@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"io/ioutil"
-	"log"
 	mreplier "mathbattle/cmd/tgbot/replier"
 	mathbattle "mathbattle/models"
+	"path/filepath"
 	"strconv"
 
 	tb "gopkg.in/tucnak/telebot.v2"
@@ -76,7 +76,11 @@ func (h *SubmitSolution) Handle(ctx mathbattle.TelegramUserContext, m *tb.Messag
 		return -1, err
 	}
 
-	log.Printf("SubmitSolution.Handle(), step: %d", ctx.CurrentStep)
+	problemIDs := r.ProblemDistribution[p.ID]
+	problemNumbers := []string{}
+	for i := 0; i < len(problemIDs); i++ {
+		problemNumbers = append(problemNumbers, strconv.Itoa(i+1))
+	}
 
 	switch ctx.CurrentStep {
 	case 0:
@@ -86,59 +90,72 @@ func (h *SubmitSolution) Handle(ctx mathbattle.TelegramUserContext, m *tb.Messag
 		}
 
 		if !isSuitable {
-			// TODO: Send help message
-			ctx.SendText("Not suitable")
-			return -1, nil
+			return -1, ErrCommandUnavailable
 		}
 
-		return 1, ctx.SendText(h.Replier.GetReply(mreplier.ReplySSolutionExpectProblem))
+		return 1, ctx.SendMessageWithKeyboard(h.Replier.GetReply(mreplier.ReplySSolutionExpectProblem), problemNumbers...)
 	case 1: // Expect problem number
-		//log.Printf("Round distribution(all): %v", r.ProblemDistribution)
-		//log.Printf("Round distribution: %v", r.ProblemDistribution[p.ID])
-
-		problemNumber, err := strconv.Atoi(m.Text)
-		if err != nil {
-			return 1, ctx.SendText(h.Replier.GetReply(mreplier.ReplySSolutionWrongProblemNumberFormat))
-		}
-		problemNumber = problemNumber - 1
-		if problemNumber < 0 || problemNumber >= len(r.ProblemDistribution[p.ID]) {
-			return 1, ctx.SendText(h.Replier.GetReply(mreplier.ReplySSolutionWrongProblemNumber))
+		problemNumber, isOk := mathbattle.ValidateProblemNumber(m.Text, problemIDs)
+		if !isOk {
+			return 1, ctx.SendMessageWithKeyboard(h.Replier.GetReply(mreplier.ReplySSolutionWrongProblemNumber), problemNumbers...)
 		}
 
-		problemId := r.ProblemDistribution[p.ID][problemNumber]
-		ctx.Variables["problem_id"] = problemId
-		log.Printf("Problem number: %d, id: %s", problemNumber, problemId)
-		return 2, nil
-	case 2:
+		problemID := r.ProblemDistribution[p.ID][problemNumber]
+		ctx.Variables["problem_id"] = mathbattle.NewContextVariableStr(problemID)
+
+		return 2, ctx.SendMessageWithKeyboard(h.Replier.GetReply(mreplier.ReplySSolutionExpectStartAccept),
+			h.Replier.GetReply(mreplier.ReplySSoltuionFinishUploading))
+
+	case 2: // Expect solution photos
+		if m.Text == h.Replier.GetReply(mreplier.ReplySSoltuionFinishUploading) {
+			totalUploaded, _ := ctx.Variables["total_uploaded"].AsInt()
+			return -1, ctx.SendText(h.Replier.GetReplySSolutionUploadSuccess(totalUploaded))
+		}
+
 		if m.Photo == nil {
 			return 2, ctx.SendText(h.Replier.GetReply(mreplier.ReplyWrongSolutionFormat))
 		}
 
-		log.Printf("Width: %d, Height: %d Size: %d", m.Photo.Width, m.Photo.Height, m.Photo.FileSize)
-		log.Printf("Album ID: %v", m.AlbumID)
-
-		filerReader, err := ctx.Bot.GetFile(&m.Photo.File)
+		f, err := ctx.Bot.FileByID(m.Photo.FileID)
 		if err != nil {
 			return -1, err
 		}
 
-		content, err := ioutil.ReadAll(filerReader)
+		fileReader, err := ctx.Bot.GetFile(&m.Photo.File)
 		if err != nil {
 			return -1, err
 		}
 
-		s, err := h.Solutions.FindOrCreate(r.ID, p.ID, ctx.Variables["problem_id"])
+		content, err := ioutil.ReadAll(fileReader)
+		if err != nil {
+			return -1, err
+		}
+
+		s, err := h.Solutions.FindOrCreate(r.ID, p.ID, ctx.Variables["problem_id"].AsString())
 		if err != nil {
 			return -1, err
 		}
 
 		err = h.Solutions.AppendPart(s.ID, mathbattle.Image{
-			Extension: ".png",
+			Extension: filepath.Ext(f.FilePath),
 			Content:   content,
 		})
 		if err != nil {
 			return -1, err
 		}
+
+		var totalUploaded int
+		_, isExist := ctx.Variables["total_uploaded"]
+		if !isExist {
+			totalUploaded = 1
+		} else {
+			totalUploaded, _ = ctx.Variables["total_uploaded"].AsInt()
+			totalUploaded++
+		}
+		ctx.Variables["total_uploaded"] = mathbattle.NewContextVariableInt(totalUploaded)
+
+		return 2, ctx.SendMessageWithKeyboard(h.Replier.GetReplySSolutionPartUploaded(totalUploaded),
+			h.Replier.GetReply(mreplier.ReplySSoltuionFinishUploading))
 	}
 
 	return -1, nil

@@ -71,7 +71,7 @@ func (h *Subscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (i
 			return -1, err
 		}
 
-		ctx.Variables["name"] = name
+		ctx.Variables["name"] = mathbattle.NewContextVariableStr(name)
 		return 2, nil
 	case 2: //expectGrade
 		grade, ok := mathbattle.ValidateUserGrade(m.Text)
@@ -86,8 +86,8 @@ func (h *Subscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (i
 
 		err := h.Participants.Store(mathbattle.Participant{
 			TelegramID:       strconv.FormatInt(ctx.ChatID, 10),
-			Name:             ctx.Variables["name"],
-			School:           ctx.Variables["school"],
+			Name:             ctx.Variables["name"].AsString(),
+			School:           ctx.Variables["school"].AsString(),
 			Grade:            grade,
 			RegistrationTime: m.Time(),
 		})

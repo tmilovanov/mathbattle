@@ -13,6 +13,7 @@ type Unsubscribe struct {
 	Handler
 	Replier      mreplier.Replier
 	Participants mathbattle.ParticipantRepository
+	Rounds       mathbattle.RoundRepository
 }
 
 func (h *Unsubscribe) Name() string {
@@ -24,12 +25,30 @@ func (h *Unsubscribe) Description() string {
 }
 
 func (h *Unsubscribe) IsShowInHelp(ctx mathbattle.TelegramUserContext) bool {
+	res, _ := h.IsAvailable(ctx)
+	return res
+}
+
+func (h *Unsubscribe) IsAvailable(ctx mathbattle.TelegramUserContext) (bool, error) {
 	isReg, err := mathbattle.IsRegistered(h.Participants, ctx.ChatID)
 	if err != nil {
-		return false
+		return false, err
 	}
 
-	return isReg
+	if !isReg {
+		return false, nil
+	}
+
+	_, err = h.Rounds.GetRunning()
+	if err != nil {
+		if err != mathbattle.ErrRoundNotFound {
+			return false, err
+		} else {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (h *Unsubscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, error) {

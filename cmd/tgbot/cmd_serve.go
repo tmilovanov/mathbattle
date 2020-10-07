@@ -39,6 +39,7 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 			Handler:      handlers.Handler{Name: "/unsubscribe", Description: "Unsubscribe"},
 			Replier:      replier,
 			Participants: storage.Participants,
+			Rounds:       storage.Rounds,
 		},
 		&handlers.SubmitSolution{
 			Handler:      handlers.Handler{Name: "/submit_solution", Description: "Submit solution"},
@@ -51,10 +52,10 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 	}
 	commandStart.AllCommands = allCommands
 
-	genericHandler := func(handler mathbattle.TelegramCommandHandler, m *tb.Message, fromStart bool) {
+	genericHandler := func(handler mathbattle.TelegramCommandHandler, m *tb.Message, startType mathbattle.CommandStep) {
 		ctx, err := ctxRepository.GetByTelegramID(int64(m.Sender.ID), b)
 		if err != nil {
-			b.Send(m.Sender, "Internal error happened")
+			ctx.SendText(replier.GetReply(mreplier.ReplyInternalErrorHappened))
 			log.Printf("Failed to get user context: %v", err)
 			return
 		}
@@ -62,15 +63,21 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 			ctxRepository.Update(ctx)
 		}()
 
-		if fromStart {
+		if startType == mathbattle.StepStart {
 			ctx.CurrentStep = 0
+		}
+		if startType == mathbattle.StepNext {
+			ctx.CurrentStep = ctx.CurrentStep + 1
 		}
 		ctx.CurrentCommand = handler.Name()
 		newStep, err := handler.Handle(ctx, m)
 		if err != nil {
-			b.Send(m.Sender, "Internal error happened")
-			log.Printf("Failed to handle command: %s : %v", handler.Name(), err)
-			return
+			if err == handlers.ErrCommandUnavailable {
+				ctx.SendText(replier.GetHelpMessage(mathbattle.FilterCommandsToShow(allCommands, ctx)))
+			} else {
+				ctx.SendText(replier.GetReply(mreplier.ReplyInternalErrorHappened))
+				log.Printf("Failed to handle command: %s : %v", handler.Name(), err)
+			}
 		}
 
 		if newStep == -1 {
@@ -84,7 +91,7 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 	for _, handler := range allCommands {
 		b.Handle(handler.Name(), func(handler mathbattle.TelegramCommandHandler) func(m *tb.Message) {
 			return func(m *tb.Message) {
-				genericHandler(handler, m, true)
+				genericHandler(handler, m, mathbattle.StepStart)
 			}
 		}(handler))
 	}
@@ -92,14 +99,14 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 	genericMessagesHandler := func(m *tb.Message) {
 		ctx, err := ctxRepository.GetByTelegramID(int64(m.Sender.ID), b)
 		if err != nil {
-			b.Send(m.Sender, "Internal error happened")
+			ctx.SendText(replier.GetReply(mreplier.ReplyInternalErrorHappened))
 			log.Printf("Failed to get user context: %v", err)
 			return
 		}
 
 		for _, handler := range allCommands {
 			if handler.Name() == ctx.CurrentCommand {
-				genericHandler(handler, m, false)
+				genericHandler(handler, m, mathbattle.StepSame)
 				return
 			}
 		}

@@ -148,6 +148,19 @@ func ValidateUserGrade(userInput string) (int, bool) {
 	return r, true
 }
 
+func ValidateProblemNumber(userInput string, problemIDs []string) (int, bool) {
+	problemNumber, err := strconv.Atoi(userInput)
+	if err != nil {
+		return -1, false
+	}
+	problemNumber = problemNumber - 1
+	if problemNumber < 0 || problemNumber >= len(problemIDs) {
+		return -1, false
+	}
+
+	return problemNumber, true
+}
+
 func IsRegistered(participantRepository ParticipantRepository, telegramID int64) (bool, error) {
 	_, exist, err := participantRepository.GetByTelegramID(strconv.FormatInt(telegramID, 10))
 	if err != nil {

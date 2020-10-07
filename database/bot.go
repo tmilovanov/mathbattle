@@ -23,7 +23,7 @@ func (r *InMemoryRepository) GetByTelegramID(chatID int64, bot *tb.Bot) (mathbat
 
 	newCtx := mathbattle.TelegramUserContext{
 		ChatID:         chatID,
-		Variables:      make(map[string]string),
+		Variables:      make(map[string]mathbattle.ContextVariable),
 		CurrentStep:    0,
 		CurrentCommand: "",
 		Bot:            bot,
