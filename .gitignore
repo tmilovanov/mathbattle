@@ -1,0 +1,4 @@
+bin/
+mydocs/
+*.code-workspace
+.vscode/
