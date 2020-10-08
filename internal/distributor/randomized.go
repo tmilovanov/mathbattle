@@ -18,31 +18,32 @@ func isFound(problems []string, problemID string) bool {
 	return false
 }
 
-func getUnusedProblems(participant mathbattle.Participant, problems []mathbattle.Problem,
+func isProblemAlreadyUsed(participant mathbattle.Participant, problem mathbattle.Problem, pastRounds []mathbattle.Round) bool {
+	for _, round := range pastRounds {
+		problemIDs, isExist := round.ProblemDistribution[participant.ID]
+		if !isExist { // User didn't participated in this round
+			continue
+		}
+
+		if isFound(problemIDs, problem.ID) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func getSuitableProblems(participant mathbattle.Participant, problems []mathbattle.Problem,
 	pastRounds []mathbattle.Round) []mathbattle.Problem {
 
 	result := []mathbattle.Problem{}
 	for _, problem := range problems {
-		if !mathbattle.IsProblemSuitableForParticipant(&problem, &participant) {
+		if !mathbattle.IsProblemSuitableForParticipant(&problem, &participant) ||
+			isProblemAlreadyUsed(participant, problem, pastRounds) {
 			continue
 		}
 
-		isUsed := false
-		for _, round := range pastRounds {
-			problemIDs, isExist := round.ProblemDistribution[participant.ID]
-			if !isExist { // User didn't participated in this round
-				continue
-			}
-
-			if isFound(problemIDs, problem.ID) {
-				isUsed = true
-				continue
-			}
-		}
-
-		if !isUsed {
-			result = append(result, problem)
-		}
+		result = append(result, problem)
 	}
 	return result
 }
@@ -100,7 +101,7 @@ func (d *RandomDistributor) Get(participants []mathbattle.Participant, problems 
 	counter := newUsageCounter()
 
 	for _, participant := range participants {
-		suitableProblems := getUnusedProblems(participant, problems, rounds)
+		suitableProblems := getSuitableProblems(participant, problems, rounds)
 		if len(suitableProblems) < count {
 			return result, fmt.Errorf("No suitable problems for this participant %v", participant)
 		}
