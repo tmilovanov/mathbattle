@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"strconv"
+	"time"
 
 	mreplier "mathbattle/cmd/tgbot/replier"
 	mathbattle "mathbattle/models"
@@ -32,76 +33,51 @@ func (h *Subscribe) IsShowInHelp(ctx mathbattle.TelegramUserContext) bool {
 	return !isReg
 }
 
-func (h *Subscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, error) {
+func resp(input string) mathbattle.TelegramResponse {
+	return mathbattle.TelegramResponse(input)
+}
+
+func (h *Subscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
 	switch ctx.CurrentStep {
 	case 0:
 		isReg, err := mathbattle.IsRegistered(h.Participants, ctx.ChatID)
 		if err != nil {
-			return -1, err
+			return -1, resp(""), err
 		}
 
 		if isReg {
-			err := ctx.SendText(h.Replier.GetReply(mreplier.ReplyAlreadyRegistered))
-			if err != nil {
-				return -1, err
-			}
-
-			return -1, nil
+			return -1, resp(h.Replier.GetReply(mreplier.ReplyAlreadyRegistered)), nil
 		}
 
-		err = ctx.SendText(h.Replier.GetReply(mreplier.ReplyRegisterNameExpect))
-		if err != nil {
-			return -1, err
-		}
-
-		return 1, nil
+		return 1, resp(h.Replier.GetReply(mreplier.ReplyRegisterNameExpect)), nil
 	case 1: //expectName
 		name, ok := mathbattle.ValidateUserName(m.Text)
 		if !ok {
-			err := ctx.SendText(h.Replier.GetReply(mreplier.ReplyRegisterNameWrong))
-			if err != nil {
-				return -1, err
-			}
-
-			return 1, nil
-		}
-
-		err := ctx.SendText(h.Replier.GetReply(mreplier.ReplyRegisterGradeExpect))
-		if err != nil {
-			return -1, err
+			return 1, resp(h.Replier.GetReply(mreplier.ReplyRegisterNameWrong)), nil
 		}
 
 		ctx.Variables["name"] = mathbattle.NewContextVariableStr(name)
-		return 2, nil
+
+		return 2, resp(h.Replier.GetReply(mreplier.ReplyRegisterGradeExpect)), nil
 	case 2: //expectGrade
 		grade, ok := mathbattle.ValidateUserGrade(m.Text)
 		if !ok {
-			err := ctx.SendText(h.Replier.GetReply(mreplier.ReplyRegisterGradeWrong))
-			if err != nil {
-				return -1, err
-			}
-
-			return 2, nil
+			return 2, resp(h.Replier.GetReply(mreplier.ReplyRegisterGradeWrong)), nil
 		}
 
-		err := h.Participants.Store(mathbattle.Participant{
+		_, err := h.Participants.Store(mathbattle.Participant{
 			TelegramID:       strconv.FormatInt(ctx.ChatID, 10),
 			Name:             ctx.Variables["name"].AsString(),
 			School:           ctx.Variables["school"].AsString(),
 			Grade:            grade,
-			RegistrationTime: m.Time(),
+			RegistrationTime: time.Now(),
 		})
 		if err != nil {
-			return -1, err
+			return -1, resp(""), err
 		}
 
-		err = ctx.SendText(h.Replier.GetReply(mreplier.ReplyRegisterSuccess))
-		if err != nil {
-			return -1, err
-		}
-
-		return -1, nil
+		return -1, resp(h.Replier.GetReply(mreplier.ReplyRegisterSuccess)), nil
 	}
 
-	return -1, nil
+	return -1, resp(""), nil
 }

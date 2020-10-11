@@ -1,22 +1,20 @@
-package database
+package mem
 
 import (
 	mathbattle "mathbattle/models"
-
-	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-type InMemoryRepository struct {
+type UserContextRepository struct {
 	userContexts map[int64]mathbattle.TelegramUserContext
 }
 
-func NewInMemoryRepository() (InMemoryRepository, error) {
-	return InMemoryRepository{
+func NewUserContextRepository() (UserContextRepository, error) {
+	return UserContextRepository{
 		userContexts: make(map[int64]mathbattle.TelegramUserContext),
 	}, nil
 }
 
-func (r *InMemoryRepository) GetByTelegramID(chatID int64, bot *tb.Bot) (mathbattle.TelegramUserContext, error) {
+func (r *UserContextRepository) GetByTelegramID(chatID int64) (mathbattle.TelegramUserContext, error) {
 	if ctx, isExist := r.userContexts[chatID]; isExist {
 		return ctx, nil
 	}
@@ -26,14 +24,13 @@ func (r *InMemoryRepository) GetByTelegramID(chatID int64, bot *tb.Bot) (mathbat
 		Variables:      make(map[string]mathbattle.ContextVariable),
 		CurrentStep:    0,
 		CurrentCommand: "",
-		Bot:            bot,
 	}
 	r.userContexts[chatID] = newCtx
 
 	return newCtx, nil
 }
 
-func (r *InMemoryRepository) Update(ctx mathbattle.TelegramUserContext) error {
-	r.userContexts[ctx.ChatID] = ctx
+func (r *UserContextRepository) Update(chatID int64, ctx mathbattle.TelegramUserContext) error {
+	r.userContexts[chatID] = ctx
 	return nil
 }

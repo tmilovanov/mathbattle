@@ -52,8 +52,8 @@ func commandStartRound(storage mathbattle.Storage, telegramToken string, replyer
 	for participantID, problemsIDs := range round.ProblemDistribution {
 		log.Printf("%s - %v", participantID, problemsIDs)
 
-		participant, exist, err := storage.Participants.GetByID(participantID)
-		if err != nil || exist == false {
+		participant, err := storage.Participants.GetByID(participantID)
+		if err != nil {
 			log.Fatal(err)
 		}
 

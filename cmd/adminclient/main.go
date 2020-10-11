@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"unicode"
 
-	"mathbattle/database"
+	"mathbattle/database/sqlite"
 	"mathbattle/internal/fstraverser"
 	mathbattle "mathbattle/models"
 
@@ -35,7 +35,7 @@ func main() {
 	case "init":
 		initApp(cfg)
 	case "add-problems":
-		db, err := database.NewSQLProblemRepository(cfg.SqlitePath, cfg.ProblemsPath)
+		db, err := sqlite.NewSQLProblemRepository(cfg.SqlitePath, cfg.ProblemsPath)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -70,7 +70,7 @@ func getConfig() (config, error) {
 }
 
 func initApp(cfg config) {
-	db, err := database.NewSQLProblemRepository(cfg.SqlitePath, cfg.ProblemsPath)
+	db, err := sqlite.NewSQLProblemRepository(cfg.SqlitePath, cfg.ProblemsPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func initApp(cfg config) {
 	// создаёт базу для всех сущностей. Если в будущем сущности будут разнесены по разным базам initApp() станет неполным
 	err = db.CreateFirstTime()
 	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		log.Fatalf("Failed to initialize sqlite. %v", err)
 	}
 
 	if _, err := os.Stat(cfg.ProblemsPath); os.IsNotExist(err) {

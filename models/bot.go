@@ -14,16 +14,18 @@ var (
 	StepNext  CommandStep = "StepNext"
 )
 
+type TelegramResponse string
+
 type TelegramCommandHandler interface {
 	Name() string
 	Description() string
 	IsShowInHelp(ctx TelegramUserContext) bool
-	Handle(ctx TelegramUserContext, m *tb.Message) (int, error)
+	Handle(ctx TelegramUserContext, m *tb.Message) (int, TelegramResponse, error)
 }
 
 type TelegramContextRepository interface {
-	GetByTelegramID(chatID int64, bot *tb.Bot) (TelegramUserContext, error)
-	Update(ctx TelegramUserContext) error
+	GetByTelegramID(chatID int64) (TelegramUserContext, error)
+	Update(chatID int64, ctx TelegramUserContext) error
 }
 
 type ContextVariable struct {
@@ -47,38 +49,46 @@ func (v ContextVariable) AsString() string {
 }
 
 type TelegramUserContext struct {
-	Variables      map[string]ContextVariable
 	ChatID         int64
+	Variables      map[string]ContextVariable
 	CurrentStep    int
 	CurrentCommand string
-	Bot            *tb.Bot
+}
+
+func NewTelegramUserContext(chatID int64) TelegramUserContext {
+	return TelegramUserContext{chatID, make(map[string]ContextVariable), 0, ""}
 }
 
 func (c *TelegramUserContext) Recipient() string {
-	return strconv.FormatInt(c.ChatID, 10)
+	//return strconv.FormatInt(c.ChatID, 10)
+	return ""
 }
 
 func (c *TelegramUserContext) SendText(msg string) error {
-	_, err := c.Bot.Send(c, msg, &tb.ReplyMarkup{
-		ReplyKeyboardRemove: true,
-	})
-	return err
+	//_, err := c.Bot.Send(c, msg, &tb.ReplyMarkup{
+	//ReplyKeyboardRemove: true,
+	//})
+	//return err
+
+	return nil
 }
 
 func (c *TelegramUserContext) SendMessageWithKeyboard(messageText string, buttonTexts ...string) error {
-	keyboard := &tb.ReplyMarkup{
-		ResizeReplyKeyboard: true,
-	}
+	//keyboard := &tb.ReplyMarkup{
+	//ResizeReplyKeyboard: true,
+	//}
 
-	buttons := []tb.Btn{}
-	for _, txt := range buttonTexts {
-		buttons = append(buttons, keyboard.Text(txt))
-	}
+	//buttons := []tb.Btn{}
+	//for _, txt := range buttonTexts {
+	//buttons = append(buttons, keyboard.Text(txt))
+	//}
 
-	keyboard.Reply(keyboard.Row(buttons...))
+	//keyboard.Reply(keyboard.Row(buttons...))
 
-	_, err := c.Bot.Send(c, messageText, keyboard)
-	return err
+	//_, err := c.Bot.Send(c, messageText, keyboard)
+	//return err
+
+	return nil
 }
 
 func FilterCommandsToShow(allCommands []TelegramCommandHandler, ctx TelegramUserContext) []TelegramCommandHandler {

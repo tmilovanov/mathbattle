@@ -6,7 +6,8 @@ import (
 	"os"
 
 	mreplier "mathbattle/cmd/tgbot/replier"
-	"mathbattle/database"
+	"mathbattle/database/mem"
+	"mathbattle/database/sqlite"
 	mathbattle "mathbattle/models"
 
 	"gopkg.in/yaml.v2"
@@ -25,19 +26,19 @@ func main() {
 		log.Fatalf("Failed to get config: %v\n", err)
 	}
 
-	participantRepository, err := database.NewSQLParticipantRepository(cfg.DatabasePath)
+	participantRepository, err := sqlite.NewSQLParticipantRepository(cfg.DatabasePath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	solutionRepository, err := database.NewSQLSolutionRepository(cfg.DatabasePath, cfg.SolutionsPath)
+	solutionRepository, err := sqlite.NewSQLSolutionRepository(cfg.DatabasePath, cfg.SolutionsPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	problemRepository, err := database.NewSQLProblemRepository(cfg.DatabasePath, cfg.ProblemsPath)
+	problemRepository, err := sqlite.NewSQLProblemRepository(cfg.DatabasePath, cfg.ProblemsPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	roundRepository, err := database.NewSQLRoundRepository(cfg.DatabasePath)
+	roundRepository, err := sqlite.NewSQLRoundRepository(cfg.DatabasePath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,7 +55,7 @@ func main() {
 		// Сейчас раунд добавляется "бесконечным". Добавить возможность передать срок окончания раунда
 		commandStartRound(storage, cfg.Token, mreplier.RussianReplyer{}, 2)
 	case "run":
-		userCtxRepository, err := database.NewInMemoryRepository()
+		userCtxRepository, err := mem.NewUserContextRepository()
 		if err != nil {
 			log.Fatal(err)
 		}

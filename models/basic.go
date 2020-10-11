@@ -7,17 +7,21 @@ import (
 	"unicode"
 )
 
+var (
+	ErrNotFound = errors.New("not found")
+)
+
 type Storage struct {
 	Participants ParticipantRepository
-	Rounds       RoundRepository
 	Problems     ProblemRepository
 	Solutions    SolutionRepository
+	Rounds       RoundRepository
 }
 
 type ParticipantRepository interface {
-	Store(participant Participant) error
-	GetByID(ID string) (Participant, bool, error)
-	GetByTelegramID(TelegramID string) (Participant, bool, error)
+	Store(participant Participant) (Participant, error)
+	GetByID(ID string) (Participant, error)
+	GetByTelegramID(TelegramID string) (Participant, error)
 	GetAll() ([]Participant, error)
 	Delete(ID string) error
 }
@@ -28,8 +32,6 @@ type ProblemRepository interface {
 	GetAll() ([]Problem, error)
 }
 
-var ErrSolutionNotFound = errors.New("solution not found")
-
 type SolutionRepository interface {
 	Store(solution Solution) (Solution, error) // Return newly created Solution with filled in ID
 	Get(ID string) (Solution, error)
@@ -38,8 +40,6 @@ type SolutionRepository interface {
 	AppendPart(ID string, part Image) error
 	Delete(ID string) error
 }
-
-var ErrRoundNotFound = errors.New("round not found")
 
 type RoundRepository interface {
 	Store(round Round) error
@@ -162,10 +162,14 @@ func ValidateProblemNumber(userInput string, problemIDs []string) (int, bool) {
 }
 
 func IsRegistered(participantRepository ParticipantRepository, telegramID int64) (bool, error) {
-	_, exist, err := participantRepository.GetByTelegramID(strconv.FormatInt(telegramID, 10))
+	_, err := participantRepository.GetByTelegramID(strconv.FormatInt(telegramID, 10))
 	if err != nil {
-		return false, err
+		if err == ErrNotFound {
+			return false, nil
+		} else {
+			return false, err
+		}
 	}
 
-	return exist, nil
+	return true, nil
 }
