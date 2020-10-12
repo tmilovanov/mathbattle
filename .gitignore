@@ -4,3 +4,5 @@ mydocs/
 .vscode/
 *config.yaml
 *.sqlite
+example_solutions/
+example_problems/
