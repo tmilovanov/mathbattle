@@ -35,19 +35,19 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 			Replier:      replier,
 			Participants: storage.Participants,
 		},
-		//&handlers.Unsubscribe{
-		//Handler:      handlers.Handler{Name: "/unsubscribe", Description: "Unsubscribe"},
-		//Replier:      replier,
-		//Participants: storage.Participants,
-		//Rounds:       storage.Rounds,
-		//},
-		//&handlers.SubmitSolution{
-		//Handler:      handlers.Handler{Name: "/submit_solution", Description: "Submit solution"},
-		//Replier:      replier,
-		//Participants: storage.Participants,
-		//Rounds:       storage.Rounds,
-		//Solutions:    storage.Solutions,
-		//},
+		&handlers.Unsubscribe{
+			Handler:      handlers.Handler{Name: "/unsubscribe", Description: "Unsubscribe"},
+			Replier:      replier,
+			Participants: storage.Participants,
+			Rounds:       storage.Rounds,
+		},
+		&handlers.SubmitSolution{
+			Handler:      handlers.Handler{Name: "/submit_solution", Description: "Submit solution"},
+			Replier:      replier,
+			Participants: storage.Participants,
+			Rounds:       storage.Rounds,
+			Solutions:    storage.Solutions,
+		},
 		commandStart,
 	}
 	commandStart.AllCommands = allCommands
@@ -79,8 +79,8 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 				log.Printf("Failed to handle command: %s : %v", handler.Name(), err)
 			}
 		}
-		if response != "" {
-			b.Send(m.Sender, string(response))
+		if response.Text != "" {
+			b.Send(m.Sender, response.Text)
 		}
 
 		if newStep == -1 {
@@ -109,6 +109,26 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 
 		for _, handler := range allCommands {
 			if handler.Name() == ctx.CurrentCommand {
+
+				if m.Photo != nil {
+					f, err := b.FileByID(m.Photo.FileID)
+					if err != nil {
+						b.Send(m.Sender, replier.GetReply(mreplier.ReplyInternalErrorHappened))
+						log.Printf("Failed to get photo ID: %v", err)
+						return
+					}
+
+					fileReader, err := b.GetFile(&m.Photo.File)
+					if err != nil {
+						b.Send(m.Sender, replier.GetReply(mreplier.ReplyInternalErrorHappened))
+						log.Printf("Failed to get file reader: %v", err)
+						return
+					}
+
+					m.Photo.FilePath = f.FilePath
+					m.Photo.FileReader = fileReader
+				}
+
 				genericHandler(handler, m, mathbattle.StepSame)
 				return
 			}

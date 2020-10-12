@@ -33,36 +33,34 @@ func (h *Subscribe) IsShowInHelp(ctx mathbattle.TelegramUserContext) bool {
 	return !isReg
 }
 
-func resp(input string) mathbattle.TelegramResponse {
-	return mathbattle.TelegramResponse(input)
-}
-
 func (h *Subscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
+	var noResponse mathbattle.TelegramResponse
+
 	switch ctx.CurrentStep {
 	case 0:
 		isReg, err := mathbattle.IsRegistered(h.Participants, ctx.ChatID)
 		if err != nil {
-			return -1, resp(""), err
+			return -1, noResponse, err
 		}
 
 		if isReg {
-			return -1, resp(h.Replier.GetReply(mreplier.ReplyAlreadyRegistered)), nil
+			return -1, mathbattle.NewResp(h.Replier.GetReply(mreplier.ReplyAlreadyRegistered)), nil
 		}
 
-		return 1, resp(h.Replier.GetReply(mreplier.ReplyRegisterNameExpect)), nil
+		return 1, mathbattle.NewResp(h.Replier.GetReply(mreplier.ReplyRegisterNameExpect)), nil
 	case 1: //expectName
 		name, ok := mathbattle.ValidateUserName(m.Text)
 		if !ok {
-			return 1, resp(h.Replier.GetReply(mreplier.ReplyRegisterNameWrong)), nil
+			return 1, mathbattle.NewResp(h.Replier.GetReply(mreplier.ReplyRegisterNameWrong)), nil
 		}
 
 		ctx.Variables["name"] = mathbattle.NewContextVariableStr(name)
 
-		return 2, resp(h.Replier.GetReply(mreplier.ReplyRegisterGradeExpect)), nil
+		return 2, mathbattle.NewResp(h.Replier.GetReply(mreplier.ReplyRegisterGradeExpect)), nil
 	case 2: //expectGrade
 		grade, ok := mathbattle.ValidateUserGrade(m.Text)
 		if !ok {
-			return 2, resp(h.Replier.GetReply(mreplier.ReplyRegisterGradeWrong)), nil
+			return 2, mathbattle.NewResp(h.Replier.GetReply(mreplier.ReplyRegisterGradeWrong)), nil
 		}
 
 		_, err := h.Participants.Store(mathbattle.Participant{
@@ -73,11 +71,11 @@ func (h *Subscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (i
 			RegistrationTime: time.Now(),
 		})
 		if err != nil {
-			return -1, resp(""), err
+			return -1, mathbattle.NewResp(""), err
 		}
 
-		return -1, resp(h.Replier.GetReply(mreplier.ReplyRegisterSuccess)), nil
+		return -1, mathbattle.NewResp(h.Replier.GetReply(mreplier.ReplyRegisterSuccess)), nil
 	}
 
-	return -1, resp(""), nil
+	return -1, mathbattle.NewResp(""), nil
 }

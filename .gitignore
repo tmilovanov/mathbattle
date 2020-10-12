@@ -3,3 +3,4 @@ mydocs/
 *.code-workspace
 .vscode/
 *config.yaml
+*.sqlite

@@ -26,5 +26,5 @@ func (h *Start) IsShowInHelp(ctx mathbattle.TelegramUserContext) bool {
 }
 
 func (h *Start) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
-	return -1, mathbattle.TelegramResponse(h.Replier.GetHelpMessage(mathbattle.FilterCommandsToShow(h.AllCommands, ctx))), nil
+	return -1, mathbattle.NewResp(h.Replier.GetHelpMessage(mathbattle.FilterCommandsToShow(h.AllCommands, ctx))), nil
 }

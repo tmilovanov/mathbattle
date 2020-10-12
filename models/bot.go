@@ -14,7 +14,29 @@ var (
 	StepNext  CommandStep = "StepNext"
 )
 
-type TelegramResponse string
+type TelegramResponse struct {
+	Text     string
+	Keyboard *tb.ReplyMarkup
+}
+
+func NewResp(messageText string) TelegramResponse {
+	return TelegramResponse{messageText, nil}
+}
+
+func NewRespWithKeyboard(messageText string, buttonTexts ...string) TelegramResponse {
+	keyboard := &tb.ReplyMarkup{
+		ResizeReplyKeyboard: true,
+	}
+
+	buttons := []tb.Btn{}
+	for _, txt := range buttonTexts {
+		buttons = append(buttons, keyboard.Text(txt))
+	}
+
+	keyboard.Reply(keyboard.Row(buttons...))
+
+	return TelegramResponse{messageText, keyboard}
+}
 
 type TelegramCommandHandler interface {
 	Name() string
@@ -64,33 +86,6 @@ func (c *TelegramUserContext) Recipient() string {
 	return ""
 }
 
-func (c *TelegramUserContext) SendText(msg string) error {
-	//_, err := c.Bot.Send(c, msg, &tb.ReplyMarkup{
-	//ReplyKeyboardRemove: true,
-	//})
-	//return err
-
-	return nil
-}
-
-func (c *TelegramUserContext) SendMessageWithKeyboard(messageText string, buttonTexts ...string) error {
-	//keyboard := &tb.ReplyMarkup{
-	//ResizeReplyKeyboard: true,
-	//}
-
-	//buttons := []tb.Btn{}
-	//for _, txt := range buttonTexts {
-	//buttons = append(buttons, keyboard.Text(txt))
-	//}
-
-	//keyboard.Reply(keyboard.Row(buttons...))
-
-	//_, err := c.Bot.Send(c, messageText, keyboard)
-	//return err
-
-	return nil
-}
-
 func FilterCommandsToShow(allCommands []TelegramCommandHandler, ctx TelegramUserContext) []TelegramCommandHandler {
 	result := []TelegramCommandHandler{}
 
@@ -101,4 +96,8 @@ func FilterCommandsToShow(allCommands []TelegramCommandHandler, ctx TelegramUser
 	}
 
 	return result
+}
+
+func fillPhotoReader(msg *tb.Message) error {
+	return nil
 }

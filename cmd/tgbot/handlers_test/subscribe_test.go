@@ -15,11 +15,7 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-func tresp(input string) mathbattle.TelegramResponse {
-	return mathbattle.TelegramResponse(input)
-}
-
-type MainTestSuite struct {
+type subscribeTestSuite struct {
 	suite.Suite
 	replyer      mreplyer.Replier
 	participants mock.MockParticipantsRepository
@@ -34,7 +30,7 @@ type ReqRespTextSequence struct {
 	step     int
 }
 
-func (s *MainTestSuite) SetupTest() {
+func (s *subscribeTestSuite) SetupTest() {
 	s.replyer = replier.RussianReplyer{}
 	s.participants = mock.NewMockParticipantsRepository()
 	s.handler = handlers.Subscribe{
@@ -44,7 +40,7 @@ func (s *MainTestSuite) SetupTest() {
 	s.req = require.New(s.T())
 }
 
-func (s *MainTestSuite) SendTextExpectText(ctx mathbattle.TelegramUserContext, msg string,
+func (s *subscribeTestSuite) SendTextExpectText(ctx mathbattle.TelegramUserContext, msg string,
 	expect string, expectedStep int) mathbattle.TelegramUserContext {
 
 	result := ctx
@@ -52,20 +48,20 @@ func (s *MainTestSuite) SendTextExpectText(ctx mathbattle.TelegramUserContext, m
 	m := &tb.Message{Text: msg}
 	step, resp, err := s.handler.Handle(ctx, m)
 	s.req.Nil(err)
-	s.req.Equal(resp, mathbattle.TelegramResponse(expect))
+	s.req.Equal(resp, mathbattle.NewResp(expect))
 	s.req.Equal(step, expectedStep)
 	result.CurrentStep = step
 
 	return result
 }
 
-func (s *MainTestSuite) SendTextExpectTextSequence(ctx mathbattle.TelegramUserContext, seq []ReqRespTextSequence) {
+func (s *subscribeTestSuite) SendTextExpectTextSequence(ctx mathbattle.TelegramUserContext, seq []ReqRespTextSequence) {
 	for _, elem := range seq {
 		ctx = s.SendTextExpectText(ctx, elem.request, elem.response, elem.step)
 	}
 }
 
-func (s *MainTestSuite) TestCorrectSubscribe() {
+func (s *subscribeTestSuite) TestCorrectSubscribe() {
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
 	testParticipant := mathbattle.Participant{
 		TelegramID: strconv.FormatInt(s.chatID, 10),
@@ -87,7 +83,7 @@ func (s *MainTestSuite) TestCorrectSubscribe() {
 	s.req.Equal(p, testParticipant)
 }
 
-func (s *MainTestSuite) TestIncorrectName() {
+func (s *subscribeTestSuite) TestIncorrectName() {
 	s.SendTextExpectTextSequence(mathbattle.NewTelegramUserContext(s.chatID), []ReqRespTextSequence{
 		{"", s.replyer.GetReply(mreplyer.ReplyRegisterNameExpect), 1},
 		{"123455~!!", s.replyer.GetReply(mreplyer.ReplyRegisterNameWrong), 1},
@@ -95,7 +91,7 @@ func (s *MainTestSuite) TestIncorrectName() {
 	})
 }
 
-func (s *MainTestSuite) TestIncorrectGrade() {
+func (s *subscribeTestSuite) TestIncorrectGrade() {
 	s.SendTextExpectTextSequence(mathbattle.NewTelegramUserContext(s.chatID), []ReqRespTextSequence{
 		{"", s.replyer.GetReply(mreplyer.ReplyRegisterNameExpect), 1},
 		{"Jack", s.replyer.GetReply(mreplyer.ReplyRegisterGradeExpect), 2},
@@ -105,7 +101,7 @@ func (s *MainTestSuite) TestIncorrectGrade() {
 	})
 }
 
-func (s *MainTestSuite) TestIncorrectThenCorrect() {
+func (s *subscribeTestSuite) TestIncorrectThenCorrect() {
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
 	testParticipant := mathbattle.Participant{
 		TelegramID: strconv.FormatInt(s.chatID, 10),
@@ -129,13 +125,15 @@ func (s *MainTestSuite) TestIncorrectThenCorrect() {
 	s.req.Equal(p, testParticipant)
 }
 
-func (s *MainTestSuite) TestSubscirbeAlredyRegistered() {
-	s.participants.Store(mathbattle.Participant{
+func (s *subscribeTestSuite) TestSubscirbeAlredyRegistered() {
+	_, err := s.participants.Store(mathbattle.Participant{
 		ID:         "",
 		TelegramID: strconv.FormatInt(s.chatID, 10),
 		Name:       "Jack",
 		Grade:      7,
 	})
+
+	s.req.Nil(err)
 
 	s.SendTextExpectTextSequence(mathbattle.NewTelegramUserContext(s.chatID), []ReqRespTextSequence{
 		{"", s.replyer.GetReply(mreplyer.ReplyAlreadyRegistered), -1},
@@ -143,5 +141,5 @@ func (s *MainTestSuite) TestSubscirbeAlredyRegistered() {
 }
 
 func TestSubscribeHandler(t *testing.T) {
-	suite.Run(t, &MainTestSuite{})
+	suite.Run(t, &subscribeTestSuite{})
 }
