@@ -23,6 +23,17 @@ func NewSQLParticipantRepository(dbPath string) (SQLParticipantRepository, error
 	}, nil
 }
 
+func NewSQLParticipantRepositoryTemp(dbName string) (SQLParticipantRepository, error) {
+	sqliteRepository, err := newTempSqliteRepository(dbName)
+	if err != nil {
+		return SQLParticipantRepository{}, err
+	}
+
+	return SQLParticipantRepository{
+		sqliteRepository: sqliteRepository,
+	}, nil
+}
+
 func (r *SQLParticipantRepository) Store(participant mathbattle.Participant) (mathbattle.Participant, error) {
 	result := participant
 	res, err := r.db.Exec("INSERT INTO participants (tg_chat_id, name, school, grade, register_time) VALUES (?, ?, ?, ?, ?)",

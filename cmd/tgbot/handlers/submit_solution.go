@@ -95,26 +95,30 @@ func (h *SubmitSolution) Handle(ctx mathbattle.TelegramUserContext, m *tb.Messag
 			return -1, noResponse, ErrCommandUnavailable
 		}
 
-		return 1, mathbattle.NewRespWithKeyboard(h.Replier.GetReply(mreplier.ReplySSolutionExpectProblem), problemNumbers...), nil
+		return 1, mathbattle.NewRespWithKeyboard(h.Replier.SolutionExpectProblemNumber(), problemNumbers...), nil
 	case 1: // Expect problem number
 		problemNumber, isOk := mathbattle.ValidateProblemNumber(m.Text, problemIDs)
 		if !isOk {
-			return 1, mathbattle.NewRespWithKeyboard(h.Replier.GetReply(mreplier.ReplySSolutionWrongProblemNumber), problemNumbers...), nil
+			return 1, mathbattle.NewRespWithKeyboard(h.Replier.SolutionWrongProblemNumber(), problemNumbers...), nil
 		}
 
 		problemID := r.ProblemDistribution[p.ID][problemNumber]
 		ctx.Variables["problem_id"] = mathbattle.NewContextVariableStr(problemID)
+		ctx.Variables["total_uploaded"] = mathbattle.NewContextVariableInt(0)
 
-		return 2, mathbattle.NewRespWithKeyboard(h.Replier.GetReply(mreplier.ReplySSolutionExpectStartAccept),
-			h.Replier.GetReply(mreplier.ReplySSoltuionFinishUploading)), nil
+		return 2, mathbattle.NewRespWithKeyboard(h.Replier.SolutionExpectPart(), h.Replier.SolutionFinishUploading()), nil
 	case 2: // Expect solution photos
-		if m.Text == h.Replier.GetReply(mreplier.ReplySSoltuionFinishUploading) {
+		if m.Text == h.Replier.SolutionFinishUploading() {
 			totalUploaded, _ := ctx.Variables["total_uploaded"].AsInt()
-			return -1, mathbattle.NewResp(h.Replier.GetReplySSolutionUploadSuccess(totalUploaded)), nil
+			if totalUploaded == 0 {
+				return -1, mathbattle.NewResp(h.Replier.SolutionEmpty()), nil
+			} else {
+				return -1, mathbattle.NewResp(h.Replier.SolutionUploadSuccess(totalUploaded)), nil
+			}
 		}
 
 		if m.Photo == nil {
-			return 2, mathbattle.NewResp(h.Replier.GetReply(mreplier.ReplyWrongSolutionFormat)), nil
+			return 2, mathbattle.NewResp(h.Replier.SolutionWrongFormat()), nil
 		}
 
 		content, err := ioutil.ReadAll(m.Photo.FileReader)
@@ -135,18 +139,13 @@ func (h *SubmitSolution) Handle(ctx mathbattle.TelegramUserContext, m *tb.Messag
 			return -1, noResponse, err
 		}
 
-		var totalUploaded int
-		_, isExist := ctx.Variables["total_uploaded"]
-		if !isExist {
-			totalUploaded = 1
-		} else {
-			totalUploaded, _ = ctx.Variables["total_uploaded"].AsInt()
-			totalUploaded++
-		}
+		tmp, _ := ctx.Variables["total_uploaded"]
+		totalUploaded, _ := tmp.AsInt()
+		totalUploaded++
 		ctx.Variables["total_uploaded"] = mathbattle.NewContextVariableInt(totalUploaded)
 
-		return 2, mathbattle.NewRespWithKeyboard(h.Replier.GetReplySSolutionPartUploaded(totalUploaded),
-			h.Replier.GetReply(mreplier.ReplySSoltuionFinishUploading)), nil
+		return 2, mathbattle.NewRespWithKeyboard(h.Replier.SolutionPartUploaded(totalUploaded),
+			h.Replier.SolutionFinishUploading()), nil
 	}
 
 	return -1, noResponse, nil

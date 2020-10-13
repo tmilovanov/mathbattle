@@ -20,7 +20,9 @@ type TelegramResponse struct {
 }
 
 func NewResp(messageText string) TelegramResponse {
-	return TelegramResponse{messageText, nil}
+	return TelegramResponse{messageText, &tb.ReplyMarkup{
+		ReplyKeyboardRemove: true,
+	}}
 }
 
 func NewRespWithKeyboard(messageText string, buttonTexts ...string) TelegramResponse {

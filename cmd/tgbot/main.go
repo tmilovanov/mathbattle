@@ -53,13 +53,13 @@ func main() {
 	switch os.Args[1] {
 	case "start-round":
 		// Сейчас раунд добавляется "бесконечным". Добавить возможность передать срок окончания раунда
-		commandStartRound(storage, cfg.Token, mreplier.RussianReplyer{}, 2)
+		commandStartRound(storage, cfg.Token, mreplier.RussianReplier{}, 2)
 	case "run":
 		userCtxRepository, err := mem.NewUserContextRepository()
 		if err != nil {
 			log.Fatal(err)
 		}
-		commandServe(storage, cfg.Token, &userCtxRepository, mreplier.RussianReplyer{})
+		commandServe(storage, cfg.Token, &userCtxRepository, mreplier.RussianReplier{})
 	}
 }
 

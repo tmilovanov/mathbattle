@@ -60,7 +60,7 @@ func (h *Unsubscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) 
 	}
 
 	if err == mathbattle.ErrNotFound {
-		return -1, mathbattle.NewResp(h.Replier.GetReply(mreplier.ReplyUnsubscribeNotSubscribed)), nil
+		return -1, mathbattle.NewResp(h.Replier.NotSubscribed()), nil
 	}
 
 	err = h.Participants.Delete(participant.ID)
@@ -68,5 +68,5 @@ func (h *Unsubscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) 
 		return -1, noRepsonse, err
 	}
 
-	return -1, mathbattle.NewResp(h.Replier.GetReply(mreplier.ReplyUnsubscribeSuccess)), nil
+	return -1, mathbattle.NewResp(h.Replier.UnsubscribeSuccess()), nil
 }

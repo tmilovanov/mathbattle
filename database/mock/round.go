@@ -17,12 +17,15 @@ func NewRoundRepository() RoundRepository {
 }
 
 func getID(t time.Time) string {
-	return t.Format("02.01.2006 15:04")
+	res := t.Format("02.01.2006 15:04")
+	return res
 }
 
-func (r *RoundRepository) Store(round mathbattle.Round) error {
-	r.impl[getID(round.StartDate)] = round
-	return nil
+func (r *RoundRepository) Store(round mathbattle.Round) (mathbattle.Round, error) {
+	result := round
+	result.ID = getID(result.StartDate)
+	r.impl[result.ID] = result
+	return result, nil
 }
 
 func (r *RoundRepository) GetAll() ([]mathbattle.Round, error) {

@@ -2,6 +2,8 @@ package sqlite
 
 import (
 	"database/sql"
+	"os"
+	"path/filepath"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -19,6 +21,35 @@ func newSqliteRepository(dbPath string) (sqliteRepository, error) {
 	return sqliteRepository{
 		db: db,
 	}, nil
+}
+
+func newTempSqliteRepository(dbName string) (sqliteRepository, error) {
+	dbPath := filepath.Join(os.TempDir(), dbName)
+	result, err := newSqliteRepository(dbPath)
+	if err != nil {
+		return result, err
+	}
+
+	err = result.deleteAllTables()
+	if err != nil {
+		return result, err
+	}
+
+	return result, result.CreateFirstTime()
+}
+
+func (r *sqliteRepository) deleteAllTables() error {
+	tableDeleters := []string{
+		"DROP TABLE participants",
+		"DROP TABLE problems",
+		"DROP TABLE rounds",
+		"DROP TABLE round_distributions",
+		"DROP TABLE solutions",
+	}
+	for _, deleteStmt := range tableDeleters {
+		r.db.Exec(deleteStmt)
+	}
+	return nil
 }
 
 func (r *sqliteRepository) CreateFirstTime() error {

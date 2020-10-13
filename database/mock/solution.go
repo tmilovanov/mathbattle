@@ -21,9 +21,10 @@ func (r *SolutionRepository) getStrID(solution mathbattle.Solution) string {
 }
 
 func (r *SolutionRepository) Store(solution mathbattle.Solution) (mathbattle.Solution, error) {
-	solution.ID = r.getStrID(solution)
-	r.impl[solution.ID] = solution
-	return solution, nil
+	result := solution
+	result.ID = r.getStrID(solution)
+	r.impl[result.ID] = result
+	return result, nil
 }
 
 func (r *SolutionRepository) Get(ID string) (mathbattle.Solution, error) {
@@ -44,7 +45,7 @@ func (r *SolutionRepository) Find(roundID string, participantID string, problemI
 
 func (r *SolutionRepository) FindOrCreate(roundID string, participantID string, problemID string) (mathbattle.Solution, error) {
 	res, err := r.Find(roundID, participantID, problemID)
-	if err != nil {
+	if err != nil && err != mathbattle.ErrNotFound {
 		return res, nil
 	}
 

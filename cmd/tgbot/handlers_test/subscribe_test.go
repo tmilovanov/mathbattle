@@ -1,4 +1,4 @@
-package handlers_test
+package handlerstest
 
 import (
 	"strconv"
@@ -6,59 +6,31 @@ import (
 
 	"mathbattle/cmd/tgbot/handlers"
 	"mathbattle/cmd/tgbot/replier"
-	mreplyer "mathbattle/cmd/tgbot/replier"
+	mreplier "mathbattle/cmd/tgbot/replier"
 	"mathbattle/database/mock"
 	mathbattle "mathbattle/models"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 type subscribeTestSuite struct {
 	suite.Suite
-	replyer      mreplyer.Replier
+	replier      mreplier.Replier
 	participants mock.MockParticipantsRepository
 	handler      handlers.Subscribe
 	chatID       int64
 	req          *require.Assertions
 }
 
-type ReqRespTextSequence struct {
-	request  string
-	response string
-	step     int
-}
-
 func (s *subscribeTestSuite) SetupTest() {
-	s.replyer = replier.RussianReplyer{}
+	s.replier = replier.RussianReplier{}
 	s.participants = mock.NewMockParticipantsRepository()
 	s.handler = handlers.Subscribe{
-		Replier:      s.replyer,
+		Replier:      s.replier,
 		Participants: &s.participants,
 	}
 	s.req = require.New(s.T())
-}
-
-func (s *subscribeTestSuite) SendTextExpectText(ctx mathbattle.TelegramUserContext, msg string,
-	expect string, expectedStep int) mathbattle.TelegramUserContext {
-
-	result := ctx
-
-	m := &tb.Message{Text: msg}
-	step, resp, err := s.handler.Handle(ctx, m)
-	s.req.Nil(err)
-	s.req.Equal(resp, mathbattle.NewResp(expect))
-	s.req.Equal(step, expectedStep)
-	result.CurrentStep = step
-
-	return result
-}
-
-func (s *subscribeTestSuite) SendTextExpectTextSequence(ctx mathbattle.TelegramUserContext, seq []ReqRespTextSequence) {
-	for _, elem := range seq {
-		ctx = s.SendTextExpectText(ctx, elem.request, elem.response, elem.step)
-	}
 }
 
 func (s *subscribeTestSuite) TestCorrectSubscribe() {
@@ -70,10 +42,10 @@ func (s *subscribeTestSuite) TestCorrectSubscribe() {
 		Grade:      7,
 	}
 
-	s.SendTextExpectTextSequence(ctx, []ReqRespTextSequence{
-		{"", s.replyer.GetReply(mreplyer.ReplyRegisterNameExpect), 1},
-		{testParticipant.Name, s.replyer.GetReply(mreplyer.ReplyRegisterGradeExpect), 2},
-		{strconv.Itoa(testParticipant.Grade), s.replyer.GetReply(mreplyer.ReplyRegisterSuccess), -1},
+	sendTextExpectTextSequence(s.req, &s.handler, ctx, []reqRespTextSequence{
+		{"", s.replier.RegisterNameExpect(), 1},
+		{testParticipant.Name, s.replier.RegisterGradeExpect(), 2},
+		{strconv.Itoa(testParticipant.Grade), s.replier.RegisterSuccess(), -1},
 	})
 
 	p, err := s.participants.GetByTelegramID(strconv.FormatInt(s.chatID, 10))
@@ -84,20 +56,20 @@ func (s *subscribeTestSuite) TestCorrectSubscribe() {
 }
 
 func (s *subscribeTestSuite) TestIncorrectName() {
-	s.SendTextExpectTextSequence(mathbattle.NewTelegramUserContext(s.chatID), []ReqRespTextSequence{
-		{"", s.replyer.GetReply(mreplyer.ReplyRegisterNameExpect), 1},
-		{"123455~!!", s.replyer.GetReply(mreplyer.ReplyRegisterNameWrong), 1},
-		{"718317+-++", s.replyer.GetReply(mreplyer.ReplyRegisterNameWrong), 1},
+	sendTextExpectTextSequence(s.req, &s.handler, mathbattle.NewTelegramUserContext(s.chatID), []reqRespTextSequence{
+		{"", s.replier.RegisterNameExpect(), 1},
+		{"123455~!!", s.replier.RegisterNameWrong(), 1},
+		{"718317+-++", s.replier.RegisterNameWrong(), 1},
 	})
 }
 
 func (s *subscribeTestSuite) TestIncorrectGrade() {
-	s.SendTextExpectTextSequence(mathbattle.NewTelegramUserContext(s.chatID), []ReqRespTextSequence{
-		{"", s.replyer.GetReply(mreplyer.ReplyRegisterNameExpect), 1},
-		{"Jack", s.replyer.GetReply(mreplyer.ReplyRegisterGradeExpect), 2},
-		{"asdfsadf", s.replyer.GetReply(mreplyer.ReplyRegisterGradeWrong), 2},
-		{"-1", s.replyer.GetReply(mreplyer.ReplyRegisterGradeWrong), 2},
-		{"12", s.replyer.GetReply(mreplyer.ReplyRegisterGradeWrong), 2},
+	sendTextExpectTextSequence(s.req, &s.handler, mathbattle.NewTelegramUserContext(s.chatID), []reqRespTextSequence{
+		{"", s.replier.RegisterNameExpect(), 1},
+		{"Jack", s.replier.RegisterGradeExpect(), 2},
+		{"asdfsadf", s.replier.RegisterGradeWrong(), 2},
+		{"-1", s.replier.RegisterGradeWrong(), 2},
+		{"12", s.replier.RegisterGradeWrong(), 2},
 	})
 }
 
@@ -110,12 +82,12 @@ func (s *subscribeTestSuite) TestIncorrectThenCorrect() {
 		Grade:      7,
 	}
 
-	s.SendTextExpectTextSequence(ctx, []ReqRespTextSequence{
-		{"", s.replyer.GetReply(mreplyer.ReplyRegisterNameExpect), 1},
-		{"123455~!!", s.replyer.GetReply(mreplyer.ReplyRegisterNameWrong), 1},
-		{testParticipant.Name, s.replyer.GetReply(mreplyer.ReplyRegisterGradeExpect), 2},
-		{"12", s.replyer.GetReply(mreplyer.ReplyRegisterGradeWrong), 2},
-		{strconv.Itoa(testParticipant.Grade), s.replyer.GetReply(mreplyer.ReplyRegisterSuccess), -1},
+	sendTextExpectTextSequence(s.req, &s.handler, ctx, []reqRespTextSequence{
+		{"", s.replier.RegisterNameExpect(), 1},
+		{"123455~!!", s.replier.RegisterNameWrong(), 1},
+		{testParticipant.Name, s.replier.RegisterGradeExpect(), 2},
+		{"12", s.replier.RegisterGradeWrong(), 2},
+		{strconv.Itoa(testParticipant.Grade), s.replier.RegisterSuccess(), -1},
 	})
 
 	p, err := s.participants.GetByTelegramID(strconv.FormatInt(s.chatID, 10))
@@ -135,8 +107,8 @@ func (s *subscribeTestSuite) TestSubscirbeAlredyRegistered() {
 
 	s.req.Nil(err)
 
-	s.SendTextExpectTextSequence(mathbattle.NewTelegramUserContext(s.chatID), []ReqRespTextSequence{
-		{"", s.replyer.GetReply(mreplyer.ReplyAlreadyRegistered), -1},
+	sendTextExpectTextSequence(s.req, &s.handler, mathbattle.NewTelegramUserContext(s.chatID), []reqRespTextSequence{
+		{"", s.replier.AlreadyRegistered(), -1},
 	})
 }
 

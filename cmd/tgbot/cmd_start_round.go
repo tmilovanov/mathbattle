@@ -16,7 +16,7 @@ import (
 	tgbotapi "gopkg.in/telegram-bot-api.v4"
 )
 
-func commandStartRound(storage mathbattle.Storage, telegramToken string, replyer mreplier.Replier, problemCount int) {
+func commandStartRound(storage mathbattle.Storage, telegramToken string, replier mreplier.Replier, problemCount int) {
 	bot, err := tgbotapi.NewBotAPI(telegramToken)
 	if err != nil {
 		log.Fatal(err)
@@ -45,7 +45,8 @@ func commandStartRound(storage mathbattle.Storage, telegramToken string, replyer
 
 	round := mathbattle.NewRound()
 	round.ProblemDistribution = distribution
-	if err = storage.Rounds.Store(round); err != nil {
+	round, err = storage.Rounds.Store(round)
+	if err != nil {
 		log.Fatalf("Failed to save round: %v", err)
 	}
 
@@ -62,7 +63,7 @@ func commandStartRound(storage mathbattle.Storage, telegramToken string, replyer
 			log.Fatalf("Failed to parse participant TelegramID: %v", err)
 		}
 
-		if _, err = bot.Send(tgbotapi.NewMessage(chatID, replyer.GetReply(mreplier.ReplyProblemsPost))); err != nil {
+		if _, err = bot.Send(tgbotapi.NewMessage(chatID, replier.ProblemsPost())); err != nil {
 			log.Fatalf("Failed to send problem to participant: %v", err)
 		}
 

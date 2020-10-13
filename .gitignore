@@ -6,3 +6,4 @@ mydocs/
 *.sqlite
 example_solutions/
 example_problems/
+*.test

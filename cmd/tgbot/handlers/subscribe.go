@@ -44,23 +44,23 @@ func (h *Subscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (i
 		}
 
 		if isReg {
-			return -1, mathbattle.NewResp(h.Replier.GetReply(mreplier.ReplyAlreadyRegistered)), nil
+			return -1, mathbattle.NewResp(h.Replier.AlreadyRegistered()), nil
 		}
 
-		return 1, mathbattle.NewResp(h.Replier.GetReply(mreplier.ReplyRegisterNameExpect)), nil
+		return 1, mathbattle.NewResp(h.Replier.RegisterNameExpect()), nil
 	case 1: //expectName
 		name, ok := mathbattle.ValidateUserName(m.Text)
 		if !ok {
-			return 1, mathbattle.NewResp(h.Replier.GetReply(mreplier.ReplyRegisterNameWrong)), nil
+			return 1, mathbattle.NewResp(h.Replier.RegisterNameWrong()), nil
 		}
 
 		ctx.Variables["name"] = mathbattle.NewContextVariableStr(name)
 
-		return 2, mathbattle.NewResp(h.Replier.GetReply(mreplier.ReplyRegisterGradeExpect)), nil
+		return 2, mathbattle.NewResp(h.Replier.RegisterGradeExpect()), nil
 	case 2: //expectGrade
 		grade, ok := mathbattle.ValidateUserGrade(m.Text)
 		if !ok {
-			return 2, mathbattle.NewResp(h.Replier.GetReply(mreplier.ReplyRegisterGradeWrong)), nil
+			return 2, mathbattle.NewResp(h.Replier.RegisterGradeWrong()), nil
 		}
 
 		_, err := h.Participants.Store(mathbattle.Participant{
@@ -74,7 +74,7 @@ func (h *Subscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (i
 			return -1, mathbattle.NewResp(""), err
 		}
 
-		return -1, mathbattle.NewResp(h.Replier.GetReply(mreplier.ReplyRegisterSuccess)), nil
+		return -1, mathbattle.NewResp(h.Replier.RegisterSuccess()), nil
 	}
 
 	return -1, mathbattle.NewResp(""), nil

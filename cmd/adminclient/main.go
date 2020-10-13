@@ -41,8 +41,8 @@ func main() {
 		}
 
 		addProblemsToRepository(&db, os.Args[2])
-	case "default":
-		fmt.Printf("Unknow command")
+	default:
+		fmt.Println("Unknow command")
 	}
 }
 
@@ -134,7 +134,8 @@ func addProblemsToRepository(repository mathbattle.ProblemRepository, problemsPa
 			Content:   content,
 		}
 
-		if err = repository.Store(problem); err != nil {
+		_, err = repository.Store(problem)
+		if err != nil {
 			log.Fatal(err)
 		}
 	})

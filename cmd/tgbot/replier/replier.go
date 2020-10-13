@@ -5,37 +5,30 @@ import (
 )
 
 type Replier interface {
-	GetReply(replyType BotReply) string
 	GetHelpMessage(availableCommands []mathbattle.TelegramCommandHandler) string
-	GetReplySSolutionUploadSuccess(totalUpload int) string
-	GetReplySSolutionPartUploaded(partNumber int) string
+	CmdSubscribeName() string
+	CmdSubscribeDesc() string
+	CmdUnsubscribeName() string
+	CmdUnsubscribeDesc() string
+	CmdSubmitSolutionName() string
+	CmdSubmitSolutionDesc() string
+	InternalError() string
+	AlreadyRegistered() string
+	RegisterNameExpect() string
+	RegisterNameWrong() string
+	RegisterGradeExpect() string
+	RegisterGradeWrong() string
+	RegisterSuccess() string
+	NotSubscribed() string
+	UnsubscribeSuccess() string
+	ProblemsPost() string
+	SolutionUploadSuccess(totalUpload int) string
+	SolutionPartUploaded(partNumber int) string
+	SolutionExpectProblemNumber() string
+	SolutionWrongProblemNumberFormat() string
+	SolutionWrongProblemNumber() string
+	SolutionExpectPart() string
+	SolutionFinishUploading() string
+	SolutionWrongFormat() string
+	SolutionEmpty() string
 }
-
-type BotReply string
-
-const (
-	ReplyInternalErrorHappened             BotReply = "replyInternalErrorHappened"
-	ReplyParticipantHello                  BotReply = "replyHello"
-	ReplyUnknownHello                      BotReply = "replyUnknownHello"
-	ReplyAlreadyRegistered                 BotReply = "replyAlreadyRegistered"
-	ReplyRegisterNameExpect                BotReply = "replyRegisterNameExpect"
-	ReplyRegisterNameWrong                 BotReply = "replyRegisterNameWrong"
-	ReplyRegisterGradeExpect               BotReply = "replyRegisterGradeExpect"
-	ReplyRegisterGradeWrong                BotReply = "replyRegisterGradeWrong"
-	ReplyRegisterSchoolExpect              BotReply = "replyRegisterSchoolExpect"
-	ReplyRegisterSchoolWrong               BotReply = "replyRegisterSchoolWrong"
-	ReplyRegisterGeneralError              BotReply = "replyRegisterGeneralError"
-	ReplyRegisterSuccess                   BotReply = "replyRegisterSuccess"
-	ReplyProblemsPost                      BotReply = "replyProblemsPost"
-	ReplyWrongSolutionFormat               BotReply = "replyWrongSolutionFormat"
-	ReplyUnsubscribeSuccess                BotReply = "replyUnsubscribeSuccess"
-	ReplyUnsubscribeNotSubscribed          BotReply = "replyUnsubscribeNotSubscribed"
-	ReplyYouAreNotRegistered               BotReply = "replyYouAreNotRegistered"
-	ReplySSolutionExpectProblem            BotReply = "replySSolutionExpectProblem"
-	ReplySSolutionWrongProblemNumberFormat BotReply = "replySSolutionWrongProblemNumberFormat"
-	ReplySSolutionWrongProblemNumber       BotReply = "replySSolutionWrongProblemNumber"
-	ReplySSolutionExpectStartAccept        BotReply = "replySSolutionExpectStartAccept"
-	ReplySSoltuionFinishUploading          BotReply = "replySSoltuionFinishUploading"
-	ReplySSoltuionPartUploadSuccess        BotReply = "replySSoltuionPartUploadSuccess"
-	ReplySSoltuionUploadSuccess            BotReply = "replySSoltuionUploadSuccess"
-)

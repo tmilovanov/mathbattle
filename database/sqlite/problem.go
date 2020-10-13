@@ -3,7 +3,9 @@ package sqlite
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
+	"strconv"
 
 	mathbattle "mathbattle/models"
 )
@@ -25,25 +27,55 @@ func NewSQLProblemRepository(dbPath, problemPath string) (SQLProblemRepository, 
 	}, nil
 }
 
+func NewSQLProblemRepositoryTemp(dbName, problemFolderName string) (SQLProblemRepository, error) {
+	sqliteRepository, err := newTempSqliteRepository(dbName)
+	if err != nil {
+		return SQLProblemRepository{}, err
+	}
+
+	problemPath := filepath.Join(os.TempDir(), problemFolderName)
+	os.RemoveAll(problemPath)
+	err = os.Mkdir(problemPath, 0777)
+	if err != nil {
+		return SQLProblemRepository{}, err
+	}
+
+	return SQLProblemRepository{
+		sqliteRepository: sqliteRepository,
+		problemFolder:    problemPath,
+	}, nil
+}
+
 func (r *SQLProblemRepository) getFilePathFromProblem(problem mathbattle.Problem) string {
 	return filepath.Join(r.problemFolder, fmt.Sprintf("%d_%d_%s%s",
 		problem.MinGrade, problem.MaxGrade, problem.ID, problem.Extension))
 }
 
-func (r *SQLProblemRepository) Store(problem mathbattle.Problem) error {
+func (r *SQLProblemRepository) Store(problem mathbattle.Problem) (mathbattle.Problem, error) {
+	result := problem
+
 	err := ioutil.WriteFile(r.getFilePathFromProblem(problem), problem.Content, 0666)
 	if err != nil {
-		return err
+		return result, err
 	}
 
-	_, err = r.db.Exec("REPLACE INTO problems (sha256sum, grade_min, grade_max, extension) VALUES (?, ?, ?, ?)",
+	insertRes, err := r.db.Exec("REPLACE INTO problems (sha256sum, grade_min, grade_max, extension) VALUES (?, ?, ?, ?)",
 		problem.ID, problem.MinGrade, problem.MaxGrade, problem.Extension)
+	if err != nil {
+		return result, err
+	}
+
+	id, err := insertRes.LastInsertId()
+	if err != nil {
+		return result, err
+	}
+	result.ID = strconv.FormatInt(id, 10)
 
 	if err != nil {
-		return err
+		return result, err
 	}
 
-	return nil
+	return result, nil
 }
 
 func (r *SQLProblemRepository) GetByID(ID string) (mathbattle.Problem, error) {

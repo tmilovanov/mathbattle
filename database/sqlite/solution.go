@@ -29,6 +29,25 @@ func NewSQLSolutionRepository(dbPath, solutionPath string) (SQLSolutionRepositor
 	}, nil
 }
 
+func NewSQLSolutionRepositoryTemp(dbName, solutionFolderName string) (SQLSolutionRepository, error) {
+	sqliteRepository, err := newTempSqliteRepository(dbName)
+	if err != nil {
+		return SQLSolutionRepository{}, err
+	}
+
+	solutionPath := filepath.Join(os.TempDir(), solutionFolderName)
+	os.RemoveAll(solutionPath)
+	err = os.Mkdir(solutionPath, 0777)
+	if err != nil {
+		return SQLSolutionRepository{}, err
+	}
+
+	return SQLSolutionRepository{
+		sqliteRepository: sqliteRepository,
+		solutionFolder:   solutionPath,
+	}, nil
+}
+
 func (r *SQLSolutionRepository) getPartPath(solution mathbattle.Solution, i int, extension string) string {
 	fileName := fmt.Sprintf("%s_%s_%s_%d%s", solution.RoundID, solution.ParticipantID,
 		solution.ProblemID, i, extension)

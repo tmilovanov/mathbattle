@@ -27,7 +27,7 @@ type ParticipantRepository interface {
 }
 
 type ProblemRepository interface {
-	Store(problem Problem) error
+	Store(problem Problem) (Problem, error)
 	GetByID(ID string) (Problem, error)
 	GetAll() ([]Problem, error)
 }
@@ -42,7 +42,7 @@ type SolutionRepository interface {
 }
 
 type RoundRepository interface {
-	Store(round Round) error
+	Store(round Round) (Round, error)
 	GetRunning() (Round, error)
 	GetAll() ([]Round, error)
 }

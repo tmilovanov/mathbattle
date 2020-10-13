@@ -25,6 +25,17 @@ func NewSQLRoundRepository(dbPath string) (SQLRoundRepository, error) {
 	}, nil
 }
 
+func NewSQLRoundRepositoryTemp(dbName string) (SQLRoundRepository, error) {
+	sqliteRepository, err := newTempSqliteRepository(dbName)
+	if err != nil {
+		return SQLRoundRepository{}, err
+	}
+
+	return SQLRoundRepository{
+		sqliteRepository: sqliteRepository,
+	}, nil
+}
+
 func (r *SQLRoundRepository) GetDistributionForRound(roundID string) (mathbattle.RoundDistribution, error) {
 	intRoundID, err := strconv.Atoi(roundID)
 	if err != nil {
@@ -79,16 +90,19 @@ func (r *SQLRoundRepository) GetAll() ([]mathbattle.Round, error) {
 	return result, nil
 }
 
-func (r *SQLRoundRepository) Store(round mathbattle.Round) error {
+func (r *SQLRoundRepository) Store(round mathbattle.Round) (mathbattle.Round, error) {
+	result := round
+
 	res, err := r.db.Exec("INSERT INTO rounds (date_start, date_end) VALUES (?,?)", round.StartDate, round.EndDate)
 	if err != nil {
-		return err
+		return result, err
 	}
 
 	roundID, err := res.LastInsertId()
 	if err != nil {
-		return err
+		return result, err
 	}
+	result.ID = strconv.FormatInt(roundID, 10)
 
 	for participantID, participantProblems := range round.ProblemDistribution {
 		serializedProblems := ""
@@ -99,17 +113,17 @@ func (r *SQLRoundRepository) Store(round mathbattle.Round) error {
 
 		intParticipantID, err := strconv.ParseInt(participantID, 10, 32)
 		if err != nil {
-			return err
+			return result, err
 		}
 
 		_, err = r.db.Exec("INSERT INTO round_distributions (round_id, participant_id, problem_ids) VALUES (?,?,?)",
 			roundID, intParticipantID, serializedProblems)
 		if err != nil {
-			return err
+			return result, err
 		}
 	}
 
-	return nil
+	return result, nil
 }
 
 func (r *SQLRoundRepository) GetRunning() (mathbattle.Round, error) {
