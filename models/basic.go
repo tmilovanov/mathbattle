@@ -107,8 +107,14 @@ func IsProblemSuitableForParticipant(problem *Problem, participant *Participant)
 }
 
 func IsParticipantNameValid(input string) bool {
+	letters := []rune(input)
+
+	if len(letters) == 0 || len(letters) > 30 {
+		return false
+	}
+
 	for _, r := range []rune(input) {
-		if !unicode.IsLetter(r) {
+		if !(unicode.IsLetter(r) || r == ' ') {
 			return false
 		}
 	}
