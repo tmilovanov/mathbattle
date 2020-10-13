@@ -141,14 +141,24 @@ func (h *SubmitSolution) stepAcceptSolutionPart(ctx mathbattle.TelegramUserConte
 		}
 	}
 
-	if m.Photo == nil {
+	if m.Photo == nil && m.Document == nil {
 		return 3, mathbattle.NewRespWithKeyboard(h.Replier.SolutionWrongFormat(), h.Replier.SolutionFinishUploading()), nil
 	}
 
-	content, err := ioutil.ReadAll(m.Photo.FileReader)
+	var uploadedFile tb.File
+	if m.Photo != nil {
+		uploadedFile = m.Photo.File
+	} else {
+		if m.Document != nil {
+			uploadedFile = m.Document.File
+		}
+	}
+
+	content, err := ioutil.ReadAll(uploadedFile.FileReader)
 	if err != nil {
 		return -1, noResponse(), err
 	}
+	extension := filepath.Ext(uploadedFile.FilePath)
 
 	s, err := h.Solutions.FindOrCreate(round.ID, participant.ID, ctx.Variables["problem_id"].AsString())
 	if err != nil {
@@ -156,7 +166,7 @@ func (h *SubmitSolution) stepAcceptSolutionPart(ctx mathbattle.TelegramUserConte
 	}
 
 	err = h.Solutions.AppendPart(s.ID, mathbattle.Image{
-		Extension: filepath.Ext(m.Photo.FilePath),
+		Extension: extension,
 		Content:   content,
 	})
 	if err != nil {

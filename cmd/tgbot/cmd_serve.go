@@ -130,26 +130,42 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 		for _, handler := range allCommands {
 			if handler.Name() == ctx.CurrentCommand {
 
+				fillFileStruct := func(f tb.File) (tb.File, error) {
+					result := f
+
+					tmp, err := b.FileByID(f.FileID)
+					if err != nil {
+						return f, err
+					}
+					result.FilePath = tmp.FilePath
+
+					fileReader, err := b.GetFile(&f)
+					if err != nil {
+						return f, err
+					}
+					result.FileReader = fileReader
+
+					return result, nil
+				}
+
 				if m.Photo != nil {
-					f, err := b.FileByID(m.Photo.FileID)
+					m.Photo.File, err = fillFileStruct(m.Photo.File)
 					if err != nil {
 						b.Send(m.Sender, replier.InternalError())
-						log.Printf("Failed to get photo ID: %v", err)
-						return
+						log.Printf("Failed to fill photo structure: %v", err)
 					}
+				}
 
-					fileReader, err := b.GetFile(&m.Photo.File)
+				if m.Document != nil {
+					m.Document.File, err = fillFileStruct(m.Document.File)
 					if err != nil {
 						b.Send(m.Sender, replier.InternalError())
-						log.Printf("Failed to get file reader: %v", err)
-						return
+						log.Printf("Failed to fill document structure: %v", err)
 					}
-
-					m.Photo.FilePath = f.FilePath
-					m.Photo.FileReader = fileReader
 				}
 
 				genericHandler(handler, m, mathbattle.StepSame)
+
 				return
 			}
 		}
@@ -159,6 +175,7 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 
 	b.Handle(tb.OnPhoto, genericMessagesHandler)
 	b.Handle(tb.OnText, genericMessagesHandler)
+	b.Handle(tb.OnDocument, genericMessagesHandler)
 
 	log.Printf("Bot started")
 
