@@ -25,11 +25,11 @@ func (h *Unsubscribe) Description() string {
 }
 
 func (h *Unsubscribe) IsShowInHelp(ctx mathbattle.TelegramUserContext) bool {
-	res, _ := h.IsAvailable(ctx)
+	res, _ := h.IsCommandSuitable(ctx)
 	return res
 }
 
-func (h *Unsubscribe) IsAvailable(ctx mathbattle.TelegramUserContext) (bool, error) {
+func (h *Unsubscribe) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, error) {
 	isReg, err := mathbattle.IsRegistered(h.Participants, ctx.ChatID)
 	if err != nil {
 		return false, err

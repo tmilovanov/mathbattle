@@ -36,6 +36,7 @@ type SolutionRepository interface {
 	Store(solution Solution) (Solution, error) // Return newly created Solution with filled in ID
 	Get(ID string) (Solution, error)
 	Find(roundID string, participantID string, problemID string) (Solution, error)
+	FindMany(roundID string, participantID string, problemID string) ([]Solution, error) //Leave IDs empty if it's not important
 	FindOrCreate(roundID string, participantID string, problemID string) (Solution, error)
 	AppendPart(ID string, part Image) error
 	Delete(ID string) error
@@ -43,8 +44,10 @@ type SolutionRepository interface {
 
 type RoundRepository interface {
 	Store(round Round) (Round, error)
+	Get(ID string) (Round, error)
 	GetRunning() (Round, error)
 	GetAll() ([]Round, error)
+	Delete(roundID string) error
 }
 
 type Participant struct {
@@ -178,4 +181,13 @@ func IsRegistered(participantRepository ParticipantRepository, telegramID int64)
 	}
 
 	return true, nil
+}
+
+func ProblemNumbers(round Round, participant Participant) []string {
+	problemIDs := round.ProblemDistribution[participant.ID]
+	result := []string{}
+	for i := 0; i < len(problemIDs); i++ {
+		result = append(result, strconv.Itoa(i+1))
+	}
+	return result
 }

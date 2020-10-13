@@ -5,7 +5,10 @@ import (
 )
 
 type Replier interface {
+	GetStartMessage() string
 	GetHelpMessage(availableCommands []mathbattle.TelegramCommandHandler) string
+	Yes() string
+	No() string
 	CmdSubscribeName() string
 	CmdSubscribeDesc() string
 	CmdUnsubscribeName() string
@@ -21,13 +24,16 @@ type Replier interface {
 	RegisterSuccess() string
 	NotSubscribed() string
 	UnsubscribeSuccess() string
-	ProblemsPost() string
+	ProblemsPostBefore() string
+	ProblemsPostAfter() string
 	SolutionUploadSuccess(totalUpload int) string
 	SolutionPartUploaded(partNumber int) string
 	SolutionExpectProblemNumber() string
 	SolutionWrongProblemNumberFormat() string
 	SolutionWrongProblemNumber() string
 	SolutionExpectPart() string
+	SolutionIsRewriteOld() string
+	SolutionDeclineRewriteOld() string
 	SolutionFinishUploading() string
 	SolutionWrongFormat() string
 	SolutionEmpty() string

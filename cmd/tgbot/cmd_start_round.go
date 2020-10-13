@@ -63,7 +63,7 @@ func commandStartRound(storage mathbattle.Storage, telegramToken string, replier
 			log.Fatalf("Failed to parse participant TelegramID: %v", err)
 		}
 
-		if _, err = bot.Send(tgbotapi.NewMessage(chatID, replier.ProblemsPost())); err != nil {
+		if _, err = bot.Send(tgbotapi.NewMessage(chatID, replier.ProblemsPostBefore())); err != nil {
 			log.Fatalf("Failed to send problem to participant: %v", err)
 		}
 
@@ -78,6 +78,10 @@ func commandStartRound(storage mathbattle.Storage, telegramToken string, replier
 			if _, err := bot.Send(msg); err != nil {
 				log.Fatalf("Failed to send problem to participant: %v", err)
 			}
+		}
+
+		if _, err = bot.Send(tgbotapi.NewMessage(chatID, replier.ProblemsPostAfter())); err != nil {
+			log.Fatalf("Failed to send problem to participant: %v", err)
 		}
 	}
 }

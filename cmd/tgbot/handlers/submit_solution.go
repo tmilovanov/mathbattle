@@ -27,21 +27,8 @@ func (h *SubmitSolution) Description() string {
 }
 
 func (h *SubmitSolution) IsShowInHelp(ctx mathbattle.TelegramUserContext) bool {
-	isReg, err := mathbattle.IsRegistered(h.Participants, ctx.ChatID)
-	if err != nil {
-		return false
-	}
-
-	if !isReg {
-		return false
-	}
-
-	_, err = h.Rounds.GetRunning()
-	if err != nil {
-		return false
-	}
-
-	return true
+	res, _ := h.IsCommandSuitable(ctx)
+	return res
 }
 
 func (h *SubmitSolution) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, error) {
@@ -66,87 +53,123 @@ func (h *SubmitSolution) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (
 }
 
 func (h *SubmitSolution) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
-	var noResponse mathbattle.TelegramResponse
-
 	r, err := h.Rounds.GetRunning()
 	if err != nil {
-		return -1, noResponse, err
+		return -1, noResponse(), err
 	}
 
 	p, err := h.Participants.GetByTelegramID(strconv.FormatInt(ctx.ChatID, 10))
 	if err != nil {
-		return -1, noResponse, err
-	}
-
-	problemIDs := r.ProblemDistribution[p.ID]
-	problemNumbers := []string{}
-	for i := 0; i < len(problemIDs); i++ {
-		problemNumbers = append(problemNumbers, strconv.Itoa(i+1))
+		return -1, noResponse(), err
 	}
 
 	switch ctx.CurrentStep {
 	case 0:
-		isSuitable, err := h.IsCommandSuitable(ctx)
-		if err != nil {
-			return -1, noResponse, err
-		}
+		return h.stepStart(ctx, m, r, p)
+	case 1:
+		return h.stepExpectProblemNumber(ctx, m, r, p)
+	case 2:
+		return h.stepAlreadySubmitted(ctx, m, r, p)
+	case 3:
+		return h.stepAcceptSolutionPart(ctx, m, r, p)
+	default:
+		return -1, noResponse(), nil
+	}
+}
 
-		if !isSuitable {
-			return -1, noResponse, ErrCommandUnavailable
-		}
+func (h *SubmitSolution) stepStart(ctx mathbattle.TelegramUserContext, m *tb.Message,
+	round mathbattle.Round, participant mathbattle.Participant) (int, mathbattle.TelegramResponse, error) {
 
-		return 1, mathbattle.NewRespWithKeyboard(h.Replier.SolutionExpectProblemNumber(), problemNumbers...), nil
-	case 1: // Expect problem number
-		problemNumber, isOk := mathbattle.ValidateProblemNumber(m.Text, problemIDs)
-		if !isOk {
-			return 1, mathbattle.NewRespWithKeyboard(h.Replier.SolutionWrongProblemNumber(), problemNumbers...), nil
-		}
+	problemNumbers := mathbattle.ProblemNumbers(round, participant)
+	return 1, mathbattle.NewRespWithKeyboard(h.Replier.SolutionExpectProblemNumber(), problemNumbers...), nil
+}
 
-		problemID := r.ProblemDistribution[p.ID][problemNumber]
-		ctx.Variables["problem_id"] = mathbattle.NewContextVariableStr(problemID)
-		ctx.Variables["total_uploaded"] = mathbattle.NewContextVariableInt(0)
+func (h *SubmitSolution) stepExpectProblemNumber(ctx mathbattle.TelegramUserContext, m *tb.Message,
+	round mathbattle.Round, participant mathbattle.Participant) (int, mathbattle.TelegramResponse, error) {
 
-		return 2, mathbattle.NewRespWithKeyboard(h.Replier.SolutionExpectPart(), h.Replier.SolutionFinishUploading()), nil
-	case 2: // Expect solution photos
-		if m.Text == h.Replier.SolutionFinishUploading() {
-			totalUploaded, _ := ctx.Variables["total_uploaded"].AsInt()
-			if totalUploaded == 0 {
-				return -1, mathbattle.NewResp(h.Replier.SolutionEmpty()), nil
-			} else {
-				return -1, mathbattle.NewResp(h.Replier.SolutionUploadSuccess(totalUploaded)), nil
-			}
-		}
-
-		if m.Photo == nil {
-			return 2, mathbattle.NewResp(h.Replier.SolutionWrongFormat()), nil
-		}
-
-		content, err := ioutil.ReadAll(m.Photo.FileReader)
-		if err != nil {
-			return -1, noResponse, err
-		}
-
-		s, err := h.Solutions.FindOrCreate(r.ID, p.ID, ctx.Variables["problem_id"].AsString())
-		if err != nil {
-			return -1, noResponse, err
-		}
-
-		err = h.Solutions.AppendPart(s.ID, mathbattle.Image{
-			Extension: filepath.Ext(m.Photo.FilePath),
-			Content:   content,
-		})
-		if err != nil {
-			return -1, noResponse, err
-		}
-
-		tmp, _ := ctx.Variables["total_uploaded"]
-		totalUploaded, _ := tmp.AsInt()
-		totalUploaded++
-		ctx.Variables["total_uploaded"] = mathbattle.NewContextVariableInt(totalUploaded)
-
-		return 2, mathbattle.NewRespWithKeyboard(h.Replier.SolutionPartUploaded(totalUploaded),
-			h.Replier.SolutionFinishUploading()), nil
+	problemIDs := round.ProblemDistribution[participant.ID]
+	problemNumbers := mathbattle.ProblemNumbers(round, participant)
+	problemNumber, isOk := mathbattle.ValidateProblemNumber(m.Text, problemIDs)
+	if !isOk {
+		return 1, mathbattle.NewRespWithKeyboard(h.Replier.SolutionWrongProblemNumber(), problemNumbers...), nil
 	}
 
-	return -1, noResponse, nil
+	problemID := round.ProblemDistribution[participant.ID][problemNumber]
+	ctx.Variables["problem_id"] = mathbattle.NewContextVariableStr(problemID)
+	ctx.Variables["total_uploaded"] = mathbattle.NewContextVariableInt(0)
+	currentSolution, err := h.Solutions.Find(round.ID, participant.ID, problemID)
+	if err != nil && err != mathbattle.ErrNotFound {
+		return -1, noResponse(), err
+	}
+
+	if err == mathbattle.ErrNotFound || len(currentSolution.Parts) == 0 {
+		return 3, mathbattle.NewRespWithKeyboard(h.Replier.SolutionExpectPart(), h.Replier.SolutionFinishUploading()), nil
+	}
+
+	return 2, mathbattle.NewRespWithKeyboard(h.Replier.SolutionIsRewriteOld(), h.Replier.Yes(), h.Replier.No()), nil
+}
+
+func (h *SubmitSolution) stepAlreadySubmitted(ctx mathbattle.TelegramUserContext, m *tb.Message,
+	round mathbattle.Round, participant mathbattle.Participant) (int, mathbattle.TelegramResponse, error) {
+
+	if m.Text == h.Replier.Yes() {
+		problemID := ctx.Variables["problem_id"].AsString()
+		solution, err := h.Solutions.Find(round.ID, participant.ID, problemID)
+		if err != nil {
+			return -1, noResponse(), err
+		}
+
+		if err := h.Solutions.Delete(solution.ID); err != nil {
+			return -1, noResponse(), err
+		}
+
+		return 3, mathbattle.NewRespWithKeyboard(h.Replier.SolutionExpectPart(), h.Replier.SolutionFinishUploading()), nil
+	} else {
+		return -1, mathbattle.NewResp(h.Replier.SolutionDeclineRewriteOld()), nil
+	}
+}
+
+func (h *SubmitSolution) stepAcceptSolutionPart(ctx mathbattle.TelegramUserContext, m *tb.Message,
+	round mathbattle.Round, participant mathbattle.Participant) (int, mathbattle.TelegramResponse, error) {
+
+	if m.Text == h.Replier.SolutionFinishUploading() {
+		totalUploaded, _ := ctx.Variables["total_uploaded"].AsInt()
+		if totalUploaded == 0 {
+			return -1, mathbattle.NewResp(h.Replier.SolutionEmpty()), nil
+		} else {
+			return -1, mathbattle.NewResp(h.Replier.SolutionUploadSuccess(totalUploaded)), nil
+		}
+	}
+
+	if m.Photo == nil {
+		return 3, mathbattle.NewRespWithKeyboard(h.Replier.SolutionWrongFormat(), h.Replier.SolutionFinishUploading()), nil
+	}
+
+	content, err := ioutil.ReadAll(m.Photo.FileReader)
+	if err != nil {
+		return -1, noResponse(), err
+	}
+
+	s, err := h.Solutions.FindOrCreate(round.ID, participant.ID, ctx.Variables["problem_id"].AsString())
+	if err != nil {
+		return -1, noResponse(), err
+	}
+
+	err = h.Solutions.AppendPart(s.ID, mathbattle.Image{
+		Extension: filepath.Ext(m.Photo.FilePath),
+		Content:   content,
+	})
+	if err != nil {
+		return -1, noResponse(), err
+	}
+
+	totalUploaded, err := ctx.Variables["total_uploaded"].AsInt()
+	if err != nil {
+		return -1, noResponse(), err
+	}
+	totalUploaded++
+	ctx.Variables["total_uploaded"] = mathbattle.NewContextVariableInt(totalUploaded)
+
+	return 3, mathbattle.NewRespWithKeyboard(h.Replier.SolutionPartUploaded(totalUploaded),
+		h.Replier.SolutionFinishUploading()), nil
 }

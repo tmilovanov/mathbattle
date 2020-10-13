@@ -42,8 +42,8 @@ func sendAndTest(req *require.Assertions, handler mathbattle.TelegramCommandHand
 	result := ctx
 	step, resp, err := handler.Handle(ctx, msg)
 	req.Nil(err)
-	req.Equal(resp, expect)
-	req.Equal(step, expectedStep)
+	req.Equal(expect, resp)
+	req.Equal(expectedStep, step)
 	result.CurrentStep = step
 
 	return result
@@ -61,11 +61,13 @@ func sendTextExpectTextSequence(req *require.Assertions, handler mathbattle.Tele
 }
 
 func sendReqExpectRespSequence(req *require.Assertions, handler mathbattle.TelegramCommandHandler, ctx mathbattle.TelegramUserContext,
-	seq []reqRespSequence) {
+	seq []reqRespSequence) mathbattle.TelegramUserContext {
 
+	result := ctx
 	for _, elem := range seq {
-		ctx = sendAndTest(req, handler, ctx, &elem.request, elem.response, elem.step)
+		result = sendAndTest(req, handler, result, &elem.request, elem.response, elem.step)
 	}
+	return result
 }
 
 func getTestDbName() string       { return "test_mathbattle.sqlite" }

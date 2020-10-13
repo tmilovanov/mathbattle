@@ -142,6 +142,67 @@ func (r *SQLSolutionRepository) Find(roundID string, participantID string, probl
 	return r.Get(ID)
 }
 
+func (r *SQLSolutionRepository) FindMany(roundID string, participantID string, problemID string) ([]mathbattle.Solution, error) {
+	query := "SELECT id, round_id, participant_id, problem_id, parts FROM solutions"
+	whereClauses := []string{}
+	whereArgs := []interface{}{}
+	if roundID != "" {
+		whereClauses = append(whereClauses, " round_id = ?")
+		whereArgs = append(whereArgs, roundID)
+	}
+	if participantID != "" {
+		whereClauses = append(whereClauses, " participant_id = ?")
+		whereArgs = append(whereArgs, participantID)
+	}
+	if problemID != "" {
+		whereClauses = append(whereClauses, " problem_id = ?")
+		whereArgs = append(whereArgs, problemID)
+	}
+	if len(whereClauses) != 0 {
+		query += " WHERE " + strings.Join(whereClauses, " AND ")
+	}
+
+	rows, err := r.db.Query(query, whereArgs...)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return []mathbattle.Solution{}, mathbattle.ErrNotFound
+		}
+	}
+	defer rows.Close()
+
+	result := []mathbattle.Solution{}
+	for rows.Next() {
+		curSolution := mathbattle.Solution{}
+		var partsExtensions string
+		err = rows.Scan(&curSolution.ID, &curSolution.RoundID, &curSolution.ParticipantID,
+			&curSolution.ProblemID, &partsExtensions)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return result, mathbattle.ErrNotFound
+			}
+			return result, err
+		}
+
+		if len(partsExtensions) != 0 {
+			extensions := strings.Split(partsExtensions, ",")
+			for i := 0; i < len(extensions); i++ {
+				partPath := r.getPartPath(curSolution, i, extensions[i])
+				content, err := ioutil.ReadFile(partPath)
+				if err != nil {
+					return result, err
+				}
+				curSolution.Parts = append(curSolution.Parts, mathbattle.Image{
+					Extension: extensions[i],
+					Content:   content,
+				})
+			}
+		}
+		result = append(result, curSolution)
+	}
+
+	return result, nil
+}
+
 func (r *SQLSolutionRepository) FindOrCreate(roundID string, participantID string, problemID string) (mathbattle.Solution, error) {
 	s, err := r.Find(roundID, participantID, problemID)
 	if err == nil {

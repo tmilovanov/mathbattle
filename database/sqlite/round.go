@@ -63,6 +63,27 @@ func (r *SQLRoundRepository) GetDistributionForRound(roundID string) (mathbattle
 	return result, nil
 }
 
+func (r *SQLRoundRepository) Get(ID string) (mathbattle.Round, error) {
+	result := mathbattle.Round{ID: ID}
+
+	intID, err := strconv.ParseInt(ID, 10, 64)
+	if err != nil {
+		return result, err
+	}
+
+	res := r.db.QueryRow("SELECT date_start, date_end FROM rounds WHERE id = ?", intID)
+	err = res.Scan(&result.StartDate, &result.EndDate)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return result, sql.ErrConnDone
+		}
+		return result, err
+	}
+
+	result.ProblemDistribution, err = r.GetDistributionForRound(result.ID)
+	return result, err
+}
+
 func (r *SQLRoundRepository) GetAll() ([]mathbattle.Round, error) {
 	rows, err := r.db.Query("SELECT id, date_start, date_end FROM rounds")
 	if err != nil {
@@ -141,4 +162,29 @@ func (r *SQLRoundRepository) GetRunning() (mathbattle.Round, error) {
 
 	result.ProblemDistribution, err = r.GetDistributionForRound(result.ID)
 	return result, err
+}
+
+func (r *SQLRoundRepository) Delete(ID string) error {
+	intID, err := strconv.ParseInt(ID, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.db.Exec("DELETE FROM round_distributions WHERE round_id = ?", intID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return mathbattle.ErrNotFound
+		}
+		return err
+	}
+
+	_, err = r.db.Exec("DELETE FROM rounds WHERE id = ?", intID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return mathbattle.ErrNotFound
+		}
+		return err
+	}
+
+	return nil
 }

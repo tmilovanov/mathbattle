@@ -24,9 +24,20 @@ func GetDeclensionByNumeral(forms [3]string, numeral int) string {
 	return forms[2]
 }
 
+func (r RussianReplier) Yes() string {
+	return "Да"
+}
+
+func (r RussianReplier) No() string {
+	return "Нет"
+}
+
+func (r RussianReplier) GetStartMessage() string {
+	return "Привет! Этот бот позволяет тебе участвовать в математических боях.\n"
+}
+
 func (r RussianReplier) GetHelpMessage(availableCommands []mathbattle.TelegramCommandHandler) string {
-	msg := "Привет! Этот бот позволяет тебе участвовать в математических боях. "
-	msg += "Вот что ты можешь сейчас сделать:\n"
+	msg := "Сейчас тебе доступны следующие действия:\n"
 	msg += "\n"
 	for _, cmd := range availableCommands {
 		msg += cmd.Name() + " " + cmd.Description() + "\n"
@@ -94,8 +105,13 @@ func (r RussianReplier) UnsubscribeSuccess() string {
 	return "Ты успешно отписан от рассылки задач."
 }
 
-func (r RussianReplier) ProblemsPost() string {
-	msg := "Привет! А вот и задачи. Как будешь готов - присылай решение. Для этого жми сюда: " + r.CmdSubmitSolutionName() + "\n"
+func (r RussianReplier) ProblemsPostBefore() string {
+	return "Привет! А вот и задачи"
+}
+
+func (r RussianReplier) ProblemsPostAfter() string {
+	msg := "Как будешь готов - присылай решение. Для этого жми сюда: \n"
+	msg += r.CmdSubmitSolutionName() + "\n"
 	msg += "Решение необходимо присылать фотографиями. "
 	return msg
 }
@@ -113,8 +129,19 @@ func (r RussianReplier) SolutionUploadSuccess(totalUpload int) string {
 func (r RussianReplier) SolutionExpectPart() string {
 	msg := "Отлично, теперь посылай решение. Решение необходимо отправлять фотографиями. "
 	msg += "Ты можешь загрузить сколько угодно фотографий. "
-	msg += "После того как отошлёшь все нажми кнопку '" + r.SolutionFinishUploading() + "'"
+	msg += "После того как отошлёшь всё - нажми кнопку '" + r.SolutionFinishUploading() + "'"
 	return msg
+}
+
+func (r RussianReplier) SolutionIsRewriteOld() string {
+	msg := "Для этой задачи ты уже отправлял решение. Новое решение перезапишет старое.\n"
+	msg += "\n"
+	msg += "Продолжить?"
+	return msg
+}
+
+func (r RussianReplier) SolutionDeclineRewriteOld() string {
+	return "Отменено"
 }
 
 func (r RussianReplier) SolutionWrongProblemNumberFormat() string {

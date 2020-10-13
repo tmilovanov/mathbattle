@@ -54,6 +54,8 @@ func main() {
 	case "start-round":
 		// Сейчас раунд добавляется "бесконечным". Добавить возможность передать срок окончания раунда
 		commandStartRound(storage, cfg.Token, mreplier.RussianReplier{}, 2)
+	case "delete-round":
+		commandDeleteRound(storage)
 	case "run":
 		userCtxRepository, err := mem.NewUserContextRepository()
 		if err != nil {

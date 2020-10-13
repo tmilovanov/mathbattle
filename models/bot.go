@@ -44,6 +44,7 @@ type TelegramCommandHandler interface {
 	Name() string
 	Description() string
 	IsShowInHelp(ctx TelegramUserContext) bool
+	IsCommandSuitable(ctx TelegramUserContext) (bool, error)
 	Handle(ctx TelegramUserContext, m *tb.Message) (int, TelegramResponse, error)
 }
 
