@@ -85,6 +85,7 @@ type Round struct {
 	StartDate           time.Time
 	EndDate             time.Time
 	ProblemDistribution RoundDistribution
+	ReviewDistribution  ReviewDistribution
 }
 
 func NewRound() Round {
@@ -98,8 +99,26 @@ func NewRound() Round {
 // RoundDistribution is mapping from participant id to set of problems that were sent to him
 type RoundDistribution map[string][]string
 
+type ReviewDistribution struct {
+	BetweenParticipants map[string][]string // mapping from participant id to set of solutions that he is sent to review
+	ToOrganizers        []Solution
+}
+
 type ProblemDistributor interface {
 	Get(participants []Participant, problems []Problem, rounds []Round) (RoundDistribution, error)
+}
+
+type OnReviewDistributor interface {
+	Get(participants []Participant, solutions []Solution, reviewersMinCount int) (ReviewDistribution, error)
+}
+
+// SolutionReview is review on solution that one participant sends to another
+type SolutionReview struct {
+	ID                    string
+	ReviewerID            string
+	ReviewedParticipantID string
+	SolutionID            string
+	Parts                 []Image
 }
 
 func IsProblemSuitableForParticipant(problem *Problem, participant *Participant) bool {
