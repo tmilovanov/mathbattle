@@ -71,8 +71,8 @@ func (r *SQLRoundRepository) Get(ID string) (mathbattle.Round, error) {
 		return result, err
 	}
 
-	res := r.db.QueryRow("SELECT date_start, date_end FROM rounds WHERE id = ?", intID)
-	err = res.Scan(&result.StartDate, &result.EndDate)
+	res := r.db.QueryRow("SELECT solve_start, solve_end, review_start, review_end FROM rounds WHERE id = ?", intID)
+	err = res.Scan(&result.SolveStartDate, &result.SolveEndDate, &result.ReviewStartDate, &result.ReviewEndDate)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return result, sql.ErrConnDone
@@ -85,7 +85,7 @@ func (r *SQLRoundRepository) Get(ID string) (mathbattle.Round, error) {
 }
 
 func (r *SQLRoundRepository) GetAll() ([]mathbattle.Round, error) {
-	rows, err := r.db.Query("SELECT id, date_start, date_end FROM rounds")
+	rows, err := r.db.Query("SELECT id, solve_start, solve_end, review_start, review_end FROM rounds")
 	if err != nil {
 		return []mathbattle.Round{}, err
 	}
@@ -95,7 +95,7 @@ func (r *SQLRoundRepository) GetAll() ([]mathbattle.Round, error) {
 	for rows.Next() {
 		var roundID int
 		curRound := mathbattle.Round{}
-		err = rows.Scan(&roundID, &curRound.StartDate, &curRound.EndDate)
+		err = rows.Scan(&roundID, &curRound.SolveStartDate, &curRound.SolveEndDate, &curRound.ReviewStartDate, &curRound.ReviewEndDate)
 		if err != nil {
 			return []mathbattle.Round{}, err
 		}
@@ -114,7 +114,8 @@ func (r *SQLRoundRepository) GetAll() ([]mathbattle.Round, error) {
 func (r *SQLRoundRepository) Store(round mathbattle.Round) (mathbattle.Round, error) {
 	result := round
 
-	res, err := r.db.Exec("INSERT INTO rounds (date_start, date_end) VALUES (?,?)", round.StartDate, round.EndDate)
+	res, err := r.db.Exec("INSERT INTO rounds (solve_start, solve_end, review_start, review_end) VALUES (?,?,?,?)",
+		round.SolveStartDate, round.SolveEndDate, round.ReviewStartDate, round.ReviewEndDate)
 	if err != nil {
 		return result, err
 	}
@@ -148,20 +149,73 @@ func (r *SQLRoundRepository) Store(round mathbattle.Round) (mathbattle.Round, er
 }
 
 func (r *SQLRoundRepository) GetRunning() (mathbattle.Round, error) {
-	res := r.db.QueryRow("SELECT id, date_start, date_end FROM rounds WHERE date_end = ? OR date_end <= ?",
-		time.Time{}, time.Now())
-
-	result := mathbattle.Round{}
-	err := res.Scan(&result.ID, &result.StartDate, &result.EndDate)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return result, mathbattle.ErrNotFound
-		}
-		return result, err
+	round, err := r.GetSolveRunning()
+	if err == nil {
+		return round, nil
 	}
 
-	result.ProblemDistribution, err = r.GetDistributionForRound(result.ID)
-	return result, err
+	if err != mathbattle.ErrNotFound {
+		return mathbattle.Round{}, err
+	}
+
+	round, err = r.GetReviewPending()
+	if err == nil {
+		return round, nil
+	}
+
+	if err != mathbattle.ErrNotFound {
+		return mathbattle.Round{}, err
+	}
+
+	return r.GetReviewRunning()
+}
+
+func (r *SQLRoundRepository) GetSolveRunning() (mathbattle.Round, error) {
+	res := r.db.QueryRow("SELECT id FROM rounds WHERE solve_end = ? OR solve_end >= ?",
+		time.Time{}, time.Now())
+
+	var ID string
+	err := res.Scan(&ID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return mathbattle.Round{}, mathbattle.ErrNotFound
+		}
+		return mathbattle.Round{}, err
+	}
+
+	return r.Get(ID)
+}
+
+func (r *SQLRoundRepository) GetReviewPending() (mathbattle.Round, error) {
+	res := r.db.QueryRow("SELECT id FROM rounds WHERE solve_end <= ? AND review_start = ?",
+		time.Now(), time.Time{})
+
+	var ID string
+	err := res.Scan(&ID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return mathbattle.Round{}, mathbattle.ErrNotFound
+		}
+		return mathbattle.Round{}, err
+	}
+
+	return r.Get(ID)
+}
+
+func (r *SQLRoundRepository) GetReviewRunning() (mathbattle.Round, error) {
+	res := r.db.QueryRow("SELECT id FROM rounds WHERE solve_end <= ? AND (review_end = ? OR review_end >= ?)",
+		time.Now(), time.Time{}, time.Now())
+
+	var ID string
+	err := res.Scan(&ID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return mathbattle.Round{}, mathbattle.ErrNotFound
+		}
+		return mathbattle.Round{}, err
+	}
+
+	return r.Get(ID)
 }
 
 func (r *SQLRoundRepository) Delete(ID string) error {

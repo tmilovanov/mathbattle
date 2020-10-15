@@ -1,4 +1,4 @@
-package reviewdistributor
+package solutiondistributor
 
 import (
 	"fmt"
@@ -57,7 +57,7 @@ func IsEachSolutionGoesToKParticiapnts(d map[string][]string, k uint) bool {
 	return true
 }
 
-func helperTestExpect(req *require.Assertions, distributor OnReviewDistributor, count uint,
+func helperTestExpect(req *require.Assertions, distributor SolutionDistributor, count uint,
 	allRoundSolutions []mathbattle.Solution, expected mathbattle.ReviewDistribution) {
 
 	r := distributor.Get(allRoundSolutions, count)
@@ -145,7 +145,7 @@ func genAllSolutionsCombinations(problemCount, participantCount int) [][]mathbat
 type oneProblemToAll struct {
 	suite.Suite
 
-	distributor OnReviewDistributor
+	distributor SolutionDistributor
 	k           uint
 }
 
@@ -241,7 +241,7 @@ func TestMap(t *testing.T) {
 type basicTestSuite struct {
 	suite.Suite
 
-	distributor      OnReviewDistributor
+	distributor      SolutionDistributor
 	problemCount     int
 	participantCount int
 	k                uint

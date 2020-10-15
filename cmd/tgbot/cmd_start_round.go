@@ -8,9 +8,10 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	mreplier "mathbattle/cmd/tgbot/replier"
-	"mathbattle/internal/distributor"
+	problemdist "mathbattle/internal/problem_distributor"
 	mathbattle "mathbattle/models"
 
 	tgbotapi "gopkg.in/telegram-bot-api.v4"
@@ -37,13 +38,14 @@ func commandStartRound(storage mathbattle.Storage, telegramToken string, replier
 		log.Fatal(err)
 	}
 
-	problemDistributor := distributor.RandomDistributor{}
+	problemDistributor := problemdist.RandomDistributor{}
 	distribution, err := problemDistributor.Get(participants, problems, pastRounds, problemCount)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	round := mathbattle.NewRound()
+	duration, _ := time.ParseDuration("48h")
+	round := mathbattle.NewRound(duration)
 	round.ProblemDistribution = distribution
 	round, err = storage.Rounds.Store(round)
 	if err != nil {

@@ -41,7 +41,7 @@ func (h *SubmitSolution) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (
 		return false, nil
 	}
 
-	_, err = h.Rounds.GetRunning()
+	_, err = h.Rounds.GetSolveRunning()
 	if err != nil {
 		if err == mathbattle.ErrNotFound {
 			return false, nil
@@ -53,7 +53,7 @@ func (h *SubmitSolution) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (
 }
 
 func (h *SubmitSolution) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
-	r, err := h.Rounds.GetRunning()
+	r, err := h.Rounds.GetSolveRunning()
 	if err != nil {
 		return -1, noResponse(), err
 	}

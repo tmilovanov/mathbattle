@@ -23,7 +23,7 @@ func getID(t time.Time) string {
 
 func (r *RoundRepository) Store(round mathbattle.Round) (mathbattle.Round, error) {
 	result := round
-	result.ID = getID(result.StartDate)
+	result.ID = getID(result.SolveStartDate)
 	r.impl[result.ID] = result
 	return result, nil
 }
@@ -36,10 +36,10 @@ func (r *RoundRepository) GetDistributionForRound(roundID string) (mathbattle.Ro
 	return mathbattle.RoundDistribution{}, nil
 }
 
-func (r *RoundRepository) GetRunning() (mathbattle.Round, error) {
+func (r *RoundRepository) GetSolveRunning() (mathbattle.Round, error) {
 	for item := range r.impl {
 		emptyTime := time.Time{}
-		if r.impl[item].EndDate == emptyTime {
+		if r.impl[item].SolveEndDate == emptyTime {
 			return r.impl[item], nil
 		}
 	}

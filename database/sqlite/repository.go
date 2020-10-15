@@ -76,8 +76,10 @@ func (r *sqliteRepository) CreateFirstTime() error {
 		)`,
 		`CREATE TABLE IF NOT EXISTS rounds (
 			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-			date_start DATETIME,
-			date_end DATETIME
+			solve_start DATETIME,
+			solve_end DATETIME,
+			review_start DATETIME,
+			review_end DATETIME
 		)`,
 		`CREATE TABLE IF NOT EXISTS round_distributions (
 			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,

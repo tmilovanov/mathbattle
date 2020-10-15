@@ -6,7 +6,7 @@ import (
 )
 
 func commandDeleteRound(storage mathbattle.Storage) {
-	r, err := storage.Rounds.GetRunning()
+	r, err := storage.Rounds.GetSolveRunning()
 	if err == mathbattle.ErrNotFound {
 		return
 	}

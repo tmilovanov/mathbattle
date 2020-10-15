@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
 	"mathbattle/cmd/tgbot/handlers"
 	mreplier "mathbattle/cmd/tgbot/replier"
@@ -70,7 +71,8 @@ func (s *submitSolutionTestSuite) SetupTest() {
 	s.req.Nil(err)
 
 	// Create round
-	round := mathbattle.NewRound()
+	duration, _ := time.ParseDuration("48h")
+	round := mathbattle.NewRound(duration)
 	round.ProblemDistribution[participant.ID] = []string{problem1.ID, problem2.ID}
 	round, err = rounds.Store(round)
 	s.req.Nil(err)

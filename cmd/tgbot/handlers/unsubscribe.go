@@ -39,7 +39,7 @@ func (h *Unsubscribe) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (boo
 		return false, nil
 	}
 
-	_, err = h.Rounds.GetRunning()
+	_, err = h.Rounds.GetSolveRunning()
 	if err != nil {
 		if err != mathbattle.ErrNotFound {
 			return false, err
