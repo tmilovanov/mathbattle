@@ -30,7 +30,7 @@ func (h *Subscribe) IsShowInHelp(ctx mathbattle.TelegramUserContext) bool {
 }
 
 func (h *Subscribe) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, error) {
-	isReg, err := mathbattle.IsRegistered(h.Participants, ctx.ChatID)
+	isReg, err := mathbattle.IsRegistered(h.Participants, ctx.User.ChatID)
 	if err != nil {
 		return false, err
 	}
@@ -43,7 +43,7 @@ func (h *Subscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (i
 
 	switch ctx.CurrentStep {
 	case 0:
-		isReg, err := mathbattle.IsRegistered(h.Participants, ctx.ChatID)
+		isReg, err := mathbattle.IsRegistered(h.Participants, ctx.User.ChatID)
 		if err != nil {
 			return -1, noResponse, err
 		}
@@ -69,7 +69,7 @@ func (h *Subscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (i
 		}
 
 		_, err := h.Participants.Store(mathbattle.Participant{
-			TelegramID:       strconv.FormatInt(ctx.ChatID, 10),
+			TelegramID:       strconv.FormatInt(ctx.User.ChatID, 10),
 			Name:             ctx.Variables["name"].AsString(),
 			School:           ctx.Variables["school"].AsString(),
 			Grade:            grade,

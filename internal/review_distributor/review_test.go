@@ -2,10 +2,12 @@ package reviewdistributor
 
 import (
 	"fmt"
+	"log"
 	"sort"
 	"strconv"
 	"testing"
 
+	"mathbattle/internal/combinator"
 	mathbattle "mathbattle/models"
 
 	"github.com/stretchr/testify/require"
@@ -66,6 +68,77 @@ func helperTestExpect(req *require.Assertions, distributor OnReviewDistributor, 
 	req.Equal(expected.BetweenParticipants, r.BetweenParticipants)
 	req.Equal(len(expected.ToOrganizers), len(r.ToOrganizers))
 	req.Equal(expected.ToOrganizers, r.ToOrganizers)
+}
+
+func generateFakeProblemIDs(problemCount int) []string {
+	result := []string{}
+	for i := 0; i < problemCount; i++ {
+		id := int('A') + i
+		if i >= 'Z' {
+			log.Panic("problemCount is too large")
+		}
+		result = append(result, string(rune(id)))
+	}
+	return result
+}
+
+//func generateFakeParticipantIDs(participantsCount int) []string {
+//result := []string{}
+//for i := 0; i < participantsCount; i++ {
+//result = append(result, strconv.Itoa(int))
+//}
+//return result
+//}
+
+//func generateRandomRoundSolutions(roundID string, problemCount int, participantsCount int) []mathbattle.Solution {
+//result := []mathbattle.Solution{}
+
+//rand.Seed(time.Now().UnixNano())
+//solutionsCount := rand.Intn(maxSolutionsCount)
+//solutionsLeft := solutionsCount
+//problemIDs := generateFakeProblemIDs(problemCount)
+//participantIDs := generateFakeParticipantIDs(participantsCount)
+
+//for i := 0; i < problemCount-1; i++ {
+//curProblemSolutionsCount := rand.Intn(solutionsLeft)
+//for j := 0; j < curProblemSolutionsCount; j++ {
+//result = append(result, mathbattle.Solution{
+//ID:            fmt.Sprintf("s%dOn%s", j, problemIDs[i]),
+//ParticipantID: "",
+//ProblemID:     problemIDs[i],
+//})
+//}
+
+//}
+//for i := 0; i < solutionsCount; i++ {
+
+//}
+//return result
+//}
+
+func genSolutionCombination(solutionsCount []int) []mathbattle.Solution {
+	result := []mathbattle.Solution{}
+	problemCount := len(solutionsCount)
+	problemIDs := generateFakeProblemIDs(problemCount)
+	for i := 0; i < problemCount; i++ {
+		for j := 0; j < solutionsCount[i]; j++ {
+			pariticipantID := fmt.Sprintf("p%d", j)
+			result = append(result, mathbattle.Solution{
+				ID:            fmt.Sprintf("s_%s_%s", pariticipantID, problemIDs[i]),
+				ParticipantID: pariticipantID,
+				ProblemID:     problemIDs[i],
+			})
+		}
+	}
+	return result
+}
+
+func genAllSolutionsCombinations(problemCount, participantCount int) [][]mathbattle.Solution {
+	result := [][]mathbattle.Solution{}
+	for _, combination := range combinator.GetAll(problemCount, participantCount) {
+		result = append(result, genSolutionCombination(combination))
+	}
+	return result
 }
 
 // One problem for all participants
@@ -168,36 +241,34 @@ func TestMap(t *testing.T) {
 type basicTestSuite struct {
 	suite.Suite
 
-	distributor  OnReviewDistributor
-	problemCount uint
-	k            uint
+	distributor      OnReviewDistributor
+	problemCount     int
+	participantCount int
+	k                uint
 }
 
-func newBasicTestSuite(problemCount uint, k uint) basicTestSuite {
+func newBasicTestSuite(problemCount int, participantCount, k int) basicTestSuite {
 	return basicTestSuite{
-		problemCount: problemCount,
-		k:            k,
+		problemCount:     problemCount,
+		participantCount: participantCount,
+		k:                uint(k),
 	}
 }
 
-func (s *basicTestSuite) TestNoSolutions() {
-	helperTestExpect(s.Require(), s.distributor, s.k,
-		[]mathbattle.Solution{},
-		mathbattle.ReviewDistribution{
-			BetweenParticipants: make(map[string][]string),
-			ToOrganizers:        []mathbattle.Solution{},
-		})
-}
-
-func generateRandomRoundSolutions(roundID string, problemCount uint) []mathbattle.Solution {
-	result := []mathbattle.Solution{}
-
-	return result
-}
-
-func (s *basicTestSuite) TestRandom() {
-	allProblemsSolution = mathbattle.Solution
-
+func (s *basicTestSuite) TestAll() {
+	combinations := genAllSolutionsCombinations(s.problemCount, s.participantCount)
+	for _, c := range combinations {
+		r := s.distributor.Get(c, s.k)
+		if !IsEachParticipantGotKSolutions(r.BetweenParticipants, s.k) {
+			fmt.Println(mathbattle.RoundSolutionsToString(c))
+			fmt.Println(r.ToString())
+			s.Require().FailNow("Each participant should got equal count of soltuions for review")
+		}
+		if !IsEachSolutionGoesToKParticiapnts(r.BetweenParticipants, s.k) {
+			fmt.Println(r.ToString())
+			s.Require().FailNow("Each solution should be reviewed by the same count of participants")
+		}
+	}
 }
 
 func TestSplit(t *testing.T) {
@@ -217,7 +288,7 @@ func TestSplit(t *testing.T) {
 	}
 	fmt.Print("\n")
 
-	result := SplitInGroupsByProblem(solutions)
+	result := mathbattle.SplitInGroupsByProblem(solutions)
 	for pID := range result {
 		fmt.Printf("%s: ", pID)
 		for _, s := range result[pID] {
@@ -229,4 +300,6 @@ func TestSplit(t *testing.T) {
 
 func TestAll(t *testing.T) {
 	suite.Run(t, &oneProblemToAll{k: 2})
+	//ts := newBasicTestSuite(1, 5, 2)
+	//suite.Run(t, &ts)
 }

@@ -1,14 +1,11 @@
 package models
 
 import (
-	"errors"
+	"fmt"
 	"strconv"
+	"strings"
 	"time"
 	"unicode"
-)
-
-var (
-	ErrNotFound = errors.New("not found")
 )
 
 type Storage struct {
@@ -100,8 +97,42 @@ func NewRound() Round {
 type RoundDistribution map[string][]string
 
 type ReviewDistribution struct {
-	BetweenParticipants map[string][]string // mapping from participant id to set of solutions that he is sent to review
+	BetweenParticipants map[string][]string // mapping from solutionID to set of participantIDs
 	ToOrganizers        []Solution
+}
+
+func (d *ReviewDistribution) ToString() string {
+	result := ""
+	for solutionID, participantIDs := range d.BetweenParticipants {
+		curSDistribution := fmt.Sprintf("%s -> ", solutionID)
+		curSDistribution += strings.Join(participantIDs, ",")
+		result += curSDistribution + "\n"
+	}
+	return result
+}
+
+func SplitInGroupsByProblem(solutions []Solution) map[string][]Solution {
+	result := make(map[string][]Solution)
+	for _, s := range solutions {
+		result[s.ProblemID] = append(result[s.ProblemID], s)
+	}
+	return result
+}
+
+func RoundSolutionsToString(solutions []Solution) string {
+	result := ""
+
+	for _, group := range SplitInGroupsByProblem(solutions) {
+		curGroup := group[0].ProblemID + ": "
+		for i := 0; i < len(group)-1; i++ {
+			curGroup += group[i].ParticipantID + ", "
+		}
+		curGroup += group[len(group)-1].ParticipantID
+
+		result += curGroup
+	}
+
+	return result
 }
 
 type ProblemDistributor interface {

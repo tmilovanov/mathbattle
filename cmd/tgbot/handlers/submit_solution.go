@@ -32,7 +32,7 @@ func (h *SubmitSolution) IsShowInHelp(ctx mathbattle.TelegramUserContext) bool {
 }
 
 func (h *SubmitSolution) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, error) {
-	isReg, err := mathbattle.IsRegistered(h.Participants, ctx.ChatID)
+	isReg, err := mathbattle.IsRegistered(h.Participants, ctx.User.ChatID)
 	if err != nil {
 		return false, err
 	}
@@ -58,7 +58,7 @@ func (h *SubmitSolution) Handle(ctx mathbattle.TelegramUserContext, m *tb.Messag
 		return -1, noResponse(), err
 	}
 
-	p, err := h.Participants.GetByTelegramID(strconv.FormatInt(ctx.ChatID, 10))
+	p, err := h.Participants.GetByTelegramID(strconv.FormatInt(ctx.User.ChatID, 10))
 	if err != nil {
 		return -1, noResponse(), err
 	}

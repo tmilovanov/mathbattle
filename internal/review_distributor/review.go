@@ -18,21 +18,12 @@ func MapSolutionsToParticipants(solutions []mathbattle.Solution, count uint) map
 	return result
 }
 
-func SplitInGroupsByProblem(solutions []mathbattle.Solution) map[string][]mathbattle.Solution {
-	result := make(map[string][]mathbattle.Solution)
-	for _, s := range solutions {
-		result[s.ProblemID] = append(result[s.ProblemID], s)
-	}
-	return result
-}
-
 func (d *OnReviewDistributor) Get(allRoundSolutions []mathbattle.Solution, count uint) mathbattle.ReviewDistribution {
 	result := mathbattle.ReviewDistribution{
 		BetweenParticipants: make(map[string][]string),
 		ToOrganizers:        make([]mathbattle.Solution, 0),
 	}
-
-	for _, problemSolutions := range SplitInGroupsByProblem(allRoundSolutions) {
+	for _, problemSolutions := range mathbattle.SplitInGroupsByProblem(allRoundSolutions) {
 		if len(problemSolutions) == 0 {
 			continue
 		}

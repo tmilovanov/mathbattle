@@ -30,7 +30,7 @@ func (h *Unsubscribe) IsShowInHelp(ctx mathbattle.TelegramUserContext) bool {
 }
 
 func (h *Unsubscribe) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, error) {
-	isReg, err := mathbattle.IsRegistered(h.Participants, ctx.ChatID)
+	isReg, err := mathbattle.IsRegistered(h.Participants, ctx.User.ChatID)
 	if err != nil {
 		return false, err
 	}
@@ -54,7 +54,7 @@ func (h *Unsubscribe) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (boo
 func (h *Unsubscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
 	var noRepsonse mathbattle.TelegramResponse
 
-	participant, err := h.Participants.GetByTelegramID(strconv.FormatInt(ctx.ChatID, 10))
+	participant, err := h.Participants.GetByTelegramID(strconv.FormatInt(ctx.User.ChatID, 10))
 	if err != nil && err != mathbattle.ErrNotFound {
 		return -1, noRepsonse, err
 	}

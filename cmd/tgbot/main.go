@@ -42,6 +42,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	telegramUserRepository, err := sqlite.NewTelegramUserRepository(cfg.DatabasePath)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	storage := mathbattle.Storage{
 		Participants: &participantRepository,
@@ -57,7 +61,7 @@ func main() {
 	case "delete-round":
 		commandDeleteRound(storage)
 	case "run":
-		userCtxRepository, err := mem.NewUserContextRepository()
+		userCtxRepository, err := mem.NewTelegramContextRepository(&telegramUserRepository)
 		if err != nil {
 			log.Fatal(err)
 		}

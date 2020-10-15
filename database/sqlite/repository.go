@@ -54,6 +54,11 @@ func (r *sqliteRepository) deleteAllTables() error {
 
 func (r *sqliteRepository) CreateFirstTime() error {
 	tableCreators := []string{
+		`CREATE TABLE IF NOT EXISTS tgusers (
+			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+			tg_chat_id VARCHAR(100),
+			is_admin BOOL
+		)`,
 		`CREATE TABLE IF NOT EXISTS participants (
 			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 			tg_chat_id VARCHAR(100),
