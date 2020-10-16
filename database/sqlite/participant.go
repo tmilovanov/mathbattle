@@ -72,17 +72,16 @@ func (r *SQLParticipantRepository) GetByID(ID string) (mathbattle.Participant, e
 }
 
 func (r *SQLParticipantRepository) GetByTelegramID(telegramID string) (mathbattle.Participant, error) {
-	row := r.db.QueryRow("SELECT id, name, school, grade, register_time FROM participants WHERE tg_chat_id = ?", telegramID)
-	var id int
 	result := mathbattle.Participant{}
-	err := row.Scan(&id, &result.Name, &result.School, &result.Grade, &result.RegistrationTime)
+
+	row := r.db.QueryRow("SELECT id, tg_chat_id, name, school, grade, register_time FROM participants WHERE tg_chat_id = ?", telegramID)
+	err := row.Scan(&result.ID, &result.TelegramID, &result.Name, &result.School, &result.Grade, &result.RegistrationTime)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return mathbattle.Participant{}, mathbattle.ErrNotFound
 		}
 		return mathbattle.Participant{}, err
 	}
-	result.ID = strconv.Itoa(id)
 
 	return result, nil
 }

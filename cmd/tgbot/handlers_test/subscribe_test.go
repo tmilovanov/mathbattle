@@ -7,7 +7,7 @@ import (
 	"mathbattle/cmd/tgbot/handlers"
 	"mathbattle/cmd/tgbot/replier"
 	mreplier "mathbattle/cmd/tgbot/replier"
-	"mathbattle/database/mock"
+	"mathbattle/database/sqlite"
 	mathbattle "mathbattle/models"
 
 	"github.com/stretchr/testify/require"
@@ -16,21 +16,24 @@ import (
 
 type subscribeTestSuite struct {
 	suite.Suite
+
 	replier      mreplier.Replier
-	participants mock.MockParticipantsRepository
+	participants sqlite.SQLParticipantRepository
 	handler      handlers.Subscribe
 	chatID       int64
 	req          *require.Assertions
 }
 
 func (s *subscribeTestSuite) SetupTest() {
+	s.req = require.New(s.T())
 	s.replier = replier.RussianReplier{}
-	s.participants = mock.NewMockParticipantsRepository()
+	participants, err := sqlite.NewSQLParticipantRepositoryTemp(getTestDbName())
+	s.participants = participants
+	s.req.Nil(err)
 	s.handler = handlers.Subscribe{
 		Replier:      s.replier,
 		Participants: &s.participants,
 	}
-	s.req = require.New(s.T())
 }
 
 func (s *subscribeTestSuite) TestCorrectSubscribe() {
