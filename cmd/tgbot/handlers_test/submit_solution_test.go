@@ -8,8 +8,8 @@ import (
 
 	"mathbattle/cmd/tgbot/handlers"
 	mreplier "mathbattle/cmd/tgbot/replier"
-	"mathbattle/database/sqlite"
 	mathbattle "mathbattle/models"
+	"mathbattle/repository/sqlite"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

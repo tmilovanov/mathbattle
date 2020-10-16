@@ -6,9 +6,9 @@ import (
 	"os"
 
 	mreplier "mathbattle/cmd/tgbot/replier"
-	"mathbattle/database/mem"
-	"mathbattle/database/sqlite"
 	mathbattle "mathbattle/models"
+	"mathbattle/repository/memory"
+	"mathbattle/repository/sqlite"
 
 	"gopkg.in/yaml.v2"
 )
@@ -61,7 +61,7 @@ func main() {
 	case "delete-round":
 		commandDeleteRound(storage)
 	case "run":
-		userCtxRepository, err := mem.NewTelegramContextRepository(&telegramUserRepository)
+		userCtxRepository, err := memory.NewTelegramContextRepository(&telegramUserRepository)
 		if err != nil {
 			log.Fatal(err)
 		}
