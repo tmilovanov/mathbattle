@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	"mathbattle/internal/combinator"
+	"mathbattle/combinator"
 	mathbattle "mathbattle/models"
 
 	"github.com/stretchr/testify/require"
@@ -81,40 +81,6 @@ func generateFakeProblemIDs(problemCount int) []string {
 	}
 	return result
 }
-
-//func generateFakeParticipantIDs(participantsCount int) []string {
-//result := []string{}
-//for i := 0; i < participantsCount; i++ {
-//result = append(result, strconv.Itoa(int))
-//}
-//return result
-//}
-
-//func generateRandomRoundSolutions(roundID string, problemCount int, participantsCount int) []mathbattle.Solution {
-//result := []mathbattle.Solution{}
-
-//rand.Seed(time.Now().UnixNano())
-//solutionsCount := rand.Intn(maxSolutionsCount)
-//solutionsLeft := solutionsCount
-//problemIDs := generateFakeProblemIDs(problemCount)
-//participantIDs := generateFakeParticipantIDs(participantsCount)
-
-//for i := 0; i < problemCount-1; i++ {
-//curProblemSolutionsCount := rand.Intn(solutionsLeft)
-//for j := 0; j < curProblemSolutionsCount; j++ {
-//result = append(result, mathbattle.Solution{
-//ID:            fmt.Sprintf("s%dOn%s", j, problemIDs[i]),
-//ParticipantID: "",
-//ProblemID:     problemIDs[i],
-//})
-//}
-
-//}
-//for i := 0; i < solutionsCount; i++ {
-
-//}
-//return result
-//}
 
 func genSolutionCombination(solutionsCount []int) []mathbattle.Solution {
 	result := []mathbattle.Solution{}

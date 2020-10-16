@@ -32,6 +32,10 @@ func (r RussianReplier) No() string {
 	return "Нет"
 }
 
+func (r RussianReplier) Cancel() string {
+	return "Отменено"
+}
+
 func (r RussianReplier) GetStartMessage() string {
 	return "Привет! Этот бот позволяет тебе участвовать в математических боях.\n"
 }
@@ -67,6 +71,14 @@ func (r RussianReplier) CmdSubmitSolutionName() string {
 
 func (r RussianReplier) CmdSubmitSolutionDesc() string {
 	return "Отправить решение на задачу из текущего раунда"
+}
+
+func (r RussianReplier) CmdStartReviewStageName() string {
+	return "/start_review_stage"
+}
+
+func (r RussianReplier) CmdStartReviewStageDesc() string {
+	return "Начать этап ревью"
 }
 
 func (r RussianReplier) InternalError() string {
@@ -166,4 +178,8 @@ func (r RussianReplier) SolutionWrongFormat() string {
 
 func (r RussianReplier) SolutionEmpty() string {
 	return "Ты не отправил ни одной фотографии своего решения :("
+}
+
+func (r RussianReplier) ReviewPost() string {
+	return "Это решение другого участника, в котором ты должен отыскать недочёты."
 }

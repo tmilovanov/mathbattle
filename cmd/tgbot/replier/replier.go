@@ -7,14 +7,20 @@ import (
 type Replier interface {
 	GetStartMessage() string
 	GetHelpMessage(availableCommands []mathbattle.TelegramCommandHandler) string
+
 	Yes() string
 	No() string
+	Cancel() string
+
 	CmdSubscribeName() string
 	CmdSubscribeDesc() string
 	CmdUnsubscribeName() string
 	CmdUnsubscribeDesc() string
 	CmdSubmitSolutionName() string
 	CmdSubmitSolutionDesc() string
+	CmdStartReviewStageName() string
+	CmdStartReviewStageDesc() string
+
 	InternalError() string
 	AlreadyRegistered() string
 	RegisterNameExpect() string
@@ -37,4 +43,5 @@ type Replier interface {
 	SolutionFinishUploading() string
 	SolutionWrongFormat() string
 	SolutionEmpty() string
+	ReviewPost() string
 }

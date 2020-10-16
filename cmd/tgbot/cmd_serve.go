@@ -2,34 +2,46 @@ package main
 
 import (
 	"log"
+	"strconv"
 	"time"
 
 	"mathbattle/cmd/tgbot/handlers"
 	mreplier "mathbattle/cmd/tgbot/replier"
 	mathbattle "mathbattle/models"
+	solutiondist "mathbattle/solution_distributor"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-func commandServe(storage mathbattle.Storage, token string, ctxRepository mathbattle.TelegramContextRepository, replier mreplier.Replier) {
-	b, err := tb.NewBot(tb.Settings{
-		Token:       token,
-		Poller:      &tb.LongPoller{Timeout: 10 * time.Second},
-		Synchronous: true,
-		//Verbose:     true,
-	})
+type TelegramPostman struct {
+	bot          *tb.Bot
+	participants mathbattle.ParticipantRepository
+}
 
+func (pm *TelegramPostman) Post(participantID string, m *tb.Message) error {
+	participant, err := pm.participants.GetByID(participantID)
 	if err != nil {
-		log.Fatal(err)
-		return
+		return err
 	}
+
+	chatID, err := strconv.ParseInt(participant.TelegramID, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	_, err = pm.bot.Send(tb.ChatID(chatID), m)
+	return err
+}
+
+func createCommands(storage mathbattle.Storage, replier mreplier.Replier, postman mathbattle.TelegramPostman) []mathbattle.TelegramCommandHandler {
+	solutionDistributor := solutiondist.SolutionDistributor{}
 
 	commandStart := &handlers.Start{
 		Handler:     handlers.Handler{Name: "/start", Description: ""},
 		Replier:     replier,
 		AllCommands: []mathbattle.TelegramCommandHandler{},
 	}
-	allCommands := []mathbattle.TelegramCommandHandler{
+	result := []mathbattle.TelegramCommandHandler{
 		&handlers.Subscribe{
 			Handler: handlers.Handler{
 				Name:        replier.CmdSubscribeName(),
@@ -57,9 +69,39 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 			Rounds:       storage.Rounds,
 			Solutions:    storage.Solutions,
 		},
+		&handlers.StartReviewStage{
+			Handler: handlers.Handler{
+				Name:        replier.CmdStartReviewStageName(),
+				Description: replier.CmdStartReviewStageDesc(),
+			},
+			Replier:             replier,
+			Rounds:              storage.Rounds,
+			Solutions:           storage.Solutions,
+			SolutionDistributor: &solutionDistributor,
+			ReviewersCount:      2,
+			Postman:             postman,
+		},
 		commandStart,
 	}
-	commandStart.AllCommands = allCommands
+	commandStart.AllCommands = result
+
+	return result
+}
+
+func commandServe(storage mathbattle.Storage, token string, ctxRepository mathbattle.TelegramContextRepository, replier mreplier.Replier) {
+	b, err := tb.NewBot(tb.Settings{
+		Token:       token,
+		Poller:      &tb.LongPoller{Timeout: 10 * time.Second},
+		Synchronous: true,
+		//Verbose:     true,
+	})
+
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	allCommands := createCommands(storage, replier, &TelegramPostman{bot: b})
 
 	genericHandler := func(handler mathbattle.TelegramCommandHandler, m *tb.Message, startType mathbattle.CommandStep) {
 		ctx, err := ctxRepository.GetByTelegramID(int64(m.Sender.ID))

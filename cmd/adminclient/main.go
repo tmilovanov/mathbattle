@@ -14,7 +14,7 @@ import (
 	"unicode"
 
 	"mathbattle/database/sqlite"
-	"mathbattle/internal/fstraverser"
+	"mathbattle/fstraverser"
 	mathbattle "mathbattle/models"
 
 	"gopkg.in/yaml.v2"

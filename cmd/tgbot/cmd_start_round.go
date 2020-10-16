@@ -11,8 +11,8 @@ import (
 	"time"
 
 	mreplier "mathbattle/cmd/tgbot/replier"
-	problemdist "mathbattle/internal/problem_distributor"
 	mathbattle "mathbattle/models"
+	problemdist "mathbattle/problem_distributor"
 
 	tgbotapi "gopkg.in/telegram-bot-api.v4"
 )
