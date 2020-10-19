@@ -39,7 +39,7 @@ func (s *subscribeTestSuite) SetupTest() {
 func (s *subscribeTestSuite) TestCorrectSubscribe() {
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
 	testParticipant := mathbattle.Participant{
-		TelegramID: strconv.FormatInt(s.chatID, 10),
+		TelegramID: s.chatID,
 		Name:       "JackDaniels",
 		School:     "",
 		Grade:      7,
@@ -79,7 +79,7 @@ func (s *subscribeTestSuite) TestIncorrectGrade() {
 func (s *subscribeTestSuite) TestIncorrectThenCorrect() {
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
 	testParticipant := mathbattle.Participant{
-		TelegramID: strconv.FormatInt(s.chatID, 10),
+		TelegramID: s.chatID,
 		Name:       "JackDaniels",
 		School:     "",
 		Grade:      7,
@@ -103,7 +103,7 @@ func (s *subscribeTestSuite) TestIncorrectThenCorrect() {
 func (s *subscribeTestSuite) TestSubscirbeAlredyRegistered() {
 	_, err := s.participants.Store(mathbattle.Participant{
 		ID:         "",
-		TelegramID: strconv.FormatInt(s.chatID, 10),
+		TelegramID: s.chatID,
 		Name:       "Jack",
 		Grade:      7,
 	})

@@ -2,7 +2,6 @@ package handlerstest
 
 import (
 	"fmt"
-	"strconv"
 	"testing"
 	"time"
 
@@ -47,7 +46,7 @@ func (s *submitSolutionTestSuite) SetupTest() {
 
 	// Store participant
 	participant, err := participants.Store(mathbattle.Participant{
-		TelegramID: strconv.FormatInt(s.chatID, 10),
+		TelegramID: s.chatID,
 		Grade:      11,
 	})
 	s.Require().Nil(err)

@@ -8,7 +8,7 @@ import (
 
 type Participant struct {
 	ID               string
-	TelegramID       string
+	TelegramID       int64
 	Name             string
 	School           string
 	Grade            int

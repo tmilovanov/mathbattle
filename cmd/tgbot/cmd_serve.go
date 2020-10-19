@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"strconv"
 	"time"
 
 	"mathbattle/cmd/tgbot/handlers"
@@ -24,12 +23,7 @@ func (pm *TelegramPostman) Post(participantID string, m *tb.Message) error {
 		return err
 	}
 
-	chatID, err := strconv.ParseInt(participant.TelegramID, 10, 64)
-	if err != nil {
-		return err
-	}
-
-	_, err = pm.bot.Send(tb.ChatID(chatID), m)
+	_, err = pm.bot.Send(tb.ChatID(participant.TelegramID), m)
 	return err
 }
 

@@ -7,7 +7,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"strconv"
 	"time"
 
 	mreplier "mathbattle/cmd/tgbot/replier"
@@ -60,12 +59,7 @@ func commandStartRound(storage mathbattle.Storage, telegramToken string, replier
 			log.Fatal(err)
 		}
 
-		chatID, err := strconv.ParseInt(participant.TelegramID, 10, 64)
-		if err != nil {
-			log.Fatalf("Failed to parse participant TelegramID: %v", err)
-		}
-
-		if _, err = bot.Send(tgbotapi.NewMessage(chatID, replier.ProblemsPostBefore())); err != nil {
+		if _, err = bot.Send(tgbotapi.NewMessage(participant.TelegramID, replier.ProblemsPostBefore())); err != nil {
 			log.Fatalf("Failed to send problem to participant: %v", err)
 		}
 
@@ -75,14 +69,14 @@ func commandStartRound(storage mathbattle.Storage, telegramToken string, replier
 				log.Fatal(err)
 			}
 
-			msg := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "", Bytes: problem.Content})
+			msg := tgbotapi.NewPhotoUpload(participant.TelegramID, tgbotapi.FileBytes{Name: "", Bytes: problem.Content})
 			msg.Caption = fmt.Sprintf("%d", i+1)
 			if _, err := bot.Send(msg); err != nil {
 				log.Fatalf("Failed to send problem to participant: %v", err)
 			}
 		}
 
-		if _, err = bot.Send(tgbotapi.NewMessage(chatID, replier.ProblemsPostAfter())); err != nil {
+		if _, err = bot.Send(tgbotapi.NewMessage(participant.TelegramID, replier.ProblemsPostAfter())); err != nil {
 			log.Fatalf("Failed to send problem to participant: %v", err)
 		}
 	}

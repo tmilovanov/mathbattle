@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"strconv"
 	"time"
 
 	mreplier "mathbattle/cmd/tgbot/replier"
@@ -69,7 +68,7 @@ func (h *Subscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (i
 		}
 
 		_, err := h.Participants.Store(mathbattle.Participant{
-			TelegramID:       strconv.FormatInt(ctx.User.ChatID, 10),
+			TelegramID:       ctx.User.ChatID,
 			Name:             ctx.Variables["name"].AsString(),
 			School:           ctx.Variables["school"].AsString(),
 			Grade:            grade,
