@@ -11,17 +11,16 @@ import (
 	mathbattle "mathbattle/models"
 	"mathbattle/repository/sqlite"
 
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 type submitSolutionTestSuite struct {
 	suite.Suite
+
 	replier        mreplier.Replier
 	handler        handlers.SubmitSolution
 	chatID         int64
-	req            *require.Assertions
 	curRound       mathbattle.Round
 	curParticipant mathbattle.Participant
 }
@@ -29,17 +28,16 @@ type submitSolutionTestSuite struct {
 func (s *submitSolutionTestSuite) SetupTest() {
 	var err error
 
-	s.req = require.New(s.T())
 	s.replier = mreplier.RussianReplier{}
 
 	participants, err := sqlite.NewParticipantRepositoryTemp(getTestDbName())
-	s.req.Nil(err)
+	s.Require().Nil(err)
 	solutions, err := sqlite.NewSolutionRepositoryTemp(getTestDbName(), getTestSolutionName())
-	s.req.Nil(err)
+	s.Require().Nil(err)
 	rounds, err := sqlite.NewRoundRepositoryTemp(getTestDbName())
-	s.req.Nil(err)
+	s.Require().Nil(err)
 	problems, err := sqlite.NewProblemRepositoryTemp(getTestDbName(), getTestProblemsName())
-	s.req.Nil(err)
+	s.Require().Nil(err)
 	s.handler = handlers.SubmitSolution{
 		Replier:      s.replier,
 		Participants: &participants,
@@ -52,7 +50,7 @@ func (s *submitSolutionTestSuite) SetupTest() {
 		TelegramID: strconv.FormatInt(s.chatID, 10),
 		Grade:      11,
 	})
-	s.req.Nil(err)
+	s.Require().Nil(err)
 	s.curParticipant = participant
 
 	// Create problems
@@ -61,21 +59,21 @@ func (s *submitSolutionTestSuite) SetupTest() {
 		MaxGrade: 11,
 		Content:  []byte("1234567890"),
 	})
-	s.req.Nil(err)
+	s.Require().Nil(err)
 
 	problem2, err := problems.Store(mathbattle.Problem{
 		MinGrade: 11,
 		MaxGrade: 11,
 		Content:  []byte("0987654321"),
 	})
-	s.req.Nil(err)
+	s.Require().Nil(err)
 
 	// Create round
 	duration, _ := time.ParseDuration("48h")
 	round := mathbattle.NewRound(duration)
 	round.ProblemDistribution[participant.ID] = []string{problem1.ID, problem2.ID}
 	round, err = rounds.Store(round)
-	s.req.Nil(err)
+	s.Require().Nil(err)
 	s.curRound = round
 }
 
@@ -92,7 +90,7 @@ func (s *submitSolutionTestSuite) sendSolutionParts(ctx mathbattle.TelegramUserC
 		})
 	}
 
-	return sendReqExpectRespSequence(s.req, &s.handler, ctx, testSequence)
+	return sendReqExpectRespSequence(s.Require(), &s.handler, ctx, testSequence)
 }
 
 func (s *submitSolutionTestSuite) sendPhotos(photos []tb.Message) mathbattle.TelegramUserContext {
@@ -111,7 +109,7 @@ func (s *submitSolutionTestSuite) sendPhotos(photos []tb.Message) mathbattle.Tel
 	testSequence = append(testSequence,
 		reqRespSequence{textReq(s.replier.SolutionFinishUploading()), mathbattle.NewResp(s.replier.SolutionUploadSuccess(len(photos))), -1})
 
-	return sendReqExpectRespSequence(s.req, &s.handler, ctx, testSequence)
+	return sendReqExpectRespSequence(s.Require(), &s.handler, ctx, testSequence)
 }
 
 func (s *submitSolutionTestSuite) sendPhotosTestDatabase(images []mathbattle.Image) mathbattle.TelegramUserContext {
@@ -126,16 +124,16 @@ func (s *submitSolutionTestSuite) sendPhotosTestDatabase(images []mathbattle.Ima
 
 	problemID := s.curRound.ProblemDistribution[s.curParticipant.ID][0]
 	solution, err := s.handler.Solutions.Find(s.curRound.ID, s.curParticipant.ID, problemID)
-	s.req.Nil(err)
-	s.req.Equal(len(images), len(solution.Parts)) // Optional, but easy to see the difference in console
-	s.req.Equal(images, solution.Parts)
+	s.Require().Nil(err)
+	s.Require().Equal(len(images), len(solution.Parts)) // Optional, but easy to see the difference in console
+	s.Require().Equal(images, solution.Parts)
 
 	return ctx
 }
 
 func (s *submitSolutionTestSuite) TestSendWrongFormatSolution() {
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
-	sendReqExpectRespSequence(s.req, &s.handler, ctx, []reqRespSequence{
+	sendReqExpectRespSequence(s.Require(), &s.handler, ctx, []reqRespSequence{
 		{textReq(""), mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectProblemNumber(), "1", "2"), 1},
 		{textReq("1"), mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectPart(), s.replier.SolutionFinishUploading()), 3},
 		{textReq("BlahBlah"), mathbattle.NewRespWithKeyboard(s.replier.SolutionWrongFormat(), s.replier.SolutionFinishUploading()), 3},
@@ -150,7 +148,7 @@ func (s *submitSolutionTestSuite) TestSendWrongFormatSolution() {
 
 func (s *submitSolutionTestSuite) TestSendNoSolution() {
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
-	sendReqExpectRespSequence(s.req, &s.handler, ctx, []reqRespSequence{
+	sendReqExpectRespSequence(s.Require(), &s.handler, ctx, []reqRespSequence{
 		{textReq(""), mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectProblemNumber(), "1", "2"), 1},
 		{textReq("1"), mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectPart(), s.replier.SolutionFinishUploading()), 3},
 		{textReq(s.replier.SolutionFinishUploading()), mathbattle.NewResp(s.replier.SolutionEmpty()), -1},
@@ -180,13 +178,13 @@ func (s *submitSolutionTestSuite) TestSendSolutionTwoTimes() {
 	ctx.CurrentStep = 0
 
 	msg := textReq("")
-	ctx = sendAndTest(s.req, &s.handler, ctx,
+	ctx = sendAndTest(s.Require(), &s.handler, ctx,
 		&msg, mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectProblemNumber(), "1", "2"), 1)
 	msg = textReq("1")
-	ctx = sendAndTest(s.req, &s.handler, ctx,
+	ctx = sendAndTest(s.Require(), &s.handler, ctx,
 		&msg, mathbattle.NewRespWithKeyboard(s.replier.SolutionIsRewriteOld(), s.replier.Yes(), s.replier.No()), 2)
 	msg = textReq(s.replier.Yes())
-	ctx = sendAndTest(s.req, &s.handler, ctx,
+	ctx = sendAndTest(s.Require(), &s.handler, ctx,
 		&msg, mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectPart(), s.replier.SolutionFinishUploading()), 3)
 
 	newSolutionParts := []mathbattle.Image{
@@ -196,12 +194,12 @@ func (s *submitSolutionTestSuite) TestSendSolutionTwoTimes() {
 	}
 	ctx = s.sendSolutionParts(ctx, newSolutionParts)
 	msg = textReq(s.replier.SolutionFinishUploading())
-	ctx = sendAndTest(s.req, &s.handler, ctx, &msg, mathbattle.NewResp(s.replier.SolutionUploadSuccess(3)), -1)
+	ctx = sendAndTest(s.Require(), &s.handler, ctx, &msg, mathbattle.NewResp(s.replier.SolutionUploadSuccess(3)), -1)
 
 	solution, err := s.handler.Solutions.Find(s.curRound.ID, s.curParticipant.ID, "1")
-	s.req.Nil(err)
-	s.req.Equal(len(newSolutionParts), len(solution.Parts))
-	s.req.Equal(newSolutionParts, solution.Parts)
+	s.Require().Nil(err)
+	s.Require().Equal(len(newSolutionParts), len(solution.Parts))
+	s.Require().Equal(newSolutionParts, solution.Parts)
 }
 
 func TestSubmitSolutionHandler(t *testing.T) {
