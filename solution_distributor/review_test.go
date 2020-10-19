@@ -2,12 +2,11 @@ package solutiondistributor
 
 import (
 	"fmt"
-	"log"
 	"sort"
 	"strconv"
 	"testing"
 
-	"mathbattle/combinator"
+	"mathbattle/mocks"
 	mathbattle "mathbattle/models"
 
 	"github.com/stretchr/testify/require"
@@ -68,43 +67,6 @@ func helperTestExpect(req *require.Assertions, distributor SolutionDistributor, 
 	req.Equal(expected.BetweenParticipants, r.BetweenParticipants)
 	req.Equal(len(expected.ToOrganizers), len(r.ToOrganizers))
 	req.Equal(expected.ToOrganizers, r.ToOrganizers)
-}
-
-func generateFakeProblemIDs(problemCount int) []string {
-	result := []string{}
-	for i := 0; i < problemCount; i++ {
-		id := int('A') + i
-		if i >= 'Z' {
-			log.Panic("problemCount is too large")
-		}
-		result = append(result, string(rune(id)))
-	}
-	return result
-}
-
-func genSolutionCombination(solutionsCount []int) []mathbattle.Solution {
-	result := []mathbattle.Solution{}
-	problemCount := len(solutionsCount)
-	problemIDs := generateFakeProblemIDs(problemCount)
-	for i := 0; i < problemCount; i++ {
-		for j := 0; j < solutionsCount[i]; j++ {
-			pariticipantID := fmt.Sprintf("p%d", j)
-			result = append(result, mathbattle.Solution{
-				ID:            fmt.Sprintf("s_%s_%s", pariticipantID, problemIDs[i]),
-				ParticipantID: pariticipantID,
-				ProblemID:     problemIDs[i],
-			})
-		}
-	}
-	return result
-}
-
-func genAllSolutionsCombinations(problemCount, participantCount int) [][]mathbattle.Solution {
-	result := [][]mathbattle.Solution{}
-	for _, combination := range combinator.GetAll(problemCount, participantCount) {
-		result = append(result, genSolutionCombination(combination))
-	}
-	return result
 }
 
 // One problem for all participants
@@ -222,7 +184,7 @@ func newBasicTestSuite(problemCount int, participantCount, k int) basicTestSuite
 }
 
 func (s *basicTestSuite) TestAll() {
-	combinations := genAllSolutionsCombinations(s.problemCount, s.participantCount)
+	combinations := mocks.GenAllSolutionsCombinations(s.problemCount, s.participantCount)
 	for _, c := range combinations {
 		r := s.distributor.Get(c, s.k)
 		if !IsEachParticipantGotKSolutions(r.BetweenParticipants, s.k) {

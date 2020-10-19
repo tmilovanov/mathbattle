@@ -32,13 +32,13 @@ func (s *submitSolutionTestSuite) SetupTest() {
 	s.req = require.New(s.T())
 	s.replier = mreplier.RussianReplier{}
 
-	participants, err := sqlite.NewSQLParticipantRepositoryTemp(getTestDbName())
+	participants, err := sqlite.NewParticipantRepositoryTemp(getTestDbName())
 	s.req.Nil(err)
-	solutions, err := sqlite.NewSQLSolutionRepositoryTemp(getTestDbName(), getTestSolutionName())
+	solutions, err := sqlite.NewSolutionRepositoryTemp(getTestDbName(), getTestSolutionName())
 	s.req.Nil(err)
-	rounds, err := sqlite.NewSQLRoundRepositoryTemp(getTestDbName())
+	rounds, err := sqlite.NewRoundRepositoryTemp(getTestDbName())
 	s.req.Nil(err)
-	problems, err := sqlite.NewSQLProblemRepositoryTemp(getTestDbName(), getTestProblemsName())
+	problems, err := sqlite.NewProblemRepositoryTemp(getTestDbName(), getTestProblemsName())
 	s.req.Nil(err)
 	s.handler = handlers.SubmitSolution{
 		Replier:      s.replier,

@@ -18,7 +18,7 @@ type subscribeTestSuite struct {
 	suite.Suite
 
 	replier      mreplier.Replier
-	participants sqlite.SQLParticipantRepository
+	participants sqlite.ParticipantRepository
 	handler      handlers.Subscribe
 	chatID       int64
 	req          *require.Assertions
@@ -27,7 +27,7 @@ type subscribeTestSuite struct {
 func (s *subscribeTestSuite) SetupTest() {
 	s.req = require.New(s.T())
 	s.replier = replier.RussianReplier{}
-	participants, err := sqlite.NewSQLParticipantRepositoryTemp(getTestDbName())
+	participants, err := sqlite.NewParticipantRepositoryTemp(getTestDbName())
 	s.participants = participants
 	s.req.Nil(err)
 	s.handler = handlers.Subscribe{

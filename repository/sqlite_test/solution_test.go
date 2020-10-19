@@ -16,7 +16,7 @@ type testSuite struct {
 	suite.Suite
 	dbPath       string
 	solutionPath string
-	rep          sqlite.SQLSolutionRepository
+	rep          sqlite.SolutionRepository
 	req          *require.Assertions
 }
 
@@ -28,7 +28,7 @@ func (s *testSuite) SetupSuite() {
 	os.RemoveAll(s.solutionPath)
 	s.req.Nil(os.Mkdir(s.solutionPath, 0777))
 
-	rep, err := sqlite.NewSQLSolutionRepository(s.dbPath, s.solutionPath)
+	rep, err := sqlite.NewSolutionRepository(s.dbPath, s.solutionPath)
 	s.req.Nil(err)
 	s.req.Nil(rep.CreateFirstTime())
 

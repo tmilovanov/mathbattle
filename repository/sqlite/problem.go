@@ -10,48 +10,48 @@ import (
 	mathbattle "mathbattle/models"
 )
 
-type SQLProblemRepository struct {
+type ProblemRepository struct {
 	sqliteRepository
 	problemFolder string
 }
 
-func NewSQLProblemRepository(dbPath, problemPath string) (SQLProblemRepository, error) {
+func NewProblemRepository(dbPath, problemPath string) (ProblemRepository, error) {
 	sqliteRepository, err := newSqliteRepository(dbPath)
 	if err != nil {
-		return SQLProblemRepository{}, err
+		return ProblemRepository{}, err
 	}
 
-	return SQLProblemRepository{
+	return ProblemRepository{
 		sqliteRepository: sqliteRepository,
 		problemFolder:    problemPath,
 	}, nil
 }
 
-func NewSQLProblemRepositoryTemp(dbName, problemFolderName string) (SQLProblemRepository, error) {
+func NewProblemRepositoryTemp(dbName, problemFolderName string) (ProblemRepository, error) {
 	sqliteRepository, err := newTempSqliteRepository(dbName)
 	if err != nil {
-		return SQLProblemRepository{}, err
+		return ProblemRepository{}, err
 	}
 
 	problemPath := filepath.Join(os.TempDir(), problemFolderName)
 	os.RemoveAll(problemPath)
 	err = os.Mkdir(problemPath, 0777)
 	if err != nil {
-		return SQLProblemRepository{}, err
+		return ProblemRepository{}, err
 	}
 
-	return SQLProblemRepository{
+	return ProblemRepository{
 		sqliteRepository: sqliteRepository,
 		problemFolder:    problemPath,
 	}, nil
 }
 
-func (r *SQLProblemRepository) getFilePathFromProblem(problem mathbattle.Problem) string {
+func (r *ProblemRepository) getFilePathFromProblem(problem mathbattle.Problem) string {
 	return filepath.Join(r.problemFolder, fmt.Sprintf("%d_%d_%s%s",
 		problem.MinGrade, problem.MaxGrade, problem.ID, problem.Extension))
 }
 
-func (r *SQLProblemRepository) Store(problem mathbattle.Problem) (mathbattle.Problem, error) {
+func (r *ProblemRepository) Store(problem mathbattle.Problem) (mathbattle.Problem, error) {
 	result := problem
 
 	err := ioutil.WriteFile(r.getFilePathFromProblem(problem), problem.Content, 0666)
@@ -78,7 +78,7 @@ func (r *SQLProblemRepository) Store(problem mathbattle.Problem) (mathbattle.Pro
 	return result, nil
 }
 
-func (r *SQLProblemRepository) GetByID(ID string) (mathbattle.Problem, error) {
+func (r *ProblemRepository) GetByID(ID string) (mathbattle.Problem, error) {
 	row := r.db.QueryRow("SELECT sha256sum, grade_min, grade_max, extension FROM problems WHERE sha256sum = ?", ID)
 	result := mathbattle.Problem{}
 	err := row.Scan(&result.ID, &result.MinGrade, &result.MaxGrade, &result.Extension)
@@ -94,7 +94,7 @@ func (r *SQLProblemRepository) GetByID(ID string) (mathbattle.Problem, error) {
 	return result, nil
 }
 
-func (r *SQLProblemRepository) GetAll() ([]mathbattle.Problem, error) {
+func (r *ProblemRepository) GetAll() ([]mathbattle.Problem, error) {
 	rows, err := r.db.Query("SELECT sha256sum, grade_min, grade_max, extension FROM problems")
 	if err != nil {
 		return []mathbattle.Problem{}, err

@@ -26,19 +26,19 @@ func main() {
 		log.Fatalf("Failed to get config: %v\n", err)
 	}
 
-	participantRepository, err := sqlite.NewSQLParticipantRepository(cfg.DatabasePath)
+	participantRepository, err := sqlite.NewParticipantRepository(cfg.DatabasePath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	solutionRepository, err := sqlite.NewSQLSolutionRepository(cfg.DatabasePath, cfg.SolutionsPath)
+	solutionRepository, err := sqlite.NewSolutionRepository(cfg.DatabasePath, cfg.SolutionsPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	problemRepository, err := sqlite.NewSQLProblemRepository(cfg.DatabasePath, cfg.ProblemsPath)
+	problemRepository, err := sqlite.NewProblemRepository(cfg.DatabasePath, cfg.ProblemsPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	roundRepository, err := sqlite.NewSQLRoundRepository(cfg.DatabasePath)
+	roundRepository, err := sqlite.NewRoundRepository(cfg.DatabasePath)
 	if err != nil {
 		log.Fatal(err)
 	}

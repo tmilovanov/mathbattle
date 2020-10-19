@@ -35,7 +35,7 @@ func main() {
 	case "init":
 		initApp(cfg)
 	case "add-problems":
-		db, err := sqlite.NewSQLProblemRepository(cfg.SqlitePath, cfg.ProblemsPath)
+		db, err := sqlite.NewProblemRepository(cfg.SqlitePath, cfg.ProblemsPath)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -70,7 +70,7 @@ func getConfig() (config, error) {
 }
 
 func initApp(cfg config) {
-	db, err := sqlite.NewSQLProblemRepository(cfg.SqlitePath, cfg.ProblemsPath)
+	db, err := sqlite.NewProblemRepository(cfg.SqlitePath, cfg.ProblemsPath)
 	if err != nil {
 		log.Fatal(err)
 	}

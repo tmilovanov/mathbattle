@@ -12,50 +12,50 @@ import (
 	mathbattle "mathbattle/models"
 )
 
-type SQLSolutionRepository struct {
+type SolutionRepository struct {
 	sqliteRepository
 	solutionFolder string
 }
 
-func NewSQLSolutionRepository(dbPath, solutionPath string) (SQLSolutionRepository, error) {
+func NewSolutionRepository(dbPath, solutionPath string) (SolutionRepository, error) {
 	sqliteRepository, err := newSqliteRepository(dbPath)
 	if err != nil {
-		return SQLSolutionRepository{}, err
+		return SolutionRepository{}, err
 	}
 
-	return SQLSolutionRepository{
+	return SolutionRepository{
 		sqliteRepository: sqliteRepository,
 		solutionFolder:   solutionPath,
 	}, nil
 }
 
-func NewSQLSolutionRepositoryTemp(dbName, solutionFolderName string) (SQLSolutionRepository, error) {
+func NewSolutionRepositoryTemp(dbName, solutionFolderName string) (SolutionRepository, error) {
 	sqliteRepository, err := newTempSqliteRepository(dbName)
 	if err != nil {
-		return SQLSolutionRepository{}, err
+		return SolutionRepository{}, err
 	}
 
 	solutionPath := filepath.Join(os.TempDir(), solutionFolderName)
 	os.RemoveAll(solutionPath)
 	err = os.Mkdir(solutionPath, 0777)
 	if err != nil {
-		return SQLSolutionRepository{}, err
+		return SolutionRepository{}, err
 	}
 
-	return SQLSolutionRepository{
+	return SolutionRepository{
 		sqliteRepository: sqliteRepository,
 		solutionFolder:   solutionPath,
 	}, nil
 }
 
-func (r *SQLSolutionRepository) getPartPath(solution mathbattle.Solution, i int, extension string) string {
+func (r *SolutionRepository) getPartPath(solution mathbattle.Solution, i int, extension string) string {
 	fileName := fmt.Sprintf("%s_%s_%s_%d%s", solution.RoundID, solution.ParticipantID,
 		solution.ProblemID, i, extension)
 	result := filepath.Join(r.solutionFolder, fileName)
 	return result
 }
 
-func (r *SQLSolutionRepository) Store(solution mathbattle.Solution) (mathbattle.Solution, error) {
+func (r *SolutionRepository) Store(solution mathbattle.Solution) (mathbattle.Solution, error) {
 	result := solution
 
 	extensions := ""
@@ -86,7 +86,7 @@ func (r *SQLSolutionRepository) Store(solution mathbattle.Solution) (mathbattle.
 	return result, nil
 }
 
-func (r *SQLSolutionRepository) Get(ID string) (mathbattle.Solution, error) {
+func (r *SolutionRepository) Get(ID string) (mathbattle.Solution, error) {
 	intID, err := strconv.Atoi(ID)
 	if err != nil {
 		return mathbattle.Solution{}, err
@@ -124,7 +124,7 @@ func (r *SQLSolutionRepository) Get(ID string) (mathbattle.Solution, error) {
 	return result, nil
 }
 
-func (r *SQLSolutionRepository) Find(roundID string, participantID string, problemID string) (mathbattle.Solution, error) {
+func (r *SolutionRepository) Find(roundID string, participantID string, problemID string) (mathbattle.Solution, error) {
 	res := r.db.QueryRow("SELECT id FROM solutions WHERE round_id = ? AND participant_id = ? AND problem_id = ?",
 		roundID, participantID, problemID)
 
@@ -142,7 +142,7 @@ func (r *SQLSolutionRepository) Find(roundID string, participantID string, probl
 	return r.Get(ID)
 }
 
-func (r *SQLSolutionRepository) FindMany(roundID string, participantID string, problemID string) ([]mathbattle.Solution, error) {
+func (r *SolutionRepository) FindMany(roundID string, participantID string, problemID string) ([]mathbattle.Solution, error) {
 	query := "SELECT id, round_id, participant_id, problem_id, parts FROM solutions"
 	whereClauses := []string{}
 	whereArgs := []interface{}{}
@@ -203,7 +203,7 @@ func (r *SQLSolutionRepository) FindMany(roundID string, participantID string, p
 	return result, nil
 }
 
-func (r *SQLSolutionRepository) FindOrCreate(roundID string, participantID string, problemID string) (mathbattle.Solution, error) {
+func (r *SolutionRepository) FindOrCreate(roundID string, participantID string, problemID string) (mathbattle.Solution, error) {
 	s, err := r.Find(roundID, participantID, problemID)
 	if err == nil {
 		return s, nil
@@ -220,7 +220,7 @@ func (r *SQLSolutionRepository) FindOrCreate(roundID string, participantID strin
 	})
 }
 
-func (r *SQLSolutionRepository) AppendPart(ID string, item mathbattle.Image) error {
+func (r *SolutionRepository) AppendPart(ID string, item mathbattle.Image) error {
 	solution, err := r.Get(ID)
 	if err != nil {
 		return err
@@ -249,7 +249,7 @@ func (r *SQLSolutionRepository) AppendPart(ID string, item mathbattle.Image) err
 	return err
 }
 
-func (r *SQLSolutionRepository) Delete(ID string) error {
+func (r *SolutionRepository) Delete(ID string) error {
 	solution, err := r.Get(ID)
 	if err != nil {
 		return err

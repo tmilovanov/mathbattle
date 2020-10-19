@@ -10,33 +10,33 @@ import (
 	mathbattle "mathbattle/models"
 )
 
-type SQLRoundRepository struct {
+type RoundRepository struct {
 	sqliteRepository
 }
 
-func NewSQLRoundRepository(dbPath string) (SQLRoundRepository, error) {
+func NewRoundRepository(dbPath string) (RoundRepository, error) {
 	sqliteRepository, err := newSqliteRepository(dbPath)
 	if err != nil {
-		return SQLRoundRepository{}, err
+		return RoundRepository{}, err
 	}
 
-	return SQLRoundRepository{
+	return RoundRepository{
 		sqliteRepository: sqliteRepository,
 	}, nil
 }
 
-func NewSQLRoundRepositoryTemp(dbName string) (SQLRoundRepository, error) {
+func NewRoundRepositoryTemp(dbName string) (RoundRepository, error) {
 	sqliteRepository, err := newTempSqliteRepository(dbName)
 	if err != nil {
-		return SQLRoundRepository{}, err
+		return RoundRepository{}, err
 	}
 
-	return SQLRoundRepository{
+	return RoundRepository{
 		sqliteRepository: sqliteRepository,
 	}, nil
 }
 
-func (r *SQLRoundRepository) GetDistributionForRound(roundID string) (mathbattle.RoundDistribution, error) {
+func (r *RoundRepository) GetDistributionForRound(roundID string) (mathbattle.RoundDistribution, error) {
 	intRoundID, err := strconv.Atoi(roundID)
 	if err != nil {
 		return mathbattle.RoundDistribution{}, err
@@ -63,7 +63,7 @@ func (r *SQLRoundRepository) GetDistributionForRound(roundID string) (mathbattle
 	return result, nil
 }
 
-func (r *SQLRoundRepository) Get(ID string) (mathbattle.Round, error) {
+func (r *RoundRepository) Get(ID string) (mathbattle.Round, error) {
 	result := mathbattle.Round{ID: ID}
 
 	intID, err := strconv.ParseInt(ID, 10, 64)
@@ -84,7 +84,7 @@ func (r *SQLRoundRepository) Get(ID string) (mathbattle.Round, error) {
 	return result, err
 }
 
-func (r *SQLRoundRepository) GetAll() ([]mathbattle.Round, error) {
+func (r *RoundRepository) GetAll() ([]mathbattle.Round, error) {
 	rows, err := r.db.Query("SELECT id, solve_start, solve_end, review_start, review_end FROM rounds")
 	if err != nil {
 		return []mathbattle.Round{}, err
@@ -111,7 +111,7 @@ func (r *SQLRoundRepository) GetAll() ([]mathbattle.Round, error) {
 	return result, nil
 }
 
-func (r *SQLRoundRepository) Store(round mathbattle.Round) (mathbattle.Round, error) {
+func (r *RoundRepository) Store(round mathbattle.Round) (mathbattle.Round, error) {
 	result := round
 
 	res, err := r.db.Exec("INSERT INTO rounds (solve_start, solve_end, review_start, review_end) VALUES (?,?,?,?)",
@@ -148,7 +148,7 @@ func (r *SQLRoundRepository) Store(round mathbattle.Round) (mathbattle.Round, er
 	return result, nil
 }
 
-func (r *SQLRoundRepository) GetRunning() (mathbattle.Round, error) {
+func (r *RoundRepository) GetRunning() (mathbattle.Round, error) {
 	round, err := r.GetSolveRunning()
 	if err == nil {
 		return round, nil
@@ -170,7 +170,7 @@ func (r *SQLRoundRepository) GetRunning() (mathbattle.Round, error) {
 	return r.GetReviewRunning()
 }
 
-func (r *SQLRoundRepository) GetSolveRunning() (mathbattle.Round, error) {
+func (r *RoundRepository) GetSolveRunning() (mathbattle.Round, error) {
 	res := r.db.QueryRow("SELECT id FROM rounds WHERE solve_end = ? OR solve_end >= ?",
 		time.Time{}, time.Now())
 
@@ -186,7 +186,7 @@ func (r *SQLRoundRepository) GetSolveRunning() (mathbattle.Round, error) {
 	return r.Get(ID)
 }
 
-func (r *SQLRoundRepository) GetReviewPending() (mathbattle.Round, error) {
+func (r *RoundRepository) GetReviewPending() (mathbattle.Round, error) {
 	res := r.db.QueryRow("SELECT id FROM rounds WHERE solve_end <= ? AND review_start = ?",
 		time.Now(), time.Time{})
 
@@ -202,7 +202,7 @@ func (r *SQLRoundRepository) GetReviewPending() (mathbattle.Round, error) {
 	return r.Get(ID)
 }
 
-func (r *SQLRoundRepository) GetReviewRunning() (mathbattle.Round, error) {
+func (r *RoundRepository) GetReviewRunning() (mathbattle.Round, error) {
 	res := r.db.QueryRow("SELECT id FROM rounds WHERE solve_end <= ? AND (review_end = ? OR review_end >= ?)",
 		time.Now(), time.Time{}, time.Now())
 
@@ -218,7 +218,7 @@ func (r *SQLRoundRepository) GetReviewRunning() (mathbattle.Round, error) {
 	return r.Get(ID)
 }
 
-func (r *SQLRoundRepository) Delete(ID string) error {
+func (r *RoundRepository) Delete(ID string) error {
 	intID, err := strconv.ParseInt(ID, 10, 64)
 	if err != nil {
 		return err

@@ -8,33 +8,33 @@ import (
 	mathbattle "mathbattle/models"
 )
 
-type SQLParticipantRepository struct {
+type ParticipantRepository struct {
 	sqliteRepository
 }
 
-func NewSQLParticipantRepository(dbPath string) (SQLParticipantRepository, error) {
+func NewParticipantRepository(dbPath string) (ParticipantRepository, error) {
 	sqliteRepository, err := newSqliteRepository(dbPath)
 	if err != nil {
-		return SQLParticipantRepository{}, err
+		return ParticipantRepository{}, err
 	}
 
-	return SQLParticipantRepository{
+	return ParticipantRepository{
 		sqliteRepository: sqliteRepository,
 	}, nil
 }
 
-func NewSQLParticipantRepositoryTemp(dbName string) (SQLParticipantRepository, error) {
+func NewParticipantRepositoryTemp(dbName string) (ParticipantRepository, error) {
 	sqliteRepository, err := newTempSqliteRepository(dbName)
 	if err != nil {
-		return SQLParticipantRepository{}, err
+		return ParticipantRepository{}, err
 	}
 
-	return SQLParticipantRepository{
+	return ParticipantRepository{
 		sqliteRepository: sqliteRepository,
 	}, nil
 }
 
-func (r *SQLParticipantRepository) Store(participant mathbattle.Participant) (mathbattle.Participant, error) {
+func (r *ParticipantRepository) Store(participant mathbattle.Participant) (mathbattle.Participant, error) {
 	result := participant
 	res, err := r.db.Exec("INSERT INTO participants (tg_chat_id, name, school, grade, register_time) VALUES (?, ?, ?, ?, ?)",
 		participant.TelegramID, participant.Name, participant.School, participant.Grade, participant.RegistrationTime)
@@ -51,7 +51,7 @@ func (r *SQLParticipantRepository) Store(participant mathbattle.Participant) (ma
 	return result, nil
 }
 
-func (r *SQLParticipantRepository) GetByID(ID string) (mathbattle.Participant, error) {
+func (r *ParticipantRepository) GetByID(ID string) (mathbattle.Participant, error) {
 	intID, err := strconv.Atoi(ID)
 	if err != nil {
 		return mathbattle.Participant{}, err
@@ -71,7 +71,7 @@ func (r *SQLParticipantRepository) GetByID(ID string) (mathbattle.Participant, e
 	return result, nil
 }
 
-func (r *SQLParticipantRepository) GetByTelegramID(telegramID string) (mathbattle.Participant, error) {
+func (r *ParticipantRepository) GetByTelegramID(telegramID string) (mathbattle.Participant, error) {
 	result := mathbattle.Participant{}
 
 	row := r.db.QueryRow("SELECT id, tg_chat_id, name, school, grade, register_time FROM participants WHERE tg_chat_id = ?", telegramID)
@@ -86,7 +86,7 @@ func (r *SQLParticipantRepository) GetByTelegramID(telegramID string) (mathbattl
 	return result, nil
 }
 
-func (r *SQLParticipantRepository) GetAll() ([]mathbattle.Participant, error) {
+func (r *ParticipantRepository) GetAll() ([]mathbattle.Participant, error) {
 	rows, err := r.db.Query("SELECT id, tg_chat_id, name, school, grade, register_time FROM participants")
 	if err != nil {
 		return []mathbattle.Participant{}, err
@@ -108,7 +108,7 @@ func (r *SQLParticipantRepository) GetAll() ([]mathbattle.Participant, error) {
 	return result, nil
 }
 
-func (r *SQLParticipantRepository) Delete(ID string) error {
+func (r *ParticipantRepository) Delete(ID string) error {
 	intID, err := strconv.Atoi(ID)
 	if err != nil {
 		return err
