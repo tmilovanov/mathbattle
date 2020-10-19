@@ -8,11 +8,6 @@ type Solution struct {
 	Parts         []Image
 }
 
-type Image struct {
-	Extension string
-	Content   []byte
-}
-
 type SolutionRepository interface {
 	Store(solution Solution) (Solution, error) // Return newly created Solution with filled in ID
 	Get(ID string) (Solution, error)

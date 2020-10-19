@@ -11,9 +11,8 @@ import (
 
 type Subscribe struct {
 	Handler
-	Replier            mreplier.Replier
-	Participants       mathbattle.ParticipantRepository
-	ProblemDistributor mathbattle.ProblemDistributor
+	Replier      mreplier.Replier
+	Participants mathbattle.ParticipantRepository
 }
 
 func (h *Subscribe) Name() string {

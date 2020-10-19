@@ -107,7 +107,7 @@ func GenSolutionStageRound(rounds mathbattle.RoundRepository, participants mathb
 	}
 
 	for _, participant := range allParticipants {
-		problems, err := problemDistributor.GetProblemsForParticipant(participant, problemOnEach)
+		problems, err := problemDistributor.GetForParticipantCount(participant, problemOnEach)
 		if err != nil {
 			return mathbattle.Round{}, err
 		}

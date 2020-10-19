@@ -4,13 +4,23 @@ import tb "gopkg.in/tucnak/telebot.v2"
 
 type TelegramResponse struct {
 	Text     string
+	Img      Image
 	Keyboard *tb.ReplyMarkup
 }
 
 func NewResp(messageText string) TelegramResponse {
-	return TelegramResponse{messageText, &tb.ReplyMarkup{
-		ReplyKeyboardRemove: true,
-	}}
+	return TelegramResponse{
+		Text: messageText,
+		Keyboard: &tb.ReplyMarkup{
+			ReplyKeyboardRemove: true,
+		},
+	}
+}
+
+func NewRespImage(image Image) TelegramResponse {
+	return TelegramResponse{
+		Img: image,
+	}
 }
 
 func NewRespWithKeyboard(messageText string, buttonTexts ...string) TelegramResponse {
@@ -25,5 +35,18 @@ func NewRespWithKeyboard(messageText string, buttonTexts ...string) TelegramResp
 
 	keyboard.Reply(keyboard.Row(buttons...))
 
-	return TelegramResponse{messageText, keyboard}
+	return TelegramResponse{
+		Text:     messageText,
+		Keyboard: keyboard,
+	}
+}
+
+func NewResps(messageTexts ...string) []TelegramResponse {
+	result := []TelegramResponse{}
+
+	for _, item := range messageTexts {
+		result = append(result, NewResp(item))
+	}
+
+	return result
 }

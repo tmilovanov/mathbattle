@@ -7,10 +7,15 @@ import (
 
 // SimpleDistributor gives each participant first problem that is suitable to participant by grade
 type SimpleDistributor struct {
-	Problems mathbattle.ProblemRepository
+	Problems     mathbattle.ProblemRepository
+	DefaultCount int
 }
 
-func (d *SimpleDistributor) GetProblemsForParticipant(participant mathbattle.Participant, count int) ([]mathbattle.Problem, error) {
+func (d *SimpleDistributor) GetForParticipant(participant mathbattle.Participant) ([]mathbattle.Problem, error) {
+	return d.GetForParticipantCount(participant, d.DefaultCount)
+}
+
+func (d *SimpleDistributor) GetForParticipantCount(participant mathbattle.Participant, count int) ([]mathbattle.Problem, error) {
 	result := []mathbattle.Problem{}
 
 	allProblems, err := d.Problems.GetAll()
