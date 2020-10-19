@@ -52,6 +52,10 @@ func (h *SubmitSolution) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (
 	return true, nil
 }
 
+func (h *SubmitSolution) IsAdminOnly() bool {
+	return false
+}
+
 func (h *SubmitSolution) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
 	r, err := h.Rounds.GetSolveRunning()
 	if err != nil {

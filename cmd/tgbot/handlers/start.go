@@ -29,6 +29,10 @@ func (h *Start) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, err
 	return true, nil
 }
 
+func (h *Start) IsAdminOnly() bool {
+	return false
+}
+
 func (h *Start) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
 	msg := h.Replier.GetStartMessage()
 	return -1, mathbattle.NewResp(msg), nil

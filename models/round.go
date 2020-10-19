@@ -25,6 +25,7 @@ type RoundRepository interface {
 	GetReviewPending() (Round, error)
 	GetReviewRunning() (Round, error)
 	GetAll() ([]Round, error)
+	Update(round Round) error
 	Delete(roundID string) error
 }
 
@@ -38,6 +39,7 @@ func NewRound(solveDuration time.Duration) Round {
 	}
 }
 
+// RoundDistribution is a mapping from participant ID to list of problem IDs
 type RoundDistribution map[string][]string
 
 type ReviewDistribution struct {

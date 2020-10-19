@@ -1,7 +1,7 @@
 package models
 
 type ProblemDistributor interface {
-	Get(participants []Participant, problems []Problem, rounds []Round) (RoundDistribution, error)
+	GetProblemsForParticipant(participant Participant, count int) ([]Problem, error)
 }
 
 func IsProblemSuitableForParticipant(problem *Problem, participant *Participant) bool {

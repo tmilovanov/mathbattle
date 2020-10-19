@@ -38,7 +38,7 @@ func commandStartRound(storage mathbattle.Storage, telegramToken string, replier
 	}
 
 	problemDistributor := problemdist.RandomDistributor{}
-	distribution, err := problemDistributor.Get(participants, problems, pastRounds, problemCount)
+	distribution, err := problemDistributor.GetForAll(participants, problems, pastRounds, problemCount)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -51,6 +51,10 @@ func (h *Unsubscribe) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (boo
 	return false, nil
 }
 
+func (h *Unsubscribe) IsAdminOnly() bool {
+	return false
+}
+
 func (h *Unsubscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
 	var noRepsonse mathbattle.TelegramResponse
 

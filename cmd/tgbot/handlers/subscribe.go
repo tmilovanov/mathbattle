@@ -11,8 +11,9 @@ import (
 
 type Subscribe struct {
 	Handler
-	Replier      mreplier.Replier
-	Participants mathbattle.ParticipantRepository
+	Replier            mreplier.Replier
+	Participants       mathbattle.ParticipantRepository
+	ProblemDistributor mathbattle.ProblemDistributor
 }
 
 func (h *Subscribe) Name() string {
@@ -37,49 +38,50 @@ func (h *Subscribe) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool,
 	return !isReg, nil
 }
 
-func (h *Subscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
-	var noResponse mathbattle.TelegramResponse
+func (h *Subscribe) IsAdminOnly() bool {
+	return false
+}
 
+func (h *Subscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
 	switch ctx.CurrentStep {
 	case 0:
-		isReg, err := mathbattle.IsRegistered(h.Participants, ctx.User.ChatID)
-		if err != nil {
-			return -1, noResponse, err
-		}
-
-		if isReg {
-			return -1, mathbattle.NewResp(h.Replier.AlreadyRegistered()), nil
-		}
-
 		return 1, mathbattle.NewResp(h.Replier.RegisterNameExpect()), nil
-	case 1: //expectName
-		name, ok := mathbattle.ValidateUserName(m.Text)
-		if !ok {
-			return 1, mathbattle.NewResp(h.Replier.RegisterNameWrong()), nil
-		}
+	case 1:
+		return h.stepAcceptName(ctx, m)
+	case 2:
+		return h.stepAcceptGradeAndFinish(ctx, m)
+	default:
+		return -1, noResponse(), nil
+	}
+}
 
-		ctx.Variables["name"] = mathbattle.NewContextVariableStr(name)
-
-		return 2, mathbattle.NewResp(h.Replier.RegisterGradeExpect()), nil
-	case 2: //expectGrade
-		grade, ok := mathbattle.ValidateUserGrade(m.Text)
-		if !ok {
-			return 2, mathbattle.NewResp(h.Replier.RegisterGradeWrong()), nil
-		}
-
-		_, err := h.Participants.Store(mathbattle.Participant{
-			TelegramID:       ctx.User.ChatID,
-			Name:             ctx.Variables["name"].AsString(),
-			School:           ctx.Variables["school"].AsString(),
-			Grade:            grade,
-			RegistrationTime: time.Now(),
-		})
-		if err != nil {
-			return -1, mathbattle.NewResp(""), err
-		}
-
-		return -1, mathbattle.NewResp(h.Replier.RegisterSuccess()), nil
+func (h *Subscribe) stepAcceptName(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
+	name, ok := mathbattle.ValidateUserName(m.Text)
+	if !ok {
+		return 1, mathbattle.NewResp(h.Replier.RegisterNameWrong()), nil
 	}
 
-	return -1, mathbattle.NewResp(""), nil
+	ctx.Variables["name"] = mathbattle.NewContextVariableStr(name)
+
+	return 2, mathbattle.NewResp(h.Replier.RegisterGradeExpect()), nil
+}
+
+func (h *Subscribe) stepAcceptGradeAndFinish(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
+	grade, ok := mathbattle.ValidateUserGrade(m.Text)
+	if !ok {
+		return 2, mathbattle.NewResp(h.Replier.RegisterGradeWrong()), nil
+	}
+
+	_, err := h.Participants.Store(mathbattle.Participant{
+		TelegramID:       ctx.User.ChatID,
+		Name:             ctx.Variables["name"].AsString(),
+		School:           ctx.Variables["school"].AsString(),
+		Grade:            grade,
+		RegistrationTime: time.Now(),
+	})
+	if err != nil {
+		return -1, noResponse(), err
+	}
+
+	return -1, mathbattle.NewResp(h.Replier.RegisterSuccess()), nil
 }

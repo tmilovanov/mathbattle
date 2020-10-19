@@ -44,7 +44,7 @@ func TestGet(t *testing.T) {
 	d := RandomDistributor{}
 
 	c := case1{grade: 7, participantsCount: 10, problemsCount: 1}
-	res, _ := d.Get(c.Participants(), c.Problems(), c.Rounds(), 1)
+	res, _ := d.GetForAll(c.Participants(), c.Problems(), c.Rounds(), 1)
 	t.Logf("%v", res)
 	for _, problemIDs := range res {
 		if len(problemIDs) != 1 {
@@ -57,7 +57,7 @@ func TestGet(t *testing.T) {
 	}
 
 	c = case1{grade: 7, participantsCount: 10, problemsCount: 2}
-	res, _ = d.Get(c.Participants(), c.Problems(), c.Rounds(), 1)
+	res, _ = d.GetForAll(c.Participants(), c.Problems(), c.Rounds(), 1)
 	problemIDcount := make(map[string]int)
 	t.Logf("%v", res)
 	for _, problemIDs := range res {
@@ -70,7 +70,7 @@ func TestGet(t *testing.T) {
 	t.Logf("%v", problemIDcount)
 
 	c = case1{grade: 7, participantsCount: 10, problemsCount: 5}
-	res, _ = d.Get(c.Participants(), c.Problems(), c.Rounds(), 1)
+	res, _ = d.GetForAll(c.Participants(), c.Problems(), c.Rounds(), 1)
 	problemIDcount = make(map[string]int)
 	t.Logf("%v", res)
 	for _, problemIDs := range res {

@@ -1,7 +1,11 @@
 package sqlite
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -48,40 +52,40 @@ func NewProblemRepositoryTemp(dbName, problemFolderName string) (ProblemReposito
 
 func (r *ProblemRepository) getFilePathFromProblem(problem mathbattle.Problem) string {
 	return filepath.Join(r.problemFolder, fmt.Sprintf("%d_%d_%s%s",
-		problem.MinGrade, problem.MaxGrade, problem.ID, problem.Extension))
+		problem.MinGrade, problem.MaxGrade, problem.Sha256sum, problem.Extension))
 }
 
 func (r *ProblemRepository) Store(problem mathbattle.Problem) (mathbattle.Problem, error) {
-	result := problem
+	h := sha256.New()
+	if _, err := io.Copy(h, bytes.NewReader(problem.Content)); err != nil {
+		return problem, err
+	}
+	problem.Sha256sum = hex.EncodeToString(h.Sum(nil))
 
 	err := ioutil.WriteFile(r.getFilePathFromProblem(problem), problem.Content, 0666)
 	if err != nil {
-		return result, err
+		return problem, err
 	}
 
-	insertRes, err := r.db.Exec("REPLACE INTO problems (sha256sum, grade_min, grade_max, extension) VALUES (?, ?, ?, ?)",
-		problem.ID, problem.MinGrade, problem.MaxGrade, problem.Extension)
+	insertRes, err := r.db.Exec("INSERT INTO problems (sha256sum, grade_min, grade_max, extension) VALUES (?, ?, ?, ?)",
+		problem.Sha256sum, problem.MinGrade, problem.MaxGrade, problem.Extension)
 	if err != nil {
-		return result, err
+		return problem, err
 	}
 
 	id, err := insertRes.LastInsertId()
 	if err != nil {
-		return result, err
+		return problem, err
 	}
-	result.ID = strconv.FormatInt(id, 10)
+	problem.ID = strconv.FormatInt(id, 10)
 
-	if err != nil {
-		return result, err
-	}
-
-	return result, nil
+	return problem, nil
 }
 
 func (r *ProblemRepository) GetByID(ID string) (mathbattle.Problem, error) {
-	row := r.db.QueryRow("SELECT sha256sum, grade_min, grade_max, extension FROM problems WHERE sha256sum = ?", ID)
+	row := r.db.QueryRow("SELECT id, sha256sum, grade_min, grade_max, extension FROM problems WHERE id = ?", ID)
 	result := mathbattle.Problem{}
-	err := row.Scan(&result.ID, &result.MinGrade, &result.MaxGrade, &result.Extension)
+	err := row.Scan(&result.ID, &result.Sha256sum, &result.MinGrade, &result.MaxGrade, &result.Extension)
 	if err != nil {
 		return mathbattle.Problem{}, err
 	}
@@ -95,7 +99,7 @@ func (r *ProblemRepository) GetByID(ID string) (mathbattle.Problem, error) {
 }
 
 func (r *ProblemRepository) GetAll() ([]mathbattle.Problem, error) {
-	rows, err := r.db.Query("SELECT sha256sum, grade_min, grade_max, extension FROM problems")
+	rows, err := r.db.Query("SELECT id, sha256sum, grade_min, grade_max, extension FROM problems")
 	if err != nil {
 		return []mathbattle.Problem{}, err
 	}
@@ -104,7 +108,7 @@ func (r *ProblemRepository) GetAll() ([]mathbattle.Problem, error) {
 	result := []mathbattle.Problem{}
 	for rows.Next() {
 		curProblem := mathbattle.Problem{}
-		err = rows.Scan(&curProblem.ID, &curProblem.MinGrade, &curProblem.MaxGrade, &curProblem.Extension)
+		err = rows.Scan(&curProblem.ID, &curProblem.Sha256sum, &curProblem.MinGrade, &curProblem.MaxGrade, &curProblem.Extension)
 		if err != nil {
 			return []mathbattle.Problem{}, err
 		}

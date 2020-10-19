@@ -13,17 +13,11 @@ import (
 )
 
 type TelegramPostman struct {
-	bot          *tb.Bot
-	participants mathbattle.ParticipantRepository
+	bot *tb.Bot
 }
 
-func (pm *TelegramPostman) Post(participantID string, m *tb.Message) error {
-	participant, err := pm.participants.GetByID(participantID)
-	if err != nil {
-		return err
-	}
-
-	_, err = pm.bot.Send(tb.ChatID(participant.TelegramID), m)
+func (pm *TelegramPostman) Post(chatID int64, m *tb.Message) error {
+	_, err := pm.bot.Send(tb.ChatID(chatID), m)
 	return err
 }
 
@@ -71,6 +65,7 @@ func createCommands(storage mathbattle.Storage, replier mreplier.Replier, postma
 			Replier:             replier,
 			Rounds:              storage.Rounds,
 			Solutions:           storage.Solutions,
+			Participants:        storage.Participants,
 			SolutionDistributor: &solutionDistributor,
 			ReviewersCount:      2,
 			Postman:             postman,

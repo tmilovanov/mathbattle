@@ -36,7 +36,7 @@ func NewRoundRepositoryTemp(dbName string) (RoundRepository, error) {
 	}, nil
 }
 
-func (r *RoundRepository) GetDistributionForRound(roundID string) (mathbattle.RoundDistribution, error) {
+func (r *RoundRepository) ProblemDistributionGet(roundID string) (mathbattle.RoundDistribution, error) {
 	intRoundID, err := strconv.Atoi(roundID)
 	if err != nil {
 		return mathbattle.RoundDistribution{}, err
@@ -63,52 +63,8 @@ func (r *RoundRepository) GetDistributionForRound(roundID string) (mathbattle.Ro
 	return result, nil
 }
 
-func (r *RoundRepository) Get(ID string) (mathbattle.Round, error) {
-	result := mathbattle.Round{ID: ID}
-
-	intID, err := strconv.ParseInt(ID, 10, 64)
-	if err != nil {
-		return result, err
-	}
-
-	res := r.db.QueryRow("SELECT solve_start, solve_end, review_start, review_end FROM rounds WHERE id = ?", intID)
-	err = res.Scan(&result.SolveStartDate, &result.SolveEndDate, &result.ReviewStartDate, &result.ReviewEndDate)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return result, sql.ErrConnDone
-		}
-		return result, err
-	}
-
-	result.ProblemDistribution, err = r.GetDistributionForRound(result.ID)
-	return result, err
-}
-
-func (r *RoundRepository) GetAll() ([]mathbattle.Round, error) {
-	rows, err := r.db.Query("SELECT id, solve_start, solve_end, review_start, review_end FROM rounds")
-	if err != nil {
-		return []mathbattle.Round{}, err
-	}
-	defer rows.Close()
-
-	result := []mathbattle.Round{}
-	for rows.Next() {
-		var roundID int
-		curRound := mathbattle.Round{}
-		err = rows.Scan(&roundID, &curRound.SolveStartDate, &curRound.SolveEndDate, &curRound.ReviewStartDate, &curRound.ReviewEndDate)
-		if err != nil {
-			return []mathbattle.Round{}, err
-		}
-		curRound.ID = strconv.Itoa(roundID)
-		distributions, err := r.GetDistributionForRound(curRound.ID)
-		if err != nil {
-			return []mathbattle.Round{}, err
-		}
-		curRound.ProblemDistribution = distributions
-
-		result = append(result, curRound)
-	}
-	return result, nil
+func (r *RoundRepository) ProblemDistributionUpdate(roundID string, rd mathbattle.RoundDistribution) error {
+	return nil
 }
 
 func (r *RoundRepository) Store(round mathbattle.Round) (mathbattle.Round, error) {
@@ -145,6 +101,54 @@ func (r *RoundRepository) Store(round mathbattle.Round) (mathbattle.Round, error
 		}
 	}
 
+	return result, nil
+}
+
+func (r *RoundRepository) Get(ID string) (mathbattle.Round, error) {
+	result := mathbattle.Round{ID: ID}
+
+	intID, err := strconv.ParseInt(ID, 10, 64)
+	if err != nil {
+		return result, err
+	}
+
+	res := r.db.QueryRow("SELECT solve_start, solve_end, review_start, review_end FROM rounds WHERE id = ?", intID)
+	err = res.Scan(&result.SolveStartDate, &result.SolveEndDate, &result.ReviewStartDate, &result.ReviewEndDate)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return result, sql.ErrConnDone
+		}
+		return result, err
+	}
+
+	result.ProblemDistribution, err = r.ProblemDistributionGet(result.ID)
+	return result, err
+}
+
+func (r *RoundRepository) GetAll() ([]mathbattle.Round, error) {
+	rows, err := r.db.Query("SELECT id, solve_start, solve_end, review_start, review_end FROM rounds")
+	if err != nil {
+		return []mathbattle.Round{}, err
+	}
+	defer rows.Close()
+
+	result := []mathbattle.Round{}
+	for rows.Next() {
+		var roundID int
+		curRound := mathbattle.Round{}
+		err = rows.Scan(&roundID, &curRound.SolveStartDate, &curRound.SolveEndDate, &curRound.ReviewStartDate, &curRound.ReviewEndDate)
+		if err != nil {
+			return []mathbattle.Round{}, err
+		}
+		curRound.ID = strconv.Itoa(roundID)
+		distributions, err := r.ProblemDistributionGet(curRound.ID)
+		if err != nil {
+			return []mathbattle.Round{}, err
+		}
+		curRound.ProblemDistribution = distributions
+
+		result = append(result, curRound)
+	}
 	return result, nil
 }
 
@@ -216,6 +220,16 @@ func (r *RoundRepository) GetReviewRunning() (mathbattle.Round, error) {
 	}
 
 	return r.Get(ID)
+}
+
+func (r *RoundRepository) Update(round mathbattle.Round) error {
+	_, err := r.db.Exec("UPDATE rounds SET solve_start = ?, solve_end = ?, review_start = ?, review_end = ? WHERE id = ?",
+		round.SolveStartDate, round.SolveEndDate, round.ReviewStartDate, round.ReviewEndDate, round.ID)
+	if err != nil {
+		return err
+	}
+
+	return r.ProblemDistributionUpdate(round.ID, round.ProblemDistribution)
 }
 
 func (r *RoundRepository) Delete(ID string) error {

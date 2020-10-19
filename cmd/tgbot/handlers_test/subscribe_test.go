@@ -10,33 +10,31 @@ import (
 	mathbattle "mathbattle/models"
 	"mathbattle/repository/sqlite"
 
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
-type subscribeTestSuite struct {
+// Subscribe is done when there is no round running
+type subscribeNoRoundTs struct {
 	suite.Suite
 
+	handler      handlers.Subscribe
 	replier      mreplier.Replier
 	participants sqlite.ParticipantRepository
-	handler      handlers.Subscribe
 	chatID       int64
-	req          *require.Assertions
 }
 
-func (s *subscribeTestSuite) SetupTest() {
-	s.req = require.New(s.T())
+func (s *subscribeNoRoundTs) SetupTest() {
 	s.replier = replier.RussianReplier{}
 	participants, err := sqlite.NewParticipantRepositoryTemp(getTestDbName())
+	s.Require().Nil(err)
 	s.participants = participants
-	s.req.Nil(err)
 	s.handler = handlers.Subscribe{
 		Replier:      s.replier,
 		Participants: &s.participants,
 	}
 }
 
-func (s *subscribeTestSuite) TestCorrectSubscribe() {
+func (s *subscribeNoRoundTs) TestCorrectSubscribe() {
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
 	testParticipant := mathbattle.Participant{
 		TelegramID: s.chatID,
@@ -45,7 +43,7 @@ func (s *subscribeTestSuite) TestCorrectSubscribe() {
 		Grade:      7,
 	}
 
-	sendTextExpectTextSequence(s.req, &s.handler, ctx, []reqRespTextSequence{
+	sendTextExpectTextSequence(s.Require(), &s.handler, ctx, []reqRespTextSequence{
 		{"", s.replier.RegisterNameExpect(), 1},
 		{testParticipant.Name, s.replier.RegisterGradeExpect(), 2},
 		{strconv.Itoa(testParticipant.Grade), s.replier.RegisterSuccess(), -1},
@@ -54,20 +52,20 @@ func (s *subscribeTestSuite) TestCorrectSubscribe() {
 	p, err := s.participants.GetByTelegramID(strconv.FormatInt(s.chatID, 10))
 	testParticipant.ID = p.ID
 	testParticipant.RegistrationTime = p.RegistrationTime
-	s.req.Nil(err)
-	s.req.Equal(p, testParticipant)
+	s.Require().Nil(err)
+	s.Require().Equal(p, testParticipant)
 }
 
-func (s *subscribeTestSuite) TestIncorrectName() {
-	sendTextExpectTextSequence(s.req, &s.handler, mathbattle.NewTelegramUserContext(s.chatID), []reqRespTextSequence{
+func (s *subscribeNoRoundTs) TestIncorrectName() {
+	sendTextExpectTextSequence(s.Require(), &s.handler, mathbattle.NewTelegramUserContext(s.chatID), []reqRespTextSequence{
 		{"", s.replier.RegisterNameExpect(), 1},
 		{"123455~!!", s.replier.RegisterNameWrong(), 1},
 		{"718317+-++", s.replier.RegisterNameWrong(), 1},
 	})
 }
 
-func (s *subscribeTestSuite) TestIncorrectGrade() {
-	sendTextExpectTextSequence(s.req, &s.handler, mathbattle.NewTelegramUserContext(s.chatID), []reqRespTextSequence{
+func (s *subscribeNoRoundTs) TestIncorrectGrade() {
+	sendTextExpectTextSequence(s.Require(), &s.handler, mathbattle.NewTelegramUserContext(s.chatID), []reqRespTextSequence{
 		{"", s.replier.RegisterNameExpect(), 1},
 		{"Jack", s.replier.RegisterGradeExpect(), 2},
 		{"asdfsadf", s.replier.RegisterGradeWrong(), 2},
@@ -76,7 +74,7 @@ func (s *subscribeTestSuite) TestIncorrectGrade() {
 	})
 }
 
-func (s *subscribeTestSuite) TestIncorrectThenCorrect() {
+func (s *subscribeNoRoundTs) TestIncorrectThenCorrect() {
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
 	testParticipant := mathbattle.Participant{
 		TelegramID: s.chatID,
@@ -85,7 +83,7 @@ func (s *subscribeTestSuite) TestIncorrectThenCorrect() {
 		Grade:      7,
 	}
 
-	sendTextExpectTextSequence(s.req, &s.handler, ctx, []reqRespTextSequence{
+	sendTextExpectTextSequence(s.Require(), &s.handler, ctx, []reqRespTextSequence{
 		{"", s.replier.RegisterNameExpect(), 1},
 		{"123455~!!", s.replier.RegisterNameWrong(), 1},
 		{testParticipant.Name, s.replier.RegisterGradeExpect(), 2},
@@ -96,25 +94,10 @@ func (s *subscribeTestSuite) TestIncorrectThenCorrect() {
 	p, err := s.participants.GetByTelegramID(strconv.FormatInt(s.chatID, 10))
 	testParticipant.ID = p.ID
 	testParticipant.RegistrationTime = p.RegistrationTime
-	s.req.Nil(err)
-	s.req.Equal(p, testParticipant)
-}
-
-func (s *subscribeTestSuite) TestSubscirbeAlredyRegistered() {
-	_, err := s.participants.Store(mathbattle.Participant{
-		ID:         "",
-		TelegramID: s.chatID,
-		Name:       "Jack",
-		Grade:      7,
-	})
-
-	s.req.Nil(err)
-
-	sendTextExpectTextSequence(s.req, &s.handler, mathbattle.NewTelegramUserContext(s.chatID), []reqRespTextSequence{
-		{"", s.replier.AlreadyRegistered(), -1},
-	})
+	s.Require().Nil(err)
+	s.Require().Equal(p, testParticipant)
 }
 
 func TestSubscribeHandler(t *testing.T) {
-	suite.Run(t, &subscribeTestSuite{})
+	suite.Run(t, &subscribeNoRoundTs{})
 }

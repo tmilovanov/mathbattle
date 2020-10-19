@@ -17,8 +17,8 @@ import (
 type submitSolutionTestSuite struct {
 	suite.Suite
 
-	replier        mreplier.Replier
 	handler        handlers.SubmitSolution
+	replier        mreplier.Replier
 	chatID         int64
 	curRound       mathbattle.Round
 	curParticipant mathbattle.Participant

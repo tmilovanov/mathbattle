@@ -6,6 +6,7 @@ type Problem struct {
 	ID        string
 	MinGrade  int
 	MaxGrade  int
+	Sha256sum string
 	Extension string
 	Content   []byte
 }
