@@ -9,6 +9,7 @@ import (
 	mathbattle "mathbattle/models"
 	solutiondist "mathbattle/solution_distributor"
 
+	tgbotapi "gopkg.in/telegram-bot-api.v4"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -47,6 +48,15 @@ func createCommands(storage mathbattle.Storage, replier mreplier.Replier, postma
 			Participants: storage.Participants,
 			Rounds:       storage.Rounds,
 		},
+		&handlers.GetProblems{
+			Handler: handlers.Handler{
+				Name:        replier.CmdGetProblemsName(),
+				Description: replier.CmdGetProblemsDesc(),
+			},
+			Participants: storage.Participants,
+			Rounds:       storage.Rounds,
+			Problems:     storage.Problems,
+		},
 		&handlers.SubmitSolution{
 			Handler: handlers.Handler{
 				Name:        replier.CmdSubmitSolutionName(),
@@ -84,7 +94,15 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 		Synchronous: true,
 		//Verbose:     true,
 	})
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 
+	b2, err := tgbotapi.NewBotAPI(token)
+	if err != nil {
+		log.Fatal(err)
+	}
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -129,7 +147,16 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 		}
 		if len(response) != 0 {
 			for _, item := range response {
-				b.Send(m.Sender, item.Text, item.Keyboard)
+				if len(item.Img.Content) > 0 {
+					// message with photo
+					msg := tgbotapi.NewPhotoUpload(ctx.User.ChatID, tgbotapi.FileBytes{Name: "", Bytes: item.Img.Content})
+					msg.Caption = item.Text
+					// msg.ReplyMarkup = item.Keyboard
+					b2.Send(msg)
+				} else {
+					// text message only
+					b.Send(m.Sender, item.Text, item.Keyboard)
+				}
 			}
 
 			if newStep == -1 && err == nil { // Command finished

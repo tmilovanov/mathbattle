@@ -22,53 +22,28 @@ func commandStartRound(storage mathbattle.Storage, telegramToken string, replier
 		log.Fatal(err)
 	}
 
-	problems, err := storage.Problems.GetAll()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	participants, err := storage.Participants.GetAll()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	pastRounds, err := storage.Rounds.GetAll()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	problemDistributor := problemdist.RandomDistributor{}
-	distribution, err := problemDistributor.GetForAll(participants, problems, pastRounds, problemCount)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	problemDistributor := problemdist.NewSimpleDistributor(storage.Problems, 3)
 	duration, _ := time.ParseDuration("48h")
 	round := mathbattle.NewRound(duration)
-	round.ProblemDistribution = distribution
-	round, err = storage.Rounds.Store(round)
-	if err != nil {
-		log.Fatalf("Failed to save round: %v", err)
-	}
 
-	for participantID, problemsIDs := range round.ProblemDistribution {
-		log.Printf("%s - %v", participantID, problemsIDs)
-
-		participant, err := storage.Participants.GetByID(participantID)
+	for _, participant := range participants {
+		participantProblems, err := problemDistributor.GetForParticipant(participant)
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		log.Printf("%s - %v", participant.ID, mathbattle.GetProblemIDs(participantProblems))
 
 		if _, err = bot.Send(tgbotapi.NewMessage(participant.TelegramID, replier.ProblemsPostBefore())); err != nil {
 			log.Fatalf("Failed to send problem to participant: %v", err)
 		}
 
-		for i, problemID := range problemsIDs {
-			problem, err := storage.Problems.GetByID(problemID)
-			if err != nil {
-				log.Fatal(err)
-			}
-
+		for i, problem := range participantProblems {
 			msg := tgbotapi.NewPhotoUpload(participant.TelegramID, tgbotapi.FileBytes{Name: "", Bytes: problem.Content})
 			msg.Caption = fmt.Sprintf("%d", i+1)
 			if _, err := bot.Send(msg); err != nil {
@@ -79,5 +54,13 @@ func commandStartRound(storage mathbattle.Storage, telegramToken string, replier
 		if _, err = bot.Send(tgbotapi.NewMessage(participant.TelegramID, replier.ProblemsPostAfter())); err != nil {
 			log.Fatalf("Failed to send problem to participant: %v", err)
 		}
+
+		round.ProblemDistribution[participant.ID] = mathbattle.GetProblemIDs(participantProblems)
 	}
+
+	round, err = storage.Rounds.Store(round)
+	if err != nil {
+		log.Fatalf("Failed to save round: %v", err)
+	}
+
 }

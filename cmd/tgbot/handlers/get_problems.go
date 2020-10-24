@@ -75,7 +75,7 @@ func (h *GetProblems) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) 
 			Extension: problem.Extension,
 			Content:   problem.Content,
 		})
-		msg.Text = fmt.Sprint(i)
+		msg.Text = fmt.Sprint(i + 1)
 
 		result = append(result, msg)
 	}

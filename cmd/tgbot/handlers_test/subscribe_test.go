@@ -13,8 +13,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// Subscribe is done when there is no round running
-type subscribeNoRoundTs struct {
+type subscribeTs struct {
 	suite.Suite
 
 	handler      handlers.Subscribe
@@ -23,7 +22,7 @@ type subscribeNoRoundTs struct {
 	chatID       int64
 }
 
-func (s *subscribeNoRoundTs) SetupTest() {
+func (s *subscribeTs) SetupTest() {
 	s.replier = replier.RussianReplier{}
 	participants, err := sqlite.NewParticipantRepositoryTemp(getTestDbName())
 	s.Require().Nil(err)
@@ -34,7 +33,7 @@ func (s *subscribeNoRoundTs) SetupTest() {
 	}
 }
 
-func (s *subscribeNoRoundTs) TestCorrectSubscribe() {
+func (s *subscribeTs) TestCorrectSubscribe() {
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
 	testParticipant := mathbattle.Participant{
 		TelegramID: s.chatID,
@@ -56,7 +55,7 @@ func (s *subscribeNoRoundTs) TestCorrectSubscribe() {
 	s.Require().Equal(p, testParticipant)
 }
 
-func (s *subscribeNoRoundTs) TestIncorrectName() {
+func (s *subscribeTs) TestIncorrectName() {
 	sendTextExpectTextSequence(s.Require(), &s.handler, mathbattle.NewTelegramUserContext(s.chatID), []reqRespTextSequence{
 		{"", s.replier.RegisterNameExpect(), 1},
 		{"123455~!!", s.replier.RegisterNameWrong(), 1},
@@ -64,7 +63,7 @@ func (s *subscribeNoRoundTs) TestIncorrectName() {
 	})
 }
 
-func (s *subscribeNoRoundTs) TestIncorrectGrade() {
+func (s *subscribeTs) TestIncorrectGrade() {
 	sendTextExpectTextSequence(s.Require(), &s.handler, mathbattle.NewTelegramUserContext(s.chatID), []reqRespTextSequence{
 		{"", s.replier.RegisterNameExpect(), 1},
 		{"Jack", s.replier.RegisterGradeExpect(), 2},
@@ -74,7 +73,7 @@ func (s *subscribeNoRoundTs) TestIncorrectGrade() {
 	})
 }
 
-func (s *subscribeNoRoundTs) TestIncorrectThenCorrect() {
+func (s *subscribeTs) TestIncorrectThenCorrect() {
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
 	testParticipant := mathbattle.Participant{
 		TelegramID: s.chatID,
@@ -99,5 +98,5 @@ func (s *subscribeNoRoundTs) TestIncorrectThenCorrect() {
 }
 
 func TestSubscribeHandler(t *testing.T) {
-	suite.Run(t, &subscribeNoRoundTs{})
+	suite.Run(t, &subscribeTs{})
 }

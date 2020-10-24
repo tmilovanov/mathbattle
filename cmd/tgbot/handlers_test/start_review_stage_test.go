@@ -60,11 +60,9 @@ func (s *startReviewStageTs) SetupTest() {
 		Postman:             newMockPostman(),
 	}
 
-	distr := &problemdistributor.SimpleDistributor{
-		Problems: &problems,
-	}
+	distributor := problemdistributor.NewSimpleDistributor(&problems, 3)
 	_, err = mocks.GenReviewPendingRound(&rounds, &participants, &solutions, &problems,
-		distr, 10, 3, []int{1, 2, 6})
+		&distributor, 10, 3, []int{1, 2, 6})
 	s.Require().Nil(err)
 }
 

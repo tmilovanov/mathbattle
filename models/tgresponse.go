@@ -20,6 +20,9 @@ func NewResp(messageText string) TelegramResponse {
 func NewRespImage(image Image) TelegramResponse {
 	return TelegramResponse{
 		Img: image,
+		Keyboard: &tb.ReplyMarkup{
+			ReplyKeyboardRemove: true,
+		},
 	}
 }
 

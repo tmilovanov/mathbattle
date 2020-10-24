@@ -20,6 +20,7 @@ type ParticipantRepository interface {
 	GetByID(ID string) (Participant, error)
 	GetByTelegramID(TelegramID int64) (Participant, error)
 	GetAll() ([]Participant, error)
+	Update(participant Participant) error
 	Delete(ID string) error
 }
 

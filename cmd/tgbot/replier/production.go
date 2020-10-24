@@ -65,6 +65,14 @@ func (r RussianReplier) CmdUnsubscribeDesc() string {
 	return "Отписаться от рассылки задач"
 }
 
+func (r RussianReplier) CmdGetProblemsName() string {
+	return "/get_problems"
+}
+
+func (r RussianReplier) CmdGetProblemsDesc() string {
+	return "Показать задачи"
+}
+
 func (r RussianReplier) CmdSubmitSolutionName() string {
 	return "/submit_solution"
 }

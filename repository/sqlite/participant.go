@@ -108,6 +108,13 @@ func (r *ParticipantRepository) GetAll() ([]mathbattle.Participant, error) {
 	return result, nil
 }
 
+func (r *ParticipantRepository) Update(participant mathbattle.Participant) error {
+	_, err := r.db.Exec("UPDATE participants SET tg_chat_id = ?, name = ?, grade = ?, school = ?, register_time = ? WHERE id = ?",
+		participant.TelegramID, participant.Name, participant.Grade, participant.School, participant.RegistrationTime,
+		participant.ID)
+	return err
+}
+
 func (r *ParticipantRepository) Delete(ID string) error {
 	intID, err := strconv.Atoi(ID)
 	if err != nil {

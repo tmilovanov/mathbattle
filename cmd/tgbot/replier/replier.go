@@ -16,6 +16,8 @@ type Replier interface {
 	CmdSubscribeDesc() string
 	CmdUnsubscribeName() string
 	CmdUnsubscribeDesc() string
+	CmdGetProblemsName() string
+	CmdGetProblemsDesc() string
 	CmdSubmitSolutionName() string
 	CmdSubmitSolutionDesc() string
 	CmdStartReviewStageName() string
