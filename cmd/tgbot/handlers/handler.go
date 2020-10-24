@@ -9,7 +9,6 @@ type Handler struct {
 	Description string
 }
 
-func noResponse() mathbattle.TelegramResponse {
-	var result mathbattle.TelegramResponse
-	return result
+func noResponse() []mathbattle.TelegramResponse {
+	return []mathbattle.TelegramResponse{}
 }

@@ -33,7 +33,7 @@ func (h *Start) IsAdminOnly() bool {
 	return false
 }
 
-func (h *Start) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
+func (h *Start) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, []mathbattle.TelegramResponse, error) {
 	msg := h.Replier.GetStartMessage()
-	return -1, mathbattle.NewResp(msg), nil
+	return -1, mathbattle.OneTextResp(msg), nil
 }

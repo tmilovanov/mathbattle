@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	mreplier "mathbattle/cmd/tgbot/replier"
+	"fmt"
 	mathbattle "mathbattle/models"
 
 	tb "gopkg.in/tucnak/telebot.v2"
@@ -10,7 +10,6 @@ import (
 type GetProblems struct {
 	Handler
 
-	Replier      mreplier.Replier
 	Participants mathbattle.ParticipantRepository
 	Rounds       mathbattle.RoundRepository
 	Problems     mathbattle.ProblemRepository
@@ -54,6 +53,32 @@ func (h *GetProblems) IsAdminOnly() bool {
 	return false
 }
 
-func (h *GetProblems) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
-	return -1, noResponse(), nil
+func (h *GetProblems) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, []mathbattle.TelegramResponse, error) {
+	participant, err := h.Participants.GetByTelegramID(ctx.User.ChatID)
+	if err != nil {
+		return -1, noResponse(), err
+	}
+
+	curRound, err := h.Rounds.GetSolveRunning()
+	if err != nil {
+		return -1, noResponse(), err
+	}
+
+	result := []mathbattle.TelegramResponse{}
+	for i, problemID := range curRound.ProblemDistribution[participant.ID] {
+		problem, err := h.Problems.GetByID(problemID)
+		if err != nil {
+			return -1, noResponse(), err
+		}
+
+		msg := mathbattle.NewRespImage(mathbattle.Image{
+			Extension: problem.Extension,
+			Content:   problem.Content,
+		})
+		msg.Text = fmt.Sprint(i)
+
+		result = append(result, msg)
+	}
+
+	return -1, result, nil
 }

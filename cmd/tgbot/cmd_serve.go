@@ -127,8 +127,11 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 			b.Send(m.Sender, replier.InternalError())
 			log.Printf("Failed to handle command: %s : %v", handler.Name(), err)
 		}
-		if response.Text != "" {
-			b.Send(m.Sender, response.Text, response.Keyboard)
+		if len(response) != 0 {
+			for _, item := range response {
+				b.Send(m.Sender, item.Text, item.Keyboard)
+			}
+
 			if newStep == -1 && err == nil { // Command finished
 				b.Send(m.Sender, replier.GetHelpMessage(mathbattle.FilterCommandsToShow(allCommands, ctx)))
 			}

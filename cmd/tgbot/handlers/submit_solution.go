@@ -5,7 +5,6 @@ import (
 	mreplier "mathbattle/cmd/tgbot/replier"
 	mathbattle "mathbattle/models"
 	"path/filepath"
-	"strconv"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -56,13 +55,13 @@ func (h *SubmitSolution) IsAdminOnly() bool {
 	return false
 }
 
-func (h *SubmitSolution) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
+func (h *SubmitSolution) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, []mathbattle.TelegramResponse, error) {
 	r, err := h.Rounds.GetSolveRunning()
 	if err != nil {
 		return -1, noResponse(), err
 	}
 
-	p, err := h.Participants.GetByTelegramID(strconv.FormatInt(ctx.User.ChatID, 10))
+	p, err := h.Participants.GetByTelegramID(ctx.User.ChatID)
 	if err != nil {
 		return -1, noResponse(), err
 	}
@@ -82,20 +81,20 @@ func (h *SubmitSolution) Handle(ctx mathbattle.TelegramUserContext, m *tb.Messag
 }
 
 func (h *SubmitSolution) stepStart(ctx mathbattle.TelegramUserContext, m *tb.Message,
-	round mathbattle.Round, participant mathbattle.Participant) (int, mathbattle.TelegramResponse, error) {
+	round mathbattle.Round, participant mathbattle.Participant) (int, []mathbattle.TelegramResponse, error) {
 
 	problemNumbers := mathbattle.ProblemNumbers(round, participant)
-	return 1, mathbattle.NewRespWithKeyboard(h.Replier.SolutionExpectProblemNumber(), problemNumbers...), nil
+	return 1, mathbattle.OneWithKb(h.Replier.SolutionExpectProblemNumber(), problemNumbers...), nil
 }
 
 func (h *SubmitSolution) stepExpectProblemNumber(ctx mathbattle.TelegramUserContext, m *tb.Message,
-	round mathbattle.Round, participant mathbattle.Participant) (int, mathbattle.TelegramResponse, error) {
+	round mathbattle.Round, participant mathbattle.Participant) (int, []mathbattle.TelegramResponse, error) {
 
 	problemIDs := round.ProblemDistribution[participant.ID]
 	problemNumbers := mathbattle.ProblemNumbers(round, participant)
 	problemNumber, isOk := mathbattle.ValidateProblemNumber(m.Text, problemIDs)
 	if !isOk {
-		return 1, mathbattle.NewRespWithKeyboard(h.Replier.SolutionWrongProblemNumber(), problemNumbers...), nil
+		return 1, mathbattle.OneWithKb(h.Replier.SolutionWrongProblemNumber(), problemNumbers...), nil
 	}
 
 	problemID := round.ProblemDistribution[participant.ID][problemNumber]
@@ -107,14 +106,14 @@ func (h *SubmitSolution) stepExpectProblemNumber(ctx mathbattle.TelegramUserCont
 	}
 
 	if err == mathbattle.ErrNotFound || len(currentSolution.Parts) == 0 {
-		return 3, mathbattle.NewRespWithKeyboard(h.Replier.SolutionExpectPart(), h.Replier.SolutionFinishUploading()), nil
+		return 3, mathbattle.OneWithKb(h.Replier.SolutionExpectPart(), h.Replier.SolutionFinishUploading()), nil
 	}
 
-	return 2, mathbattle.NewRespWithKeyboard(h.Replier.SolutionIsRewriteOld(), h.Replier.Yes(), h.Replier.No()), nil
+	return 2, mathbattle.OneWithKb(h.Replier.SolutionIsRewriteOld(), h.Replier.Yes(), h.Replier.No()), nil
 }
 
 func (h *SubmitSolution) stepAlreadySubmitted(ctx mathbattle.TelegramUserContext, m *tb.Message,
-	round mathbattle.Round, participant mathbattle.Participant) (int, mathbattle.TelegramResponse, error) {
+	round mathbattle.Round, participant mathbattle.Participant) (int, []mathbattle.TelegramResponse, error) {
 
 	if m.Text == h.Replier.Yes() {
 		problemID := ctx.Variables["problem_id"].AsString()
@@ -127,26 +126,26 @@ func (h *SubmitSolution) stepAlreadySubmitted(ctx mathbattle.TelegramUserContext
 			return -1, noResponse(), err
 		}
 
-		return 3, mathbattle.NewRespWithKeyboard(h.Replier.SolutionExpectPart(), h.Replier.SolutionFinishUploading()), nil
+		return 3, mathbattle.OneWithKb(h.Replier.SolutionExpectPart(), h.Replier.SolutionFinishUploading()), nil
 	} else {
-		return -1, mathbattle.NewResp(h.Replier.SolutionDeclineRewriteOld()), nil
+		return -1, mathbattle.OneTextResp(h.Replier.SolutionDeclineRewriteOld()), nil
 	}
 }
 
 func (h *SubmitSolution) stepAcceptSolutionPart(ctx mathbattle.TelegramUserContext, m *tb.Message,
-	round mathbattle.Round, participant mathbattle.Participant) (int, mathbattle.TelegramResponse, error) {
+	round mathbattle.Round, participant mathbattle.Participant) (int, []mathbattle.TelegramResponse, error) {
 
 	if m.Text == h.Replier.SolutionFinishUploading() {
 		totalUploaded, _ := ctx.Variables["total_uploaded"].AsInt()
 		if totalUploaded == 0 {
-			return -1, mathbattle.NewResp(h.Replier.SolutionEmpty()), nil
+			return -1, mathbattle.OneTextResp(h.Replier.SolutionEmpty()), nil
 		} else {
-			return -1, mathbattle.NewResp(h.Replier.SolutionUploadSuccess(totalUploaded)), nil
+			return -1, mathbattle.OneTextResp(h.Replier.SolutionUploadSuccess(totalUploaded)), nil
 		}
 	}
 
 	if m.Photo == nil && m.Document == nil {
-		return 3, mathbattle.NewRespWithKeyboard(h.Replier.SolutionWrongFormat(), h.Replier.SolutionFinishUploading()), nil
+		return 3, mathbattle.OneWithKb(h.Replier.SolutionWrongFormat(), h.Replier.SolutionFinishUploading()), nil
 	}
 
 	var uploadedFile tb.File
@@ -184,6 +183,6 @@ func (h *SubmitSolution) stepAcceptSolutionPart(ctx mathbattle.TelegramUserConte
 	totalUploaded++
 	ctx.Variables["total_uploaded"] = mathbattle.NewContextVariableInt(totalUploaded)
 
-	return 3, mathbattle.NewRespWithKeyboard(h.Replier.SolutionPartUploaded(totalUploaded),
+	return 3, mathbattle.OneWithKb(h.Replier.SolutionPartUploaded(totalUploaded),
 		h.Replier.SolutionFinishUploading()), nil
 }

@@ -34,6 +34,6 @@ func (h *Stat) IsAdminOnly() bool {
 	return true
 }
 
-func (h *Stat) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
+func (h *Stat) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, []mathbattle.TelegramResponse, error) {
 	return -1, noResponse(), nil
 }

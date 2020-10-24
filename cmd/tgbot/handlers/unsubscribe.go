@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"strconv"
-
 	mreplier "mathbattle/cmd/tgbot/replier"
 	mathbattle "mathbattle/models"
 
@@ -55,22 +53,20 @@ func (h *Unsubscribe) IsAdminOnly() bool {
 	return false
 }
 
-func (h *Unsubscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
-	var noRepsonse mathbattle.TelegramResponse
-
-	participant, err := h.Participants.GetByTelegramID(strconv.FormatInt(ctx.User.ChatID, 10))
+func (h *Unsubscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, []mathbattle.TelegramResponse, error) {
+	participant, err := h.Participants.GetByTelegramID(ctx.User.ChatID)
 	if err != nil && err != mathbattle.ErrNotFound {
-		return -1, noRepsonse, err
+		return -1, noResponse(), err
 	}
 
 	if err == mathbattle.ErrNotFound {
-		return -1, mathbattle.NewResp(h.Replier.NotSubscribed()), nil
+		return -1, mathbattle.OneTextResp(h.Replier.NotSubscribed()), nil
 	}
 
 	err = h.Participants.Delete(participant.ID)
 	if err != nil {
-		return -1, noRepsonse, err
+		return -1, noResponse(), err
 	}
 
-	return -1, mathbattle.NewResp(h.Replier.UnsubscribeSuccess()), nil
+	return -1, mathbattle.OneTextResp(h.Replier.UnsubscribeSuccess()), nil
 }

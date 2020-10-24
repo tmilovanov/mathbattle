@@ -42,7 +42,7 @@ func sendAndTest(req *require.Assertions, handler mathbattle.TelegramCommandHand
 	result := ctx
 	step, resp, err := handler.Handle(ctx, msg)
 	req.Nil(err)
-	req.Equal(expect, resp)
+	req.Equal(expect, resp[0])
 	req.Equal(expectedStep, step)
 	result.CurrentStep = step
 

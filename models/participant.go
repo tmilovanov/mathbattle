@@ -18,7 +18,7 @@ type Participant struct {
 type ParticipantRepository interface {
 	Store(participant Participant) (Participant, error)
 	GetByID(ID string) (Participant, error)
-	GetByTelegramID(TelegramID string) (Participant, error)
+	GetByTelegramID(TelegramID int64) (Participant, error)
 	GetAll() ([]Participant, error)
 	Delete(ID string) error
 }
@@ -64,7 +64,7 @@ func ValidateUserGrade(userInput string) (int, bool) {
 }
 
 func IsRegistered(participantRepository ParticipantRepository, telegramID int64) (bool, error) {
-	_, err := participantRepository.GetByTelegramID(strconv.FormatInt(telegramID, 10))
+	_, err := participantRepository.GetByTelegramID(telegramID)
 	if err != nil {
 		if err == ErrNotFound {
 			return false, nil

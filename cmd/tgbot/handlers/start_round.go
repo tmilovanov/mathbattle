@@ -32,6 +32,6 @@ func (h *StartRound) IsAdminOnly() bool {
 	return true
 }
 
-func (h *StartRound) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
+func (h *StartRound) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, []mathbattle.TelegramResponse, error) {
 	return -1, noResponse(), nil
 }

@@ -72,7 +72,7 @@ func (s *startReviewStageTs) TestMain() {
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
 	msg := textReq("")
 	_, resp, _ := s.handler.Handle(ctx, &msg)
-	fmt.Printf("RESPONSE: %s", resp.Text)
+	fmt.Printf("RESPONSE: %s", resp[0].Text)
 }
 
 func TestStartReviewStage(t *testing.T) {

@@ -16,7 +16,7 @@ type TelegramCommandHandler interface {
 	IsShowInHelp(ctx TelegramUserContext) bool
 	IsCommandSuitable(ctx TelegramUserContext) (bool, error)
 	IsAdminOnly() bool
-	Handle(ctx TelegramUserContext, m *tb.Message) (int, TelegramResponse, error)
+	Handle(ctx TelegramUserContext, m *tb.Message) (int, []TelegramResponse, error)
 }
 
 func FilterCommandsToShow(allCommands []TelegramCommandHandler, ctx TelegramUserContext) []TelegramCommandHandler {

@@ -41,10 +41,10 @@ func (h *Subscribe) IsAdminOnly() bool {
 	return false
 }
 
-func (h *Subscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
+func (h *Subscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, []mathbattle.TelegramResponse, error) {
 	switch ctx.CurrentStep {
 	case 0:
-		return 1, mathbattle.NewResp(h.Replier.RegisterNameExpect()), nil
+		return 1, mathbattle.OneTextResp(h.Replier.RegisterNameExpect()), nil
 	case 1:
 		return h.stepAcceptName(ctx, m)
 	case 2:
@@ -54,21 +54,21 @@ func (h *Subscribe) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (i
 	}
 }
 
-func (h *Subscribe) stepAcceptName(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
+func (h *Subscribe) stepAcceptName(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, []mathbattle.TelegramResponse, error) {
 	name, ok := mathbattle.ValidateUserName(m.Text)
 	if !ok {
-		return 1, mathbattle.NewResp(h.Replier.RegisterNameWrong()), nil
+		return 1, mathbattle.OneTextResp(h.Replier.RegisterNameWrong()), nil
 	}
 
 	ctx.Variables["name"] = mathbattle.NewContextVariableStr(name)
 
-	return 2, mathbattle.NewResp(h.Replier.RegisterGradeExpect()), nil
+	return 2, mathbattle.OneTextResp(h.Replier.RegisterGradeExpect()), nil
 }
 
-func (h *Subscribe) stepAcceptGradeAndFinish(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
+func (h *Subscribe) stepAcceptGradeAndFinish(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, []mathbattle.TelegramResponse, error) {
 	grade, ok := mathbattle.ValidateUserGrade(m.Text)
 	if !ok {
-		return 2, mathbattle.NewResp(h.Replier.RegisterGradeWrong()), nil
+		return 2, mathbattle.OneTextResp(h.Replier.RegisterGradeWrong()), nil
 	}
 
 	_, err := h.Participants.Store(mathbattle.Participant{
@@ -82,5 +82,5 @@ func (h *Subscribe) stepAcceptGradeAndFinish(ctx mathbattle.TelegramUserContext,
 		return -1, noResponse(), err
 	}
 
-	return -1, mathbattle.NewResp(h.Replier.RegisterSuccess()), nil
+	return -1, mathbattle.OneTextResp(h.Replier.RegisterSuccess()), nil
 }

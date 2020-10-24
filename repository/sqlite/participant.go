@@ -71,7 +71,7 @@ func (r *ParticipantRepository) GetByID(ID string) (mathbattle.Participant, erro
 	return result, nil
 }
 
-func (r *ParticipantRepository) GetByTelegramID(telegramID string) (mathbattle.Participant, error) {
+func (r *ParticipantRepository) GetByTelegramID(telegramID int64) (mathbattle.Participant, error) {
 	result := mathbattle.Participant{}
 
 	row := r.db.QueryRow("SELECT id, tg_chat_id, name, school, grade, register_time FROM participants WHERE tg_chat_id = ?", telegramID)

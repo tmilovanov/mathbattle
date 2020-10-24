@@ -49,7 +49,7 @@ func (s *subscribeNoRoundTs) TestCorrectSubscribe() {
 		{strconv.Itoa(testParticipant.Grade), s.replier.RegisterSuccess(), -1},
 	})
 
-	p, err := s.participants.GetByTelegramID(strconv.FormatInt(s.chatID, 10))
+	p, err := s.participants.GetByTelegramID(s.chatID)
 	testParticipant.ID = p.ID
 	testParticipant.RegistrationTime = p.RegistrationTime
 	s.Require().Nil(err)
@@ -91,7 +91,7 @@ func (s *subscribeNoRoundTs) TestIncorrectThenCorrect() {
 		{strconv.Itoa(testParticipant.Grade), s.replier.RegisterSuccess(), -1},
 	})
 
-	p, err := s.participants.GetByTelegramID(strconv.FormatInt(s.chatID, 10))
+	p, err := s.participants.GetByTelegramID(s.chatID)
 	testParticipant.ID = p.ID
 	testParticipant.RegistrationTime = p.RegistrationTime
 	s.Require().Nil(err)

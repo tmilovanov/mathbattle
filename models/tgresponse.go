@@ -50,3 +50,15 @@ func NewResps(messageTexts ...string) []TelegramResponse {
 
 	return result
 }
+
+func OneTextResp(messageText string) []TelegramResponse {
+	return []TelegramResponse{
+		NewResp(messageText),
+	}
+}
+
+func OneWithKb(messageText string, buttonTexts ...string) []TelegramResponse {
+	return []TelegramResponse{
+		NewRespWithKeyboard(messageText, buttonTexts...),
+	}
+}

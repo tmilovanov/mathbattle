@@ -47,7 +47,7 @@ func (h *StartReviewStage) IsAdminOnly() bool {
 	return true
 }
 
-func (h *StartReviewStage) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
+func (h *StartReviewStage) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, []mathbattle.TelegramResponse, error) {
 	switch ctx.CurrentStep {
 	case 0:
 		return h.stepConfirmDistribution(ctx, m)
@@ -58,7 +58,7 @@ func (h *StartReviewStage) Handle(ctx mathbattle.TelegramUserContext, m *tb.Mess
 	}
 }
 
-func (h *StartReviewStage) stepConfirmDistribution(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
+func (h *StartReviewStage) stepConfirmDistribution(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, []mathbattle.TelegramResponse, error) {
 	round, err := h.Rounds.GetReviewPending()
 	if err != nil {
 		return -1, noResponse(), err
@@ -75,12 +75,12 @@ func (h *StartReviewStage) stepConfirmDistribution(ctx mathbattle.TelegramUserCo
 		return -1, noResponse(), err
 	}
 
-	return 1, mathbattle.NewRespWithKeyboard(distributionDesc, h.Replier.Yes(), h.Replier.No()), nil
+	return 1, mathbattle.OneWithKb(distributionDesc, h.Replier.Yes(), h.Replier.No()), nil
 }
 
-func (h *StartReviewStage) stepDistribute(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, mathbattle.TelegramResponse, error) {
+func (h *StartReviewStage) stepDistribute(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, []mathbattle.TelegramResponse, error) {
 	if m.Text != h.Replier.Yes() {
-		return -1, mathbattle.NewResp(h.Replier.Cancel()), nil
+		return -1, mathbattle.OneTextResp(h.Replier.Cancel()), nil
 	}
 
 	round, err := h.Rounds.GetReviewPending()
