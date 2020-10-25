@@ -37,7 +37,7 @@ func ReviewDistrubitonToString(participants mathbattle.ParticipantRepository, so
 			if err != nil {
 				return "", err
 			}
-			result += fmt.Sprintf("'%s'(%s) -> '%s'\n", p.Name, solution.ProblemID, targetParticipant.Name)
+			result += fmt.Sprintf("'%s'(Problem: %s) -> '%s'\n", p.Name, solution.ProblemID, targetParticipant.Name)
 		}
 	}
 

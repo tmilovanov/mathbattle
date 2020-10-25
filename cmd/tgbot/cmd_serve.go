@@ -127,6 +127,11 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 			return
 		}
 
+		if !ctx.User.IsAdmin && handler.IsAdminOnly() {
+			b.Send(m.Sender, replier.GetHelpMessage(mathbattle.FilterCommandsToShow(allCommands, ctx)))
+			return
+		}
+
 		if err != nil {
 			b.Send(m.Sender, replier.InternalError())
 			log.Printf("Failed to get user context: %v", err)

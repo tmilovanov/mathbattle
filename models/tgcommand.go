@@ -23,6 +23,10 @@ func FilterCommandsToShow(allCommands []TelegramCommandHandler, ctx TelegramUser
 	result := []TelegramCommandHandler{}
 
 	for _, cmd := range allCommands {
+		if !ctx.User.IsAdmin && cmd.IsAdminOnly() {
+			continue
+		}
+
 		if cmd.IsShowInHelp(ctx) {
 			result = append(result, cmd)
 		}
