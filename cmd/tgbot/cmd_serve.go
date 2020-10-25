@@ -22,7 +22,8 @@ func (pm *TelegramPostman) Post(chatID int64, m *tb.Message) error {
 	return err
 }
 
-func createCommands(storage mathbattle.Storage, replier mreplier.Replier, postman mathbattle.TelegramPostman) []mathbattle.TelegramCommandHandler {
+func createCommands(storage mathbattle.Storage, replier mreplier.Replier,
+	postman mathbattle.TelegramPostman, problemDistributor mathbattle.ProblemDistributor) []mathbattle.TelegramCommandHandler {
 	solutionDistributor := solutiondist.SolutionDistributor{}
 
 	commandStart := &handlers.Start{
@@ -53,9 +54,10 @@ func createCommands(storage mathbattle.Storage, replier mreplier.Replier, postma
 				Name:        replier.CmdGetProblemsName(),
 				Description: replier.CmdGetProblemsDesc(),
 			},
-			Participants: storage.Participants,
-			Rounds:       storage.Rounds,
-			Problems:     storage.Problems,
+			Participants:       storage.Participants,
+			Rounds:             storage.Rounds,
+			Problems:           storage.Problems,
+			ProblemDistributor: problemDistributor,
 		},
 		&handlers.SubmitSolution{
 			Handler: handlers.Handler{
@@ -87,7 +89,8 @@ func createCommands(storage mathbattle.Storage, replier mreplier.Replier, postma
 	return result
 }
 
-func commandServe(storage mathbattle.Storage, token string, ctxRepository mathbattle.TelegramContextRepository, replier mreplier.Replier) {
+func commandServe(storage mathbattle.Storage, token string, ctxRepository mathbattle.TelegramContextRepository,
+	replier mreplier.Replier, problemDistributor mathbattle.ProblemDistributor) {
 	b, err := tb.NewBot(tb.Settings{
 		Token:       token,
 		Poller:      &tb.LongPoller{Timeout: 10 * time.Second},
@@ -108,7 +111,7 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 		return
 	}
 
-	allCommands := createCommands(storage, replier, &TelegramPostman{bot: b})
+	allCommands := createCommands(storage, replier, &TelegramPostman{bot: b}, problemDistributor)
 
 	genericHandler := func(handler mathbattle.TelegramCommandHandler, m *tb.Message, startType mathbattle.CommandStep) {
 		ctx, err := ctxRepository.GetByTelegramID(int64(m.Sender.ID))

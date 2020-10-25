@@ -10,9 +10,10 @@ import (
 type GetProblems struct {
 	Handler
 
-	Participants mathbattle.ParticipantRepository
-	Rounds       mathbattle.RoundRepository
-	Problems     mathbattle.ProblemRepository
+	Participants       mathbattle.ParticipantRepository
+	Rounds             mathbattle.RoundRepository
+	Problems           mathbattle.ProblemRepository
+	ProblemDistributor mathbattle.ProblemDistributor
 }
 
 func (h *GetProblems) Name() string {
@@ -64,8 +65,27 @@ func (h *GetProblems) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) 
 		return -1, noResponse(), err
 	}
 
+	var problemIDs []string
+	participantProblems, areExist := curRound.ProblemDistribution[participant.ID]
+	if !areExist {
+		// New participant
+		problems, err := h.ProblemDistributor.GetForParticipant(participant)
+		if err != nil {
+			return -1, noResponse(), err
+		}
+		problemIDs = mathbattle.GetProblemIDs(problems)
+		curRound.ProblemDistribution[participant.ID] = problemIDs
+		err = h.Rounds.Update(curRound)
+		if err != nil {
+			return -1, noResponse(), err
+		}
+	} else {
+		// Exisiting participant
+		problemIDs = participantProblems
+	}
+
 	result := []mathbattle.TelegramResponse{}
-	for i, problemID := range curRound.ProblemDistribution[participant.ID] {
+	for i, problemID := range problemIDs {
 		problem, err := h.Problems.GetByID(problemID)
 		if err != nil {
 			return -1, noResponse(), err

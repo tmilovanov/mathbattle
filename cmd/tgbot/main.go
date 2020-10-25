@@ -8,6 +8,7 @@ import (
 	mreplier "mathbattle/cmd/tgbot/replier"
 	"mathbattle/mocks"
 	mathbattle "mathbattle/models"
+	problemdist "mathbattle/problem_distributor"
 	problemdistributor "mathbattle/problem_distributor"
 	"mathbattle/repository/memory"
 	"mathbattle/repository/sqlite"
@@ -51,16 +52,18 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		commandServe(storage, cfg.Token, &userCtxRepository, mreplier.RussianReplier{})
+		problemDistributor := problemdist.NewSimpleDistributor(storage.Problems, 3)
+		commandServe(storage, cfg.Token, &userCtxRepository, mreplier.RussianReplier{}, &problemDistributor)
 	case "debug-run":
 		userCtxRepository, err := memory.NewTelegramContextRepository(&telegramUserRepository)
 		if err != nil {
 			log.Fatal(err)
 		}
 
+		problemDistributor := problemdist.NewSimpleDistributor(storage.Problems, 3)
 		mocks.GenReviewPendingRound(storage.Rounds, storage.Participants, storage.Solutions, storage.Problems,
 			&problemdistributor.SimpleDistributor{}, 10, 3, []int{1, 3, 6})
-		commandServe(storage, cfg.Token, &userCtxRepository, mreplier.RussianReplier{})
+		commandServe(storage, cfg.Token, &userCtxRepository, mreplier.RussianReplier{}, &problemDistributor)
 	}
 }
 
