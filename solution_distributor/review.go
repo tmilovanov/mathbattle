@@ -40,7 +40,9 @@ func (d *SolutionDistributor) Get(allRoundSolutions []mathbattle.Solution, revie
 		}
 
 		for solutionID, participantIDs := range MapSolutionsToParticipants(problemSolutions, finalReviewerCount) {
-			result.BetweenParticipants[solutionID] = participantIDs
+			for _, pID := range participantIDs {
+				result.BetweenParticipants[pID] = append(result.BetweenParticipants[pID], solutionID)
+			}
 		}
 	}
 

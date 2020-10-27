@@ -107,8 +107,8 @@ func (s *oneProblemToAll) TestLessThanNeedSolutions() {
 		},
 		mathbattle.ReviewDistribution{
 			BetweenParticipants: map[string][]string{
-				"s1": {"p2"},
-				"s2": {"p1"},
+				"p1": {"s2"},
+				"p2": {"s1"},
 			},
 			ToOrganizers: []mathbattle.Solution{},
 		})
@@ -122,9 +122,9 @@ func (s *oneProblemToAll) TestEnoughSolutions() {
 			{ID: "s3", ProblemID: "A", ParticipantID: "p3"},
 		}, mathbattle.ReviewDistribution{
 			BetweenParticipants: map[string][]string{
-				"s1": {"p2", "p3"},
-				"s2": {"p1", "p3"},
-				"s3": {"p2", "p1"},
+				"p1": {"s2", "s3"},
+				"p2": {"s1", "s3"},
+				"p3": {"s1", "s2"},
 			},
 			ToOrganizers: []mathbattle.Solution{},
 		})
@@ -137,10 +137,10 @@ func (s *oneProblemToAll) TestEnoughSolutions() {
 			{ID: "s4", ProblemID: "A", ParticipantID: "p4"},
 		}, mathbattle.ReviewDistribution{
 			BetweenParticipants: map[string][]string{
-				"s1": {"p2", "p3"},
-				"s2": {"p3", "p4"},
-				"s3": {"p4", "p1"},
-				"s4": {"p1", "p2"},
+				"p1": {"s3", "s4"},
+				"p2": {"s4", "s1"},
+				"p3": {"s1", "s2"},
+				"p4": {"s2", "s3"},
 			},
 			ToOrganizers: []mathbattle.Solution{},
 		})

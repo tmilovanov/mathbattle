@@ -24,16 +24,20 @@ type Replier interface {
 	CmdStartReviewStageDesc() string
 
 	InternalError() string
+
 	AlreadyRegistered() string
 	RegisterNameExpect() string
 	RegisterNameWrong() string
 	RegisterGradeExpect() string
 	RegisterGradeWrong() string
 	RegisterSuccess() string
+
 	NotSubscribed() string
 	UnsubscribeSuccess() string
+
 	ProblemsPostBefore() string
 	ProblemsPostAfter() string
+
 	SolutionUploadSuccess(totalUpload int) string
 	SolutionPartUploaded(partNumber int) string
 	SolutionExpectProblemNumber() string
@@ -45,5 +49,11 @@ type Replier interface {
 	SolutionFinishUploading() string
 	SolutionWrongFormat() string
 	SolutionEmpty() string
+
 	ReviewPost() string
+	ReviewExpectSolutionNumber() string
+	ReviewWrongSolutionNumber() string
+	ReviewIsRewriteOld() string
+	ReviewExpectContent() string
+	ReviewUploadSuccess() string
 }

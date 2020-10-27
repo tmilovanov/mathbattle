@@ -25,15 +25,16 @@ func GetProblemIDs(problems []Problem) []string {
 	return result
 }
 
-func ValidateProblemNumber(userInput string, problemIDs []string) (int, bool) {
-	problemNumber, err := strconv.Atoi(userInput)
+func ValidateIndex(userInput string, strings []string) (int, bool) {
+	index, err := strconv.Atoi(userInput)
 	if err != nil {
 		return -1, false
 	}
-	problemNumber = problemNumber - 1
-	if problemNumber < 0 || problemNumber >= len(problemIDs) {
+
+	index = index - 1
+	if index < 0 || index >= len(strings) {
 		return -1, false
 	}
 
-	return problemNumber, true
+	return index, true
 }

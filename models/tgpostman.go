@@ -1,7 +1,7 @@
 package models
 
-import tb "gopkg.in/tucnak/telebot.v2"
-
 type TelegramPostman interface {
-	Post(chatID int64, m *tb.Message) error
+	PostText(chatID int64, message string) error
+	PostPhoto(chatID int64, caption string, image Image) error
+	PostAlbum(chatID int64, caption string, images []Image) error
 }

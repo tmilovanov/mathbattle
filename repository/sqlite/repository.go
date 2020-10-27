@@ -94,6 +94,12 @@ func (r *sqliteRepository) CreateFirstTime() error {
 			problem_id INTEGER,
 			parts TEXT
 		)`,
+		`CREATE TABLE IF NOT EXISTS reviews (
+			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+			reviewer_id INTEGER,
+			solution_id INTEGER,
+			content TEXT
+		)`,
 	}
 
 	for _, createStmt := range tableCreators {

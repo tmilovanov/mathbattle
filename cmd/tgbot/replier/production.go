@@ -165,7 +165,7 @@ func (r RussianReplier) SolutionDeclineRewriteOld() string {
 }
 
 func (r RussianReplier) SolutionWrongProblemNumberFormat() string {
-	return "SolutionWrongProblemNumberFormat"
+	return "Неверный номер задачи."
 }
 
 func (r RussianReplier) SolutionWrongProblemNumber() string {
@@ -189,5 +189,28 @@ func (r RussianReplier) SolutionEmpty() string {
 }
 
 func (r RussianReplier) ReviewPost() string {
-	return "Это решение другого участника, в котором ты должен отыскать недочёты."
+	return "Это решения другого участника, в котором ты должен отыскать недочёты."
+}
+
+func (r RussianReplier) ReviewExpectSolutionNumber() string {
+	return "Введи номер решения, для которого ты хочешь отправить отзыв."
+}
+
+func (r RussianReplier) ReviewWrongSolutionNumber() string {
+	return "Неверный номер решения."
+}
+
+func (r RussianReplier) ReviewIsRewriteOld() string {
+	msg := "Для этой задачи ты уже отправлял отзыв. Новый отзыв перезапишет старый.\n"
+	msg += "\n"
+	msg += "Продолжить?"
+	return msg
+}
+
+func (r RussianReplier) ReviewExpectContent() string {
+	return "Отлично, теперь посылай отзыв текстовым сообщением."
+}
+
+func (r RussianReplier) ReviewUploadSuccess() string {
+	return "Отзыв записан."
 }

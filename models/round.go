@@ -43,7 +43,7 @@ func NewRound(solveDuration time.Duration) Round {
 type RoundDistribution map[string][]string
 
 type ReviewDistribution struct {
-	BetweenParticipants map[string][]string // mapping from solutionID to set of participantIDs
+	BetweenParticipants map[string][]string // mapping from participantID to list of solution IDs that he got
 	ToOrganizers        []Solution
 }
 
@@ -64,5 +64,30 @@ func ProblemNumbers(round Round, participant Participant) []string {
 	for i := 0; i < len(problemIDs); i++ {
 		result = append(result, strconv.Itoa(i+1))
 	}
+	return result
+}
+
+// Получить порядковые номера решений, которые были посланы участнику на ревью
+func SolutionNumbers(round Round, participant Participant) []string {
+	solutionIDs := round.ReviewDistribution.BetweenParticipants[participant.ID]
+
+	result := []string{}
+	for i := 0; i < len(solutionIDs); i++ {
+		result = append(result, strconv.Itoa(i+1))
+	}
+
+	return result
+}
+
+// Remaps map[Key][]Value -> map[Value][]Key
+func Remap(input map[string][]string) map[string][]string {
+	result := make(map[string][]string)
+
+	for key, values := range input {
+		for _, val := range values {
+			result[val] = append(result[val], key)
+		}
+	}
+
 	return result
 }

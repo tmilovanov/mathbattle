@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"bytes"
 	mreplier "mathbattle/cmd/tgbot/replier"
 	mathbattle "mathbattle/models"
 	"mathbattle/usecases"
+	"strconv"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -94,31 +94,27 @@ func (h *StartReviewStage) stepDistribute(ctx mathbattle.TelegramUserContext, m 
 	}
 
 	distribution := h.SolutionDistributor.Get(allRoundSolutions, h.ReviewersCount)
-	for solutionID, participantIDs := range distribution.BetweenParticipants {
-		solution, err := h.Solutions.Get(solutionID)
+
+	for participantID, solutionIDs := range distribution.BetweenParticipants {
+		p, err := h.Participants.GetByID(participantID)
 		if err != nil {
 			return -1, noResponse(), nil
 		}
 
-		for _, participantID := range participantIDs {
-			p, err := h.Participants.GetByID(participantID)
-			if err != nil {
-				return -1, noResponse(), nil
-			}
+		err = h.Postman.PostText(p.TelegramID, h.Replier.ReviewPost())
+		if err != nil {
+			return -1, noResponse(), err
+		}
 
-			err = h.Postman.Post(p.TelegramID, &tb.Message{Text: h.Replier.ReviewPost()})
+		for i, solutionID := range solutionIDs {
+			solution, err := h.Solutions.Get(solutionID)
 			if err != nil {
 				return -1, noResponse(), err
 			}
 
-			for _, part := range solution.Parts {
-				msg := &tb.Message{
-					Photo: &tb.Photo{File: tb.FromReader(bytes.NewReader(part.Content))},
-				}
-				err = h.Postman.Post(p.TelegramID, msg)
-				if err != nil {
-					return -1, noResponse(), err
-				}
+			err = h.Postman.PostAlbum(p.TelegramID, strconv.Itoa(i+1), solution.Parts)
+			if err != nil {
+				return -1, noResponse(), err
 			}
 		}
 	}

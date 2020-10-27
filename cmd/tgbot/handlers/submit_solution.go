@@ -92,7 +92,7 @@ func (h *SubmitSolution) stepExpectProblemNumber(ctx mathbattle.TelegramUserCont
 
 	problemIDs := round.ProblemDistribution[participant.ID]
 	problemNumbers := mathbattle.ProblemNumbers(round, participant)
-	problemNumber, isOk := mathbattle.ValidateProblemNumber(m.Text, problemIDs)
+	problemNumber, isOk := mathbattle.ValidateIndex(m.Text, problemIDs)
 	if !isOk {
 		return 1, mathbattle.OneWithKb(h.Replier.SolutionWrongProblemNumber(), problemNumbers...), nil
 	}

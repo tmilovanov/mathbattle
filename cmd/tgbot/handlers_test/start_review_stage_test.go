@@ -13,7 +13,6 @@ import (
 	solutiondistributor "mathbattle/solution_distributor"
 
 	"github.com/stretchr/testify/suite"
-	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 type startReviewStageTs struct {
@@ -25,17 +24,25 @@ type startReviewStageTs struct {
 }
 
 type mockPostman struct {
-	impl map[int64][]*tb.Message
+	impl map[int64][]string
 }
 
 func newMockPostman() *mockPostman {
 	return &mockPostman{
-		impl: make(map[int64][]*tb.Message),
+		impl: make(map[int64][]string),
 	}
 }
 
-func (pm *mockPostman) Post(chatID int64, m *tb.Message) error {
-	pm.impl[chatID] = append(pm.impl[chatID], m)
+func (pm *mockPostman) PostText(chatID int64, message string) error {
+	pm.impl[chatID] = append(pm.impl[chatID], message)
+	return nil
+}
+
+func (pm *mockPostman) PostPhoto(chatID int64, caption string, image mathbattle.Image) error {
+	return nil
+}
+
+func (pm *mockPostman) PostAlbum(chatID int64, caption string, images []mathbattle.Image) error {
 	return nil
 }
 

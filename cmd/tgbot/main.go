@@ -42,6 +42,8 @@ func main() {
 	storage := getStorage(cfg, isDebug)
 
 	switch os.Args[2] {
+	case "example":
+		commandExample(cfg.Token)
 	case "start-round":
 		// Сейчас раунд добавляется "бесконечным". Добавить возможность передать срок окончания раунда
 		commandStartRound(storage, cfg.Token, mreplier.RussianReplier{}, 2)
