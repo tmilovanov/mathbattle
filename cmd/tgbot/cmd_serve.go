@@ -147,23 +147,35 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 		ctx, err := ctxRepository.GetByTelegramID(int64(m.Sender.ID))
 		isSuitable, err := handler.IsCommandSuitable(ctx)
 		if err != nil {
-			b.Send(m.Sender, replier.InternalError())
+			b.Send(m.Sender, replier.InternalError(), &tb.ReplyMarkup{
+				ReplyKeyboardRemove: true,
+			})
 			log.Printf("Failed to get user context: %v", err)
 			return
 		}
 
 		if !isSuitable {
-			b.Send(m.Sender, replier.GetHelpMessage(mathbattle.FilterCommandsToShow(allCommands, ctx)))
+			b.Send(m.Sender,
+				replier.GetHelpMessage(mathbattle.FilterCommandsToShow(allCommands, ctx)),
+				&tb.ReplyMarkup{
+					ReplyKeyboardRemove: true,
+				})
 			return
 		}
 
 		if !ctx.User.IsAdmin && handler.IsAdminOnly() {
-			b.Send(m.Sender, replier.GetHelpMessage(mathbattle.FilterCommandsToShow(allCommands, ctx)))
+			b.Send(m.Sender,
+				replier.GetHelpMessage(mathbattle.FilterCommandsToShow(allCommands, ctx)),
+				&tb.ReplyMarkup{
+					ReplyKeyboardRemove: true,
+				})
 			return
 		}
 
 		if err != nil {
-			b.Send(m.Sender, replier.InternalError())
+			b.Send(m.Sender, replier.InternalError(), &tb.ReplyMarkup{
+				ReplyKeyboardRemove: true,
+			})
 			log.Printf("Failed to get user context: %v", err)
 			return
 		}
@@ -273,7 +285,11 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 			}
 		}
 
-		b.Send(m.Sender, replier.GetHelpMessage(mathbattle.FilterCommandsToShow(allCommands, ctx)))
+		b.Send(m.Sender,
+			replier.GetHelpMessage(mathbattle.FilterCommandsToShow(allCommands, ctx)),
+			&tb.ReplyMarkup{
+				ReplyKeyboardRemove: true,
+			})
 	}
 
 	b.Handle(tb.OnPhoto, genericMessagesHandler)
