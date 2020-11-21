@@ -102,12 +102,12 @@ func (h *SubmitReview) stepExpectSolutionNumber(ctx mathbattle.TelegramUserConte
 
 	solutionID := round.ReviewDistribution.BetweenParticipants[participant.ID][solutionNumber]
 	ctx.Variables["solution_id"] = mathbattle.NewContextVariableStr(solutionID)
-	currentReview, err := h.Reviews.Find(solutionID)
-	if err != nil && err != mathbattle.ErrNotFound {
+	reviews, err := h.Reviews.FindMany(participant.ID, solutionID)
+	if err != nil {
 		return -1, noResponse(), err
 	}
 
-	if err == mathbattle.ErrNotFound || len(currentReview.Content) == 0 {
+	if len(reviews) == 0 {
 		return 3, mathbattle.OneWithKb(h.Replier.ReviewExpectContent()), nil
 	}
 
@@ -119,12 +119,16 @@ func (h *SubmitReview) stepAlreadySubmitted(ctx mathbattle.TelegramUserContext, 
 
 	if m.Text == h.Replier.Yes() {
 		solutionID := ctx.Variables["solution_id"].AsString()
-		review, err := h.Reviews.Find(solutionID)
+		reviews, err := h.Reviews.FindMany(participant.ID, solutionID)
 		if err != nil {
 			return -1, noResponse(), err
 		}
 
-		if err := h.Reviews.Delete(review.ID); err != nil {
+		if len(reviews) != 1 {
+			return -1, noResponse(), err
+		}
+
+		if err := h.Reviews.Delete(reviews[0].ID); err != nil {
 			return -1, noResponse(), err
 		}
 

@@ -89,13 +89,8 @@ func (r *RoundRepository) Store(round mathbattle.Round) (mathbattle.Round, error
 		}
 		serializedProblems = serializedProblems[:len(serializedProblems)-1]
 
-		intParticipantID, err := strconv.ParseInt(participantID, 10, 32)
-		if err != nil {
-			return result, err
-		}
-
 		_, err = r.db.Exec("INSERT INTO round_distributions (round_id, participant_id, problem_ids) VALUES (?,?,?)",
-			roundID, intParticipantID, serializedProblems)
+			roundID, participantID, serializedProblems)
 		if err != nil {
 			return result, err
 		}

@@ -23,17 +23,18 @@ func ReviewDistrubitonToString(participants mathbattle.ParticipantRepository, so
 
 	result += "Between participants: \n"
 	result += "---------\n"
-	for solutionID, participantIDs := range d.BetweenParticipants {
-		solution, err := solutions.Get(solutionID)
+	for participantID, solutionIDs := range d.BetweenParticipants {
+		p, err := participants.GetByID(participantID)
 		if err != nil {
 			return "", err
 		}
-		p, err := participants.GetByID(solution.ParticipantID)
-		if err != nil {
-			return "", err
-		}
-		for _, targetParticipantID := range participantIDs {
-			targetParticipant, err := participants.GetByID(targetParticipantID)
+
+		for _, solutionID := range solutionIDs {
+			solution, err := solutions.Get(solutionID)
+			if err != nil {
+				return "", err
+			}
+			targetParticipant, err := participants.GetByID(solution.ParticipantID)
 			if err != nil {
 				return "", err
 			}

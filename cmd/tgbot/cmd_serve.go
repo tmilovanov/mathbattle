@@ -198,7 +198,11 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 			}
 
 			if newStep == -1 && err == nil { // Command finished
-				b.Send(m.Sender, replier.GetHelpMessage(mathbattle.FilterCommandsToShow(allCommands, ctx)))
+				b.Send(m.Sender,
+					replier.GetHelpMessage(mathbattle.FilterCommandsToShow(allCommands, ctx)),
+					&tb.ReplyMarkup{
+						ReplyKeyboardRemove: true,
+					})
 			}
 		}
 

@@ -156,6 +156,32 @@ func GenReviewPendingRound(rounds mathbattle.RoundRepository, participants mathb
 	return round, nil
 }
 
+func GenReviewStageRound(rounds mathbattle.RoundRepository, participants mathbattle.ParticipantRepository,
+	solutions mathbattle.SolutionRepository, problems mathbattle.ProblemRepository,
+	problemDistributor mathbattle.ProblemDistributor, solutionsDistributor mathbattle.SolutionDistributor,
+	participantsCount int, problemOnEach int, solutionsCount []int, reviewersCount uint) (mathbattle.Round, error) {
+
+	round, err := GenReviewPendingRound(rounds, participants, solutions, problems, problemDistributor,
+		participantsCount, problemOnEach, solutionsCount)
+	if err != nil {
+		return round, err
+	}
+
+	allRoundSolutions, err := solutions.FindMany(round.ID, "", "")
+	if err != nil {
+		return round, err
+	}
+
+	round.ReviewStartDate = time.Now()
+	round.ReviewDistribution = solutionsDistributor.Get(allRoundSolutions, reviewersCount)
+	err = rounds.Update(round)
+	if err != nil {
+		return round, err
+	}
+
+	return round, nil
+}
+
 func GenProblemIDs(problemCount int) []string {
 	result := []string{}
 	for i := 0; i < problemCount; i++ {

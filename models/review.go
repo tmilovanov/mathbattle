@@ -11,7 +11,7 @@ type Review struct {
 type ReviewRepository interface {
 	Store(review Review) (Review, error) // Return newly created Review with filled in ID
 	Get(ID string) (Review, error)
-	Find(solutionID string) (Review, error)
+	FindMany(reviewerID, solutionID string) ([]Review, error)
 	Update(review Review) error
 	Delete(ID string) error
 }

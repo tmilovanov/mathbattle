@@ -99,7 +99,7 @@ func (r *ReviewRepository) FindMany(reviewerID, solutionID string) ([]mathbattle
 		err = rows.Scan(&curReview.ID, &curReview.ReviewerID, &curReview.SolutionID, &curReview.Content)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				return result, mathbattle.ErrNotFound
+				return []mathbattle.Review{}, nil
 			}
 			return result, err
 		}

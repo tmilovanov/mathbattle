@@ -5,6 +5,7 @@ import (
 	mathbattle "mathbattle/models"
 	"mathbattle/usecases"
 	"strconv"
+	"time"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -117,6 +118,11 @@ func (h *StartReviewStage) stepDistribute(ctx mathbattle.TelegramUserContext, m 
 				return -1, noResponse(), err
 			}
 		}
+	}
+
+	round.ReviewStartDate = time.Now()
+	if err = h.Rounds.Update(round); err != nil {
+		return -1, noResponse(), err
 	}
 
 	return -1, noResponse(), nil
