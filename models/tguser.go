@@ -1,6 +1,8 @@
 package models
 
-import "strconv"
+import (
+	"strconv"
+)
 
 type TelegramUser struct {
 	ID      string

@@ -76,3 +76,15 @@ func IsRegistered(participantRepository ParticipantRepository, telegramID int64)
 
 	return true, nil
 }
+
+func FilterRegisteredAfter(participants []Participant, datetime time.Time) []Participant {
+	result := []Participant{}
+
+	for _, participant := range participants {
+		if participant.RegistrationTime.After(datetime) {
+			result = append(result, participant)
+		}
+	}
+
+	return result
+}

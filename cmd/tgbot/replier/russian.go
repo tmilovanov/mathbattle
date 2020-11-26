@@ -2,8 +2,10 @@ package replier
 
 import (
 	"fmt"
+	"time"
 
 	mathbattle "mathbattle/models"
+	"mathbattle/usecases"
 )
 
 type RussianReplier struct{}
@@ -95,6 +97,14 @@ func (r RussianReplier) CmdSubmitReviewName() string {
 
 func (r RussianReplier) CmdSubmitReviewDesc() string {
 	return "Отправить замечания по решению"
+}
+
+func (r RussianReplier) CmdStatName() string {
+	return "/stat"
+}
+
+func (r RussianReplier) CmdStatDesc() string {
+	return "Статистика"
 }
 
 func (r RussianReplier) InternalError() string {
@@ -196,6 +206,30 @@ func (r RussianReplier) SolutionEmpty() string {
 	return "Ты не отправил ни одной фотографии своего решения :("
 }
 
+func (r RussianReplier) StartReviewGetDuration() string {
+	result := "Введите дату окончания раунда по московскому времени, в одном из следующих форматов:\n"
+	result += "DD.MM.YYYY HH:MM (Ревью нельзя будет отослать после указанной даты)\n"
+	result += "DD.MM.YYYY (Последний день приёма ревью. Приём ревью окончится в полночь)\n"
+	return result
+}
+
+func (r RussianReplier) StartReviewWrongDuration() string {
+	return "Дата окончания раунда введена неверно"
+}
+
+func (r RussianReplier) StartReviewConfirmDuration(untilDate time.Time) string {
+	untillDateStr := untilDate.Format("02.01.2006 15:04")
+	result := fmt.Sprintf("После %s ревью приниматься не будут\n", untillDateStr)
+	hour, minute, sec := usecases.DurationToDayHourMinute(time.Until(untilDate))
+	result += fmt.Sprintf("Общая продолжительность фазы отсылки ревью: %dд. %dч. %dм.\n", hour, minute, sec)
+	result += "Верно?\n"
+	return result
+}
+
+func (r RussianReplier) StartReviewSuccess() string {
+	return "Решения разосланы, этап успешно начался."
+}
+
 func (r RussianReplier) ReviewPost() string {
 	return "Это решения другого участника, в котором ты должен отыскать недочёты."
 }
@@ -221,4 +255,30 @@ func (r RussianReplier) ReviewExpectContent() string {
 
 func (r RussianReplier) ReviewUploadSuccess() string {
 	return "Отзыв записан."
+}
+
+func (r RussianReplier) FormatStat(stat usecases.Stat) string {
+	result := ""
+	result += fmt.Sprintf("Участников всего: %d\n", stat.ParticipantsTotal)
+	result += fmt.Sprintf("Из них новых сегодня: %d\n", stat.ParticipantsToday)
+
+	if stat.RoundStage == mathbattle.StageNotStarted || stat.RoundStage == mathbattle.StageFinished {
+		result += "Нет активного раунда."
+		return result
+	}
+
+	result += "\nСтатистика активного раунда:\n"
+	if stat.RoundStage == mathbattle.StageSolve {
+		days, hours, minutes := usecases.DurationToDayHourMinute(stat.TimeToSolveLeft)
+		result += "Идёт фаза отсылки решений\n"
+		result += fmt.Sprintf("До её конца осталось: %dд. %dч. %dм.\n", days, hours, minutes)
+	} else if stat.RoundStage == mathbattle.StageReview {
+		days, hours, minutes := usecases.DurationToDayHourMinute(stat.TimeToReviewLeft)
+		result += "Идёт фаза критики решений\n"
+		result += fmt.Sprintf("До её конца осталось: %dд. %dч. %dм.\n", days, hours, minutes)
+	}
+	result += fmt.Sprintf("Всего решений прислано: %d\n", stat.SolutionsTotal)
+	result += fmt.Sprintf("Всего ревью прилано: %d\n", stat.ReviewsTotal)
+
+	return result
 }

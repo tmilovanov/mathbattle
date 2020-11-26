@@ -122,6 +122,17 @@ func createCommands(storage mathbattle.Storage, replier mreplier.Replier,
 			Rounds:       storage.Rounds,
 			Reviews:      storage.Reviews,
 		},
+		&handlers.Stat{
+			Handler: handlers.Handler{
+				Name:        replier.CmdStatName(),
+				Description: replier.CmdStatDesc(),
+			},
+			Replier:      replier,
+			Participants: storage.Participants,
+			Rounds:       storage.Rounds,
+			Solutions:    storage.Solutions,
+			Reviews:      storage.Reviews,
+		},
 		commandStart,
 	}
 	commandStart.AllCommands = result

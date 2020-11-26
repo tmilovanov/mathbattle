@@ -7,6 +7,16 @@ import (
 	"time"
 )
 
+type RoundStage string
+
+const (
+	StageNotStarted    RoundStage = "StageNotStarted"
+	StageFinished      RoundStage = "StageFinished"
+	StageSolve         RoundStage = "StageSolve"
+	StageReviewPending RoundStage = "StageReviewPending"
+	StageReview        RoundStage = "StageReview"
+)
+
 type Round struct {
 	ID                  string
 	solveStartDate      time.Time // После этого времени участники могут сдавать решения
@@ -122,4 +132,50 @@ func Remap(input map[string][]string) map[string][]string {
 	}
 
 	return result
+}
+
+func GetRoundStage(round Round) RoundStage {
+	if round.GetSolveStartDate().IsZero() || round.GetSolveStartDate().After(time.Now()) {
+		return StageNotStarted
+	}
+
+	if round.GetSolveEndDate().IsZero() || round.GetSolveEndDate().After(time.Now()) {
+		return StageSolve
+	}
+
+	if round.GetReviewStartDate().IsZero() || round.GetReviewStartDate().After(time.Now()) {
+		return StageReviewPending
+	}
+
+	if round.GetReviewEndDate().IsZero() || round.GetReviewEndDate().After(time.Now()) {
+		return StageReview
+	}
+
+	return StageFinished
+}
+
+func ParseStageEndDate(endDateTime string) (time.Time, error) {
+	endDateTime = strings.Trim(endDateTime, " \t\n")
+	moscowLocation, err := time.LoadLocation("Europe/Moscow")
+	if err != nil {
+		return time.Time{}, err
+	}
+	if len(endDateTime) == len("DD.MM.YYYY") {
+		t, err := time.Parse("02.01.2006", endDateTime)
+		if err != nil {
+			return time.Time{}, ErrWrongUserInput
+		}
+		t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, moscowLocation)
+		t = t.AddDate(0, 0, 1)
+		return t, nil
+	} else if len(endDateTime) == len("DD.MM.YYYY HH:MM") {
+		t, err := time.Parse("02.01.2006 15:04", endDateTime)
+		if err != nil {
+			return time.Time{}, ErrWrongUserInput
+		}
+		t = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, moscowLocation)
+		return t, nil
+	}
+
+	return time.Time{}, ErrWrongUserInput
 }

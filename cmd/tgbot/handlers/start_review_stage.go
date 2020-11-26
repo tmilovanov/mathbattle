@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	mreplier "mathbattle/cmd/tgbot/replier"
 	mathbattle "mathbattle/models"
 	"mathbattle/usecases"
@@ -53,6 +54,10 @@ func (h *StartReviewStage) Handle(ctx mathbattle.TelegramUserContext, m *tb.Mess
 	case 0:
 		return h.stepConfirmDistribution(ctx, m)
 	case 1:
+		return h.stepAskDuration(ctx, m)
+	case 2:
+		return h.stepConfirmDuration(ctx, m)
+	case 3:
 		return h.stepDistribute(ctx, m)
 	default:
 		return -1, noResponse(), nil
@@ -79,9 +84,42 @@ func (h *StartReviewStage) stepConfirmDistribution(ctx mathbattle.TelegramUserCo
 	return 1, mathbattle.OneWithKb(distributionDesc, h.Replier.Yes(), h.Replier.No()), nil
 }
 
+func (h *StartReviewStage) stepAskDuration(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, []mathbattle.TelegramResponse, error) {
+	if m.Text != h.Replier.Yes() {
+		return -1, mathbattle.OneTextResp(h.Replier.Cancel()), nil
+	}
+
+	return 2, mathbattle.OneTextResp(h.Replier.StartReviewGetDuration()), nil
+}
+
+func (h *StartReviewStage) stepConfirmDuration(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, []mathbattle.TelegramResponse, error) {
+	ctx.Variables["until_date"] = mathbattle.NewContextVariableStr(m.Text)
+	untilDate, err := mathbattle.ParseStageEndDate(m.Text)
+	if err != nil {
+		if err == mathbattle.ErrWrongUserInput {
+			return 2, mathbattle.OneTextResp(h.Replier.StartReviewWrongDuration()), nil
+		}
+		return -1, noResponse(), nil
+	}
+
+	return 3, mathbattle.OneWithKb(h.Replier.StartReviewConfirmDuration(untilDate), h.Replier.Yes(), h.Replier.No()), nil
+}
+
 func (h *StartReviewStage) stepDistribute(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, []mathbattle.TelegramResponse, error) {
 	if m.Text != h.Replier.Yes() {
 		return -1, mathbattle.OneTextResp(h.Replier.Cancel()), nil
+	}
+
+	untilDateStr, exist := ctx.Variables["until_date"]
+	if !exist {
+		return -1, noResponse(), errors.New("Can't find until_date")
+	}
+	untilDate, err := mathbattle.ParseStageEndDate(untilDateStr.AsString())
+	if err != nil {
+		if err == mathbattle.ErrWrongUserInput {
+			return 2, mathbattle.OneTextResp(h.Replier.StartReviewWrongDuration()), nil
+		}
+		return -1, noResponse(), nil
 	}
 
 	round, err := h.Rounds.GetReviewPending()
@@ -121,10 +159,11 @@ func (h *StartReviewStage) stepDistribute(ctx mathbattle.TelegramUserContext, m 
 	}
 
 	round.SetReviewStartDate(time.Now())
+	round.SetReviewEndDate(untilDate)
 	round.ReviewDistribution = distribution
 	if err = h.Rounds.Update(round); err != nil {
 		return -1, noResponse(), err
 	}
 
-	return -1, noResponse(), nil
+	return -1, mathbattle.OneTextResp(h.Replier.StartReviewSuccess()), nil
 }

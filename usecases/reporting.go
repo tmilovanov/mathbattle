@@ -3,6 +3,7 @@ package usecases
 import (
 	"fmt"
 	mathbattle "mathbattle/models"
+	"time"
 )
 
 func ReviewDistrubitonToString(participants mathbattle.ParticipantRepository, solutions mathbattle.SolutionRepository,
@@ -50,6 +51,66 @@ func ReviewDistrubitonToString(participants mathbattle.ParticipantRepository, so
 	return result, nil
 }
 
-func StatReport(participants mathbattle.Participant, solutions mathbattle.Solution, rounds mathbattle.Round) (string, error) {
-	return "", nil
+type Stat struct {
+	//TODO: Add VisitorsToday
+	ParticipantsTotal int
+	ParticipantsToday int
+
+	RoundStage       mathbattle.RoundStage
+	TimeToSolveLeft  time.Duration
+	TimeToReviewLeft time.Duration
+	SolutionsTotal   int
+	ReviewsTotal     int
+	// TODO: Add SolutionsToday
+	// TODO: Add ReviewsToday
+}
+
+func DurationToDayHourMinute(d time.Duration) (int, int, int) {
+	d = d.Round(time.Minute)
+	day := time.Hour * 24
+	days := d / day
+	d = d - days*day
+	hours := d / time.Hour
+	d = d - hours*time.Hour
+	minutes := d / time.Minute
+	return int(days), int(hours), int(minutes)
+}
+
+func StatReport(participants mathbattle.ParticipantRepository, rounds mathbattle.RoundRepository,
+	solutions mathbattle.SolutionRepository, reviews mathbattle.ReviewRepository) (Stat, error) {
+
+	result := Stat{}
+
+	pAll, err := participants.GetAll()
+	if err != nil {
+		return result, err
+	}
+	pToday := mathbattle.FilterRegisteredAfter(pAll, time.Now().Truncate(24*time.Hour))
+	result.ParticipantsTotal = len(pAll)
+	result.ParticipantsToday = len(pToday)
+
+	round, err := rounds.GetRunning()
+	result.RoundStage = mathbattle.GetRoundStage(round)
+	if err != nil {
+		if err != mathbattle.ErrNotFound {
+			return result, err
+		}
+	} else {
+		result.TimeToSolveLeft = time.Until(round.GetSolveEndDate())
+		result.TimeToReviewLeft = time.Until(round.GetReviewEndDate())
+
+		allRoundSolutions, err := solutions.FindMany(round.ID, "", "")
+		if err != nil {
+			return result, err
+		}
+		result.SolutionsTotal = len(allRoundSolutions)
+
+		allRoundReviews, err := reviews.FindMany(round.ID, "")
+		if err != nil {
+			return result, err
+		}
+		result.ReviewsTotal = len(allRoundReviews)
+	}
+
+	return result, nil
 }

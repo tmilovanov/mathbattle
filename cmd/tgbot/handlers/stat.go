@@ -3,14 +3,18 @@ package handlers
 import (
 	mreplier "mathbattle/cmd/tgbot/replier"
 	mathbattle "mathbattle/models"
+	"mathbattle/usecases"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 type Stat struct {
 	Handler
-	AllCommands []mathbattle.TelegramCommandHandler
-	Replier     mreplier.Replier
+	Replier      mreplier.Replier
+	Participants mathbattle.ParticipantRepository
+	Rounds       mathbattle.RoundRepository
+	Solutions    mathbattle.SolutionRepository
+	Reviews      mathbattle.ReviewRepository
 }
 
 func (h *Stat) Name() string {
@@ -35,5 +39,9 @@ func (h *Stat) IsAdminOnly() bool {
 }
 
 func (h *Stat) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (int, []mathbattle.TelegramResponse, error) {
-	return -1, noResponse(), nil
+	stat, err := usecases.StatReport(h.Participants, h.Rounds, h.Solutions, h.Reviews)
+	if err != nil {
+		return -1, noResponse(), err
+	}
+	return -1, mathbattle.OneTextResp(h.Replier.FormatStat(stat)), nil
 }
