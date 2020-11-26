@@ -39,11 +39,11 @@ func ReviewDistrubitonToString(participants mathbattle.ParticipantRepository, so
 			if err != nil {
 				return "", err
 			}
-			targetParticipant, err := participants.GetByID(solution.ParticipantID)
+			fromParticipant, err := participants.GetByID(solution.ParticipantID)
 			if err != nil {
 				return "", err
 			}
-			result += fmt.Sprintf("'%s'(Problem: %s) -> '%s'\n", p.Name, solution.ProblemID, targetParticipant.Name)
+			result += fmt.Sprintf("Participant '%s' <- Participant '%s' (Problem %s)\n", p.Name, fromParticipant.Name, solution.ProblemID)
 		}
 	}
 

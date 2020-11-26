@@ -121,6 +121,7 @@ func (h *StartReviewStage) stepDistribute(ctx mathbattle.TelegramUserContext, m 
 	}
 
 	round.SetReviewStartDate(time.Now())
+	round.ReviewDistribution = distribution
 	if err = h.Rounds.Update(round); err != nil {
 		return -1, noResponse(), err
 	}

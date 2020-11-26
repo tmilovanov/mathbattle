@@ -5,4 +5,5 @@ type Storage struct {
 	Problems     ProblemRepository
 	Solutions    SolutionRepository
 	Rounds       RoundRepository
+	Reviews      ReviewRepository
 }

@@ -108,7 +108,7 @@ func (h *SubmitReview) stepExpectSolutionNumber(ctx mathbattle.TelegramUserConte
 	}
 
 	if len(reviews) == 0 {
-		return 3, mathbattle.OneWithKb(h.Replier.ReviewExpectContent()), nil
+		return 3, mathbattle.OneTextResp(h.Replier.ReviewExpectContent()), nil
 	}
 
 	return 2, mathbattle.OneWithKb(h.Replier.ReviewIsRewriteOld(), h.Replier.Yes(), h.Replier.No()), nil
@@ -132,7 +132,7 @@ func (h *SubmitReview) stepAlreadySubmitted(ctx mathbattle.TelegramUserContext, 
 			return -1, noResponse(), err
 		}
 
-		return 3, mathbattle.OneWithKb(h.Replier.ReviewExpectContent()), nil
+		return 3, mathbattle.OneTextResp(h.Replier.ReviewExpectContent()), nil
 	} else {
 		return -1, mathbattle.OneTextResp(h.Replier.Cancel()), nil
 	}

@@ -112,6 +112,16 @@ func createCommands(storage mathbattle.Storage, replier mreplier.Replier,
 			ReviewersCount:      2,
 			Postman:             postman,
 		},
+		&handlers.SubmitReview{
+			Handler: handlers.Handler{
+				Name:        replier.CmdSubmitReviewName(),
+				Description: replier.CmdSubmitReviewDesc(),
+			},
+			Replier:      replier,
+			Participants: storage.Participants,
+			Rounds:       storage.Rounds,
+			Reviews:      storage.Reviews,
+		},
 		commandStart,
 	}
 	commandStart.AllCommands = result

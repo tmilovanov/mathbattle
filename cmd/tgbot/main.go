@@ -124,6 +124,11 @@ func getStorage(cfg config, isDebug bool) mathbattle.Storage {
 		}
 		storage.Rounds = &rounds
 
+		reviews, err := sqlite.NewReviewRepositoryTemp(cfg.DatabasePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		storage.Reviews = &reviews
 	} else {
 		participants, err := sqlite.NewParticipantRepository(cfg.DatabasePath)
 		if err != nil {
@@ -148,6 +153,12 @@ func getStorage(cfg config, isDebug bool) mathbattle.Storage {
 			log.Fatal(err)
 		}
 		storage.Rounds = &rounds
+
+		reviews, err := sqlite.NewReviewRepository(cfg.DatabasePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		storage.Reviews = &reviews
 	}
 
 	return storage

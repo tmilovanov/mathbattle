@@ -22,6 +22,8 @@ type Replier interface {
 	CmdSubmitSolutionDesc() string
 	CmdStartReviewStageName() string
 	CmdStartReviewStageDesc() string
+	CmdSubmitReviewName() string
+	CmdSubmitReviewDesc() string
 
 	InternalError() string
 

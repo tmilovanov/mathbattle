@@ -89,6 +89,14 @@ func (r RussianReplier) CmdStartReviewStageDesc() string {
 	return "Начать этап ревью"
 }
 
+func (r RussianReplier) CmdSubmitReviewName() string {
+	return "/submit_review"
+}
+
+func (r RussianReplier) CmdSubmitReviewDesc() string {
+	return "Отправить замечания по решению"
+}
+
 func (r RussianReplier) InternalError() string {
 	return "Произошла внутрення ошибка. Свяжись с организаторами и опиши свою проблему."
 }
