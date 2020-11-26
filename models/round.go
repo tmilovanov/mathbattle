@@ -9,12 +9,44 @@ import (
 
 type Round struct {
 	ID                  string
-	SolveStartDate      time.Time // После этого времени участники могут сдавать решения
-	SolveEndDate        time.Time // До этого времени участники могут сдавать решения
-	ReviewStartDate     time.Time // После этого времени участники получают решения от других участников на ревью
-	ReviewEndDate       time.Time // До этого времени участники могут сдавать ревью на решения других участников
+	solveStartDate      time.Time // После этого времени участники могут сдавать решения
+	solveEndDate        time.Time // До этого времени участники могут сдавать решения
+	reviewStartDate     time.Time // После этого времени участники получают решения от других участников на ревью
+	reviewEndDate       time.Time // До этого времени участники могут сдавать ревью на решения других участников
 	ProblemDistribution RoundDistribution
 	ReviewDistribution  ReviewDistribution
+}
+
+func (r *Round) SetSolveStartDate(datetime time.Time) {
+	r.solveStartDate = datetime.Round(0).UTC()
+}
+
+func (r *Round) GetSolveStartDate() time.Time {
+	return r.solveStartDate
+}
+
+func (r *Round) SetSolveEndDate(datetime time.Time) {
+	r.solveEndDate = datetime.Round(0).UTC()
+}
+
+func (r *Round) GetSolveEndDate() time.Time {
+	return r.solveEndDate
+}
+
+func (r *Round) SetReviewStartDate(datetime time.Time) {
+	r.reviewStartDate = datetime.Round(0).UTC()
+}
+
+func (r *Round) GetReviewStartDate() time.Time {
+	return r.reviewStartDate
+}
+
+func (r *Round) SetReviewEndDate(datetime time.Time) {
+	r.reviewEndDate = datetime.Round(0).UTC()
+}
+
+func (r *Round) GetReviewEndDate() time.Time {
+	return r.reviewEndDate
 }
 
 type RoundRepository interface {
@@ -30,13 +62,13 @@ type RoundRepository interface {
 }
 
 func NewRound(solveDuration time.Duration) Round {
-	solveStartTime := time.Now()
-	return Round{
-		ID:                  "", // ID is filled by database layer
-		SolveStartDate:      solveStartTime,
-		SolveEndDate:        solveStartTime.Add(solveDuration),
-		ProblemDistribution: make(map[string][]string),
-	}
+	result := Round{}
+	result.SetSolveStartDate(time.Now())
+	result.SetSolveEndDate(result.GetSolveStartDate().Add(solveDuration))
+	result.ProblemDistribution = make(map[string][]string)
+	result.ReviewDistribution.BetweenParticipants = make(map[string][]string)
+
+	return result
 }
 
 // RoundDistribution is a mapping from participant ID to list of problem IDs
@@ -44,7 +76,7 @@ type RoundDistribution map[string][]string
 
 type ReviewDistribution struct {
 	BetweenParticipants map[string][]string // mapping from participantID to list of solution IDs that he got
-	ToOrganizers        []Solution
+	ToOrganizers        []string
 }
 
 func (d *ReviewDistribution) ToString() string {

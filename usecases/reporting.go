@@ -11,7 +11,12 @@ func ReviewDistrubitonToString(participants mathbattle.ParticipantRepository, so
 	result := ""
 	result += "To orgs: \n"
 	result += "----------\n"
-	for _, solution := range d.ToOrganizers {
+	for _, solutionID := range d.ToOrganizers {
+		solution, err := solutions.Get(solutionID)
+		if err != nil {
+			return "", err
+		}
+
 		p, err := participants.GetByID(solution.ParticipantID)
 		if err != nil {
 			return "", err

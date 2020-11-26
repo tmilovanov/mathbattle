@@ -40,11 +40,14 @@ func newTempSqliteRepository(dbName string) (sqliteRepository, error) {
 
 func (r *sqliteRepository) deleteAllTables() error {
 	tableDeleters := []string{
+		"DROP TABLE tgusers",
 		"DROP TABLE participants",
 		"DROP TABLE problems",
 		"DROP TABLE rounds",
-		"DROP TABLE round_distributions",
+		"DROP TABLE rounds_problems_distributions",
+		"DROP TABLE rounds_solutions_distributions",
 		"DROP TABLE solutions",
+		"DROP TABLE reviews",
 	}
 	for _, deleteStmt := range tableDeleters {
 		r.db.Exec(deleteStmt)
@@ -81,11 +84,16 @@ func (r *sqliteRepository) CreateFirstTime() error {
 			review_start DATETIME,
 			review_end DATETIME
 		)`,
-		`CREATE TABLE IF NOT EXISTS round_distributions (
+		`CREATE TABLE IF NOT EXISTS rounds_problems_distributions (
 			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 			round_id INTEGER,
 			participant_id INTEGER,
-			problem_ids TEXT
+			problems_ids TEXT
+		)`,
+		`CREATE TABLE IF NOT EXISTS rounds_solutions_distributions (
+			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+			round_id INTEGER,
+			distribution TEXT
 		)`,
 		`CREATE TABLE IF NOT EXISTS solutions (
 			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,

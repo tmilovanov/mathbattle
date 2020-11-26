@@ -120,7 +120,7 @@ func (h *StartReviewStage) stepDistribute(ctx mathbattle.TelegramUserContext, m 
 		}
 	}
 
-	round.ReviewStartDate = time.Now()
+	round.SetReviewStartDate(time.Now())
 	if err = h.Rounds.Update(round); err != nil {
 		return -1, noResponse(), err
 	}

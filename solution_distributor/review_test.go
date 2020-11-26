@@ -13,21 +13,11 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func Sort1(d map[string][]string) {
-	for _, participantIDs := range d {
+func SortAll(d mathbattle.ReviewDistribution) {
+	for _, participantIDs := range d.BetweenParticipants {
 		sort.Strings(participantIDs)
 	}
-}
-
-func Sort2(d []mathbattle.Solution) {
-	sort.Slice(d, func(i, j int) bool {
-		return d[i].ID < d[j].ID
-	})
-}
-
-func SortAll(d mathbattle.ReviewDistribution) {
-	Sort1(d.BetweenParticipants)
-	Sort2(d.ToOrganizers)
+	sort.Strings(d.ToOrganizers)
 }
 
 func IsEachParticipantGotKSolutions(d map[string][]string, k uint) bool {
@@ -82,7 +72,7 @@ func (s *oneProblemToAll) TestNoSolutions() {
 		[]mathbattle.Solution{},
 		mathbattle.ReviewDistribution{
 			BetweenParticipants: make(map[string][]string),
-			ToOrganizers:        []mathbattle.Solution{},
+			ToOrganizers:        []string{},
 		})
 }
 
@@ -93,9 +83,7 @@ func (s *oneProblemToAll) TestOneSolution() {
 		},
 		mathbattle.ReviewDistribution{
 			BetweenParticipants: make(map[string][]string),
-			ToOrganizers: []mathbattle.Solution{
-				{ID: "s1", ProblemID: "A"},
-			},
+			ToOrganizers:        []string{"s1"},
 		})
 }
 
@@ -110,7 +98,7 @@ func (s *oneProblemToAll) TestLessThanNeedSolutions() {
 				"p1": {"s2"},
 				"p2": {"s1"},
 			},
-			ToOrganizers: []mathbattle.Solution{},
+			ToOrganizers: []string{},
 		})
 }
 
@@ -126,7 +114,7 @@ func (s *oneProblemToAll) TestEnoughSolutions() {
 				"p2": {"s1", "s3"},
 				"p3": {"s1", "s2"},
 			},
-			ToOrganizers: []mathbattle.Solution{},
+			ToOrganizers: []string{},
 		})
 
 	helperTestExpect(s.Require(), s.distributor, s.k,
@@ -142,7 +130,7 @@ func (s *oneProblemToAll) TestEnoughSolutions() {
 				"p3": {"s1", "s2"},
 				"p4": {"s2", "s3"},
 			},
-			ToOrganizers: []mathbattle.Solution{},
+			ToOrganizers: []string{},
 		})
 }
 

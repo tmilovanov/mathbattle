@@ -102,9 +102,9 @@ func GenSolutionStageRound(rounds mathbattle.RoundRepository, participants mathb
 	}
 
 	round := mathbattle.Round{
-		SolveStartDate:      time.Now(),
 		ProblemDistribution: make(map[string][]string),
 	}
+	round.SetSolveStartDate(time.Now())
 
 	for _, participant := range allParticipants {
 		problems, err := problemDistributor.GetForParticipantCount(participant, problemOnEach)
@@ -150,7 +150,7 @@ func GenReviewPendingRound(rounds mathbattle.RoundRepository, participants mathb
 			return mathbattle.Round{}, err
 		}
 	}
-	round.SolveEndDate = time.Now().AddDate(0, 0, -1)
+	round.SetSolveEndDate(time.Now().AddDate(0, 0, -1))
 	rounds.Update(round)
 
 	return round, nil
@@ -172,7 +172,7 @@ func GenReviewStageRound(rounds mathbattle.RoundRepository, participants mathbat
 		return round, err
 	}
 
-	round.ReviewStartDate = time.Now()
+	round.SetReviewStartDate(time.Now())
 	round.ReviewDistribution = solutionsDistributor.Get(allRoundSolutions, reviewersCount)
 	err = rounds.Update(round)
 	if err != nil {

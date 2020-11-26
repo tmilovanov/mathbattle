@@ -21,7 +21,7 @@ func MapSolutionsToParticipants(solutions []mathbattle.Solution, reviewerCount u
 func (d *SolutionDistributor) Get(allRoundSolutions []mathbattle.Solution, reviewerCount uint) mathbattle.ReviewDistribution {
 	result := mathbattle.ReviewDistribution{
 		BetweenParticipants: make(map[string][]string),
-		ToOrganizers:        make([]mathbattle.Solution, 0),
+		ToOrganizers:        make([]string, 0),
 	}
 
 	for _, problemSolutions := range mathbattle.SplitInGroupsByProblem(allRoundSolutions) {
@@ -30,7 +30,7 @@ func (d *SolutionDistributor) Get(allRoundSolutions []mathbattle.Solution, revie
 		}
 
 		if len(problemSolutions) == 1 {
-			result.ToOrganizers = append(result.ToOrganizers, problemSolutions[0])
+			result.ToOrganizers = append(result.ToOrganizers, problemSolutions[0].ID)
 			continue
 		}
 
