@@ -14,6 +14,8 @@ type SubmitReview struct {
 	Participants mathbattle.ParticipantRepository
 	Rounds       mathbattle.RoundRepository
 	Reviews      mathbattle.ReviewRepository
+	Solutions    mathbattle.SolutionRepository
+	Postman      mathbattle.TelegramPostman
 }
 
 func (h *SubmitReview) Name() string {
@@ -142,11 +144,26 @@ func (h *SubmitReview) stepAcceptReview(ctx mathbattle.TelegramUserContext, m *t
 	round mathbattle.Round, participant mathbattle.Participant) (int, []mathbattle.TelegramResponse, error) {
 
 	solutionID := ctx.Variables["solution_id"].AsString()
-	_, err := h.Reviews.Store(mathbattle.Review{
+	review, err := h.Reviews.Store(mathbattle.Review{
 		ReviewerID: participant.ID,
 		SolutionID: solutionID,
 		Content:    m.Text,
 	})
+	if err != nil {
+		return -1, noResponse(), err
+	}
+
+	solution, err := h.Solutions.Get(solutionID)
+	if err != nil {
+		return -1, noResponse(), err
+	}
+
+	reviewedParticipant, err := h.Participants.GetByID(solution.ParticipantID)
+	if err != nil {
+		return -1, noResponse(), err
+	}
+
+	err = h.Postman.PostText(reviewedParticipant.TelegramID, h.Replier.ReviewMsgForReviewee(review))
 	if err != nil {
 		return -1, noResponse(), err
 	}

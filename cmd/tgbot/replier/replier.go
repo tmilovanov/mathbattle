@@ -75,6 +75,7 @@ type Replier interface {
 	ReviewIsRewriteOld() string
 	ReviewExpectContent() string
 	ReviewUploadSuccess() string
+	ReviewMsgForReviewee(review mathbattle.Review) string
 
 	// Replies used in CmdStat
 	FormatStat(stat usecases.Stat) string

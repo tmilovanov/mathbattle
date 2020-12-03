@@ -81,6 +81,8 @@ func (s *submitReviewTestSuite) SetupTest() {
 		Participants: &participants,
 		Rounds:       &rounds,
 		Reviews:      &reviews,
+		Solutions:    s.solutions,
+		Postman:      mocks.NewPostman(),
 	}
 }
 

@@ -121,6 +121,8 @@ func createCommands(storage mathbattle.Storage, replier mreplier.Replier,
 			Participants: storage.Participants,
 			Rounds:       storage.Rounds,
 			Reviews:      storage.Reviews,
+			Solutions:    storage.Solutions,
+			Postman:      postman,
 		},
 		&handlers.Stat{
 			Handler: handlers.Handler{

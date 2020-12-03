@@ -6,7 +6,6 @@ import (
 	"mathbattle/cmd/tgbot/handlers"
 	mreplier "mathbattle/cmd/tgbot/replier"
 	"mathbattle/mocks"
-	mathbattle "mathbattle/models"
 	problemdistributor "mathbattle/problem_distributor"
 	"mathbattle/repository/sqlite"
 	solutiondistributor "mathbattle/solution_distributor"
@@ -20,29 +19,6 @@ type startReviewStageTs struct {
 	handler handlers.StartReviewStage
 	replier mreplier.Replier
 	chatID  int64
-}
-
-type mockPostman struct {
-	impl map[int64][]string
-}
-
-func newMockPostman() *mockPostman {
-	return &mockPostman{
-		impl: make(map[int64][]string),
-	}
-}
-
-func (pm *mockPostman) PostText(chatID int64, message string) error {
-	pm.impl[chatID] = append(pm.impl[chatID], message)
-	return nil
-}
-
-func (pm *mockPostman) PostPhoto(chatID int64, caption string, image mathbattle.Image) error {
-	return nil
-}
-
-func (pm *mockPostman) PostAlbum(chatID int64, caption string, images []mathbattle.Image) error {
-	return nil
 }
 
 func (s *startReviewStageTs) SetupTest() {
@@ -63,7 +39,7 @@ func (s *startReviewStageTs) SetupTest() {
 		Participants:        &participants,
 		SolutionDistributor: &solutiondistributor.SolutionDistributor{},
 		ReviewersCount:      2,
-		Postman:             newMockPostman(),
+		Postman:             mocks.NewPostman(),
 	}
 
 	distributor := problemdistributor.NewSimpleDistributor(&problems, 3)

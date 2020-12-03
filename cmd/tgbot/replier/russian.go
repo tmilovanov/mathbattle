@@ -257,6 +257,13 @@ func (r RussianReplier) ReviewUploadSuccess() string {
 	return "Отзыв записан."
 }
 
+func (r RussianReplier) ReviewMsgForReviewee(review mathbattle.Review) string {
+	msg := "Ты получил критику своего решения от другого участника:\n"
+	msg += "\n"
+	msg += review.Content
+	return msg
+}
+
 func (r RussianReplier) FormatStat(stat usecases.Stat) string {
 	result := ""
 	result += fmt.Sprintf("Участников всего: %d\n", stat.ParticipantsTotal)
