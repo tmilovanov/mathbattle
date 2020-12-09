@@ -62,6 +62,13 @@ func createCommands(storage mathbattle.Storage, replier mreplier.Replier,
 		AllCommands: []mathbattle.TelegramCommandHandler{},
 	}
 	result := []mathbattle.TelegramCommandHandler{
+		&handlers.Help{
+			Handler: handlers.Handler{
+				Name:        replier.CmdHelpName(),
+				Description: replier.CmdHelpDesc(),
+			},
+			Replier: replier,
+		},
 		&handlers.Subscribe{
 			Handler: handlers.Handler{
 				Name:        replier.CmdSubscribeName(),
@@ -179,7 +186,7 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 
 		if !isSuitable {
 			b.Send(m.Sender,
-				replier.GetHelpMessage(mathbattle.FilterCommandsToShow(allCommands, ctx)),
+				replier.GetAvailableCommands(mathbattle.FilterCommandsToShow(allCommands, ctx)),
 				&tb.ReplyMarkup{
 					ReplyKeyboardRemove: true,
 				})
@@ -188,7 +195,7 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 
 		if !ctx.User.IsAdmin && handler.IsAdminOnly() {
 			b.Send(m.Sender,
-				replier.GetHelpMessage(mathbattle.FilterCommandsToShow(allCommands, ctx)),
+				replier.GetAvailableCommands(mathbattle.FilterCommandsToShow(allCommands, ctx)),
 				&tb.ReplyMarkup{
 					ReplyKeyboardRemove: true,
 				})
@@ -234,7 +241,7 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 
 			if newStep == -1 && err == nil { // Command finished
 				b.Send(m.Sender,
-					replier.GetHelpMessage(mathbattle.FilterCommandsToShow(allCommands, ctx)),
+					replier.GetAvailableCommands(mathbattle.FilterCommandsToShow(allCommands, ctx)),
 					&tb.ReplyMarkup{
 						ReplyKeyboardRemove: true,
 					})
@@ -309,7 +316,7 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 		}
 
 		b.Send(m.Sender,
-			replier.GetHelpMessage(mathbattle.FilterCommandsToShow(allCommands, ctx)),
+			replier.GetAvailableCommands(mathbattle.FilterCommandsToShow(allCommands, ctx)),
 			&tb.ReplyMarkup{
 				ReplyKeyboardRemove: true,
 			})

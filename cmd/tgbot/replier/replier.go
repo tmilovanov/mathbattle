@@ -8,12 +8,15 @@ import (
 
 type Replier interface {
 	GetStartMessage() string
-	GetHelpMessage(availableCommands []mathbattle.TelegramCommandHandler) string
+	GetAvailableCommands(availableCommands []mathbattle.TelegramCommandHandler) string
+	GetHelpMessage() string
 
 	Yes() string
 	No() string
 	Cancel() string
 
+	CmdHelpName() string
+	CmdHelpDesc() string
 	CmdSubscribeName() string
 	CmdSubscribeDesc() string
 	CmdUnsubscribeName() string
