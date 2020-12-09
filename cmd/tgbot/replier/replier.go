@@ -67,7 +67,9 @@ type Replier interface {
 	StartReviewSuccess() string
 
 	// Replies used to post solutions to other participants to review
-	ReviewPost() string
+	ReviewPostBefore() string
+	ReviewPostCaption(problemIndex int, solutionNumber int) string
+	ReviewPostAfter() string
 
 	// Replies used in CmdSubmitReview
 	ReviewExpectSolutionNumber() string

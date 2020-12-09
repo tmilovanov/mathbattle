@@ -39,11 +39,11 @@ func (r RussianReplier) Cancel() string {
 }
 
 func (r RussianReplier) GetStartMessage() string {
-	return "Привет! Этот бот позволяет тебе участвовать в математических боях.\n"
+	return "Привет! Этот бот поможет подготовиться к математическим боям.\n"
 }
 
 func (r RussianReplier) GetHelpMessage(availableCommands []mathbattle.TelegramCommandHandler) string {
-	msg := "Сейчас тебе доступны следующие действия:\n"
+	msg := "Сейчас доступны следующие действия:\n"
 	msg += "\n"
 	for _, cmd := range availableCommands {
 		msg += cmd.Name() + " " + cmd.Description() + "\n"
@@ -108,15 +108,15 @@ func (r RussianReplier) CmdStatDesc() string {
 }
 
 func (r RussianReplier) InternalError() string {
-	return "Произошла внутрення ошибка. Свяжись с организаторами и опиши свою проблему."
+	return "Произошла внутрення ошибка. Свяжитесь с организаторами и опишите свою проблему."
 }
 
 func (r RussianReplier) AlreadyRegistered() string {
-	return "Ты уже подписан на рассылку задач."
+	return "Вы уже подписаны на рассылку задач."
 }
 
 func (r RussianReplier) RegisterNameExpect() string {
-	return "Введи своё имя. Имя должно состоять только из букв."
+	return "Введите своё имя. Имя должно состоять только из букв."
 }
 
 func (r RussianReplier) RegisterNameWrong() string {
@@ -124,33 +124,33 @@ func (r RussianReplier) RegisterNameWrong() string {
 }
 
 func (r RussianReplier) RegisterGradeExpect() string {
-	return "Отлично. Теперь укажи класс, в котором ты учишься (В ответе используй только цифры)"
+	return "Отлично! Теперь укажите класс, в котором учитесь (используйте только цифры)."
 }
 
 func (r RussianReplier) RegisterGradeWrong() string {
-	return "Введён неправильный класс. Ожидается число от 1 до 11"
+	return "Введён неправильный класс. Ожидается число от 1 до 11."
 }
 
 func (r RussianReplier) RegisterSuccess() string {
-	return "Ты успешно зарегистрирован. Теперь ожидай рассылки задач"
+	return "Вы успешно зарегистрированы. Ожидайте начала раунда и рассылки задач."
 }
 
 func (r RussianReplier) NotSubscribed() string {
-	return "Ты не подписан на рассылку задач."
+	return "Вы не подписаны на рассылку задач."
 }
 
 func (r RussianReplier) UnsubscribeSuccess() string {
-	return "Ты успешно отписан от рассылки задач."
+	return "Вы успешно отписаны от рассылки задач."
 }
 
 func (r RussianReplier) ProblemsPostBefore() string {
-	return "Привет! А вот и задачи"
+	return "Привет! А вот и задачи."
 }
 
 func (r RussianReplier) ProblemsPostAfter() string {
-	msg := "Как будешь готов - присылай решение. Для этого жми сюда: \n"
+	msg := "Как будете готовы - присылайте решение. Для этого нажмите сюда: \n"
 	msg += r.CmdSubmitSolutionName() + "\n"
-	msg += "Решение необходимо присылать фотографиями. "
+	msg += "Решение следует оформить на бумаге и прислать качественное фото или скан. "
 	return msg
 }
 
@@ -159,20 +159,20 @@ func (r RussianReplier) SolutionPartUploaded(partNumber int) string {
 }
 
 func (r RussianReplier) SolutionUploadSuccess(totalUpload int) string {
-	return fmt.Sprintf("Загрузка решения завершена. Всего в твоём решении %d %s", totalUpload, GetDeclensionByNumeral([3]string{
+	return fmt.Sprintf("Загрузка решения завершена. Всего в решении %d %s", totalUpload, GetDeclensionByNumeral([3]string{
 		"лист", "листа", "листов",
 	}, totalUpload))
 }
 
 func (r RussianReplier) SolutionExpectPart() string {
-	msg := "Отлично, теперь посылай решение. Решение необходимо отправлять фотографиями. "
-	msg += "Ты можешь загрузить сколько угодно фотографий. "
-	msg += "После того как отошлёшь всё - нажми кнопку '" + r.SolutionFinishUploading() + "'"
+	msg := "Отлично, теперь присылайте решение. Решение следует оформить на бумаге и прислать качественное фото или скан."
+	msg += "Можно загрузить сколько угодно фотографий. "
+	msg += "После того как отошлёте всё - нажмите кнопку '" + r.SolutionFinishUploading() + "'"
 	return msg
 }
 
 func (r RussianReplier) SolutionIsRewriteOld() string {
-	msg := "Для этой задачи ты уже отправлял решение. Новое решение перезапишет старое.\n"
+	msg := "Для этой задачи вы уже отправляли решение. Новое решение перезапишет старое.\n"
 	msg += "\n"
 	msg += "Продолжить?"
 	return msg
@@ -191,7 +191,7 @@ func (r RussianReplier) SolutionWrongProblemNumber() string {
 }
 
 func (r RussianReplier) SolutionExpectProblemNumber() string {
-	return "Введи номер задачи, для которой ты хочешь отправить решение."
+	return "Введите номер задачи, для которой хотите отправить решение."
 }
 
 func (r RussianReplier) SolutionFinishUploading() string {
@@ -199,11 +199,11 @@ func (r RussianReplier) SolutionFinishUploading() string {
 }
 
 func (r RussianReplier) SolutionWrongFormat() string {
-	return "Неверный формат решения. В решении ожидаются только фотографии"
+	return "Неверный формат решения. В решении ожидаются только фотографии."
 }
 
 func (r RussianReplier) SolutionEmpty() string {
-	return "Ты не отправил ни одной фотографии своего решения :("
+	return "Вы не отправили ни одной фотографии своего решения :("
 }
 
 func (r RussianReplier) StartReviewGetDuration() string {
@@ -230,12 +230,23 @@ func (r RussianReplier) StartReviewSuccess() string {
 	return "Решения разосланы, этап успешно начался."
 }
 
-func (r RussianReplier) ReviewPost() string {
-	return "Это решения другого участника, в котором ты должен отыскать недочёты."
+func (r RussianReplier) ReviewPostBefore() string {
+	return "Это решения другого участника, в котором нужно проверить и найти недочёты, если они есть."
+}
+
+func (r RussianReplier) ReviewPostCaption(problemIndex int, solutionNumber int) string {
+	return fmt.Sprintf("%d (Решение на задачу %d)", solutionNumber, problemIndex)
+}
+
+func (r RussianReplier) ReviewPostAfter() string {
+	msg := "Как будете готовы - присылайте свои отзывы на решения других участников. Для этого нажмите сюда: \n"
+	msg += r.CmdSubmitReviewName() + "\n"
+	msg += "Отзыв следует присылать обычным текстом."
+	return msg
 }
 
 func (r RussianReplier) ReviewExpectSolutionNumber() string {
-	return "Введи номер решения, для которого ты хочешь отправить отзыв."
+	return "Введите номер решения, для которого хотите отправить отзыв."
 }
 
 func (r RussianReplier) ReviewWrongSolutionNumber() string {
@@ -243,14 +254,14 @@ func (r RussianReplier) ReviewWrongSolutionNumber() string {
 }
 
 func (r RussianReplier) ReviewIsRewriteOld() string {
-	msg := "Для этой задачи ты уже отправлял отзыв. Новый отзыв перезапишет старый.\n"
+	msg := "Для этой задачи вы уже отправляли отзыв. Новый отзыв перезапишет старый.\n"
 	msg += "\n"
 	msg += "Продолжить?"
 	return msg
 }
 
 func (r RussianReplier) ReviewExpectContent() string {
-	return "Отлично, теперь посылай отзыв текстовым сообщением."
+	return "Отлично, теперь посылайте отзыв текстовым сообщением. В отзыве следует указать, считаете ли вы решение верным. Если нет, объяснить почему."
 }
 
 func (r RussianReplier) ReviewUploadSuccess() string {
@@ -258,7 +269,7 @@ func (r RussianReplier) ReviewUploadSuccess() string {
 }
 
 func (r RussianReplier) ReviewMsgForReviewee(review mathbattle.Review) string {
-	msg := "Ты получил критику своего решения от другого участника:\n"
+	msg := "Вы получили отзыв на своё решение от другого участника:\n"
 	msg += "\n"
 	msg += review.Content
 	return msg
@@ -281,11 +292,11 @@ func (r RussianReplier) FormatStat(stat usecases.Stat) string {
 		result += fmt.Sprintf("До её конца осталось: %dд. %dч. %dм.\n", days, hours, minutes)
 	} else if stat.RoundStage == mathbattle.StageReview {
 		days, hours, minutes := usecases.DurationToDayHourMinute(stat.TimeToReviewLeft)
-		result += "Идёт фаза критики решений\n"
+		result += "Идёт фаза проверки решений\n"
 		result += fmt.Sprintf("До её конца осталось: %dд. %dч. %dм.\n", days, hours, minutes)
 	}
 	result += fmt.Sprintf("Всего решений прислано: %d\n", stat.SolutionsTotal)
-	result += fmt.Sprintf("Всего ревью прилано: %d\n", stat.ReviewsTotal)
+	result += fmt.Sprintf("Всего ревью прислано: %d\n", stat.ReviewsTotal)
 
 	return result
 }

@@ -1,4 +1,4 @@
-package maps
+package mstd
 
 // Remaps map[Key][]Value -> map[Value][]Key
 func Remap(input map[string][]string) map[string][]string {

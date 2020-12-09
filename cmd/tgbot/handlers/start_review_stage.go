@@ -4,8 +4,8 @@ import (
 	"errors"
 	mreplier "mathbattle/cmd/tgbot/replier"
 	mathbattle "mathbattle/models"
+	"mathbattle/mstd"
 	"mathbattle/usecases"
-	"strconv"
 	"time"
 
 	tb "gopkg.in/tucnak/telebot.v2"
@@ -140,7 +140,7 @@ func (h *StartReviewStage) stepDistribute(ctx mathbattle.TelegramUserContext, m 
 			return -1, noResponse(), nil
 		}
 
-		err = h.Postman.PostText(p.TelegramID, h.Replier.ReviewPost())
+		err = h.Postman.PostText(p.TelegramID, h.Replier.ReviewPostBefore())
 		if err != nil {
 			return -1, noResponse(), err
 		}
@@ -151,10 +151,17 @@ func (h *StartReviewStage) stepDistribute(ctx mathbattle.TelegramUserContext, m 
 				return -1, noResponse(), err
 			}
 
-			err = h.Postman.PostAlbum(p.TelegramID, strconv.Itoa(i+1), solution.Parts)
+			problemIndex := mstd.IndexOf(round.ProblemDistribution[p.ID], solution.ProblemID)
+			caption := h.Replier.ReviewPostCaption(problemIndex+1, i+1)
+			err = h.Postman.PostAlbum(p.TelegramID, caption, solution.Parts)
 			if err != nil {
 				return -1, noResponse(), err
 			}
+		}
+
+		err = h.Postman.PostText(p.TelegramID, h.Replier.ReviewPostAfter())
+		if err != nil {
+			return -1, noResponse(), err
 		}
 	}
 
