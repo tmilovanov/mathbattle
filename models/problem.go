@@ -1,7 +1,5 @@
 package models
 
-import "strconv"
-
 type Problem struct {
 	ID        string
 	MinGrade  int
@@ -23,18 +21,4 @@ func GetProblemIDs(problems []Problem) []string {
 		result = append(result, problem.ID)
 	}
 	return result
-}
-
-func ValidateIndex(userInput string, strings []string) (int, bool) {
-	index, err := strconv.Atoi(userInput)
-	if err != nil {
-		return -1, false
-	}
-
-	index = index - 1
-	if index < 0 || index >= len(strings) {
-		return -1, false
-	}
-
-	return index, true
 }

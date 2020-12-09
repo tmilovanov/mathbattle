@@ -50,9 +50,9 @@ type Replier interface {
 	// Replies used in CmdSubmitSolution
 	SolutionUploadSuccess(totalUpload int) string
 	SolutionPartUploaded(partNumber int) string
-	SolutionExpectProblemNumber() string
-	SolutionWrongProblemNumberFormat() string
-	SolutionWrongProblemNumber() string
+	SolutionExpectProblemCaption() string
+	SolutionWrongProblemCaptionFormat() string
+	SolutionWrongProblemCaption() string
 	SolutionExpectPart() string
 	SolutionIsRewriteOld() string
 	SolutionDeclineRewriteOld() string
@@ -67,13 +67,15 @@ type Replier interface {
 	StartReviewSuccess() string
 
 	// Replies used to post solutions to other participants to review
-	ReviewPostBefore() string
-	ReviewPostCaption(problemIndex int, solutionNumber int) string
+	ReviewPostBefore(stageDuration time.Duration, stageEnd time.Time) string
+	ReviewPostCaption(problemCaption string, solutionNumber int) string
 	ReviewPostAfter() string
 
 	// Replies used in CmdSubmitReview
-	ReviewExpectSolutionNumber() string
-	ReviewWrongSolutionNumber() string
+	ReviewGetSolutionCaptions(descriptors []mathbattle.SolutionDescriptor) []string
+	ReviewGetDescriptor(userInput string) (mathbattle.SolutionDescriptor, bool)
+	ReviewExpectSolutionCaption() string
+	ReviewWrongSolutionCaption() string
 	ReviewIsRewriteOld() string
 	ReviewExpectContent() string
 	ReviewUploadSuccess() string

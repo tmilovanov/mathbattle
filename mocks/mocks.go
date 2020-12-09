@@ -12,6 +12,7 @@ import (
 
 	"mathbattle/combinator"
 	mathbattle "mathbattle/models"
+	"mathbattle/mstd"
 )
 
 func GenProblems(problemsCount int, minGrade int, maxGrade int) []mathbattle.Problem {
@@ -57,21 +58,21 @@ func GenSolutionsForRound(roundID string, rd mathbattle.RoundDistribution, needS
 	}
 
 	result := []mathbattle.Solution{}
-	for participantID, problemIDs := range rd {
-		for _, problemID := range problemIDs {
-			if curSolutionsCount[problemID] < needSolutionsCount[problemID] {
+	for participantID, problemDescriptors := range rd {
+		for _, desc := range problemDescriptors {
+			if curSolutionsCount[desc.ProblemID] < needSolutionsCount[desc.ProblemID] {
 				result = append(result, mathbattle.Solution{
 					RoundID:       roundID,
-					ProblemID:     problemID,
+					ProblemID:     desc.ProblemID,
 					ParticipantID: participantID,
 					Parts: []mathbattle.Image{
 						{
 							Extension: ".jpg",
-							Content:   []byte(fmt.Sprintf("s_of_%s_on_%s", participantID, problemID)),
+							Content:   []byte(fmt.Sprintf("s_of_%s_on_%s", participantID, desc.ProblemID)),
 						},
 					},
 				})
-				curSolutionsCount[problemID]++
+				curSolutionsCount[desc.ProblemID]++
 			}
 		}
 	}
@@ -102,7 +103,7 @@ func GenSolutionStageRound(rounds mathbattle.RoundRepository, participants mathb
 	}
 
 	round := mathbattle.Round{
-		ProblemDistribution: make(map[string][]string),
+		ProblemDistribution: make(map[string][]mathbattle.ProblemDescriptor),
 	}
 	round.SetSolveStartDate(time.Now())
 
@@ -112,8 +113,15 @@ func GenSolutionStageRound(rounds mathbattle.RoundRepository, participants mathb
 			return mathbattle.Round{}, err
 		}
 
-		round.ProblemDistribution[participant.ID] = append(round.ProblemDistribution[participant.ID],
-			mathbattle.GetProblemIDs(problems)...)
+		descriptors := []mathbattle.ProblemDescriptor{}
+		for i, problem := range problems {
+			descriptors = append(descriptors, mathbattle.ProblemDescriptor{
+				Caption:   mstd.IndexToLetter(i),
+				ProblemID: problem.ID,
+			})
+		}
+
+		round.ProblemDistribution[participant.ID] = descriptors
 	}
 
 	round, err = rounds.Store(round)

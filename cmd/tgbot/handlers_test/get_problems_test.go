@@ -1,7 +1,6 @@
 package handlerstest
 
 import (
-	"strconv"
 	"testing"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	mreplier "mathbattle/cmd/tgbot/replier"
 	"mathbattle/mocks"
 	mathbattle "mathbattle/models"
+	"mathbattle/mstd"
 	problemdistributor "mathbattle/problem_distributor"
 	"mathbattle/repository/sqlite"
 
@@ -122,7 +122,7 @@ func (s *getProblemsTs) TestGetProblems() {
 			Extension: problems[i].Extension,
 			Content:   problems[i].Content,
 		}
-		s.Require().Equal(strconv.Itoa(i+1), resp[i].Text)
+		s.Require().Equal(mstd.IndexToLetter(i), resp[i].Text)
 		s.Require().Equal(problemImg, resp[i].Img)
 	}
 }

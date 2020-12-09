@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -43,6 +44,14 @@ func (r *Round) GetSolveEndDate() time.Time {
 	return r.solveEndDate
 }
 
+func (r *Round) GetSolveEndDateMsk() (time.Time, error) {
+	location, err := time.LoadLocation("Europe/Moscow")
+	if err != nil {
+		return time.Time{}, err
+	}
+	return r.solveEndDate.In(location), nil
+}
+
 func (r *Round) SetReviewStartDate(datetime time.Time) {
 	r.reviewStartDate = datetime.Round(0).UTC()
 }
@@ -57,6 +66,18 @@ func (r *Round) SetReviewEndDate(datetime time.Time) {
 
 func (r *Round) GetReviewEndDate() time.Time {
 	return r.reviewEndDate
+}
+
+func (r *Round) GetReviewEndDateMsk() (time.Time, error) {
+	location, err := time.LoadLocation("Europe/Moscow")
+	if err != nil {
+		return time.Time{}, err
+	}
+	return r.reviewEndDate.In(location), nil
+}
+
+func (r *Round) GetReviewStageDuration() time.Duration {
+	return r.GetReviewEndDate().Sub(r.GetReviewStartDate())
 }
 
 type RoundRepository interface {
@@ -75,18 +96,114 @@ func NewRound(solveDuration time.Duration) Round {
 	result := Round{}
 	result.SetSolveStartDate(time.Now())
 	result.SetSolveEndDate(result.GetSolveStartDate().Add(solveDuration))
-	result.ProblemDistribution = make(map[string][]string)
+	result.ProblemDistribution = make(map[string][]ProblemDescriptor)
 	result.ReviewDistribution.BetweenParticipants = make(map[string][]string)
 
 	return result
 }
 
-// RoundDistribution is a mapping from participant ID to list of problem IDs
-type RoundDistribution map[string][]string
+type ProblemDescriptor struct {
+	// Caption используется вместо названия задачи. Нужен только для того чтобы конкретный участник мог
+	// как-то назвать задачу. Например "задача А" или "задача 1"
+	// Уникален для каждой задачи при фиксированном Round и Participant
+	Caption string
+	// ID из базы
+	ProblemID string
+}
+
+// RoundDistribution is a mapping from participant ID to list of problems that participant get to solve
+type RoundDistribution map[string][]ProblemDescriptor
+
+func (pd RoundDistribution) FindDescriptor(participantID string, problemID string) (ProblemDescriptor, error) {
+	descriptors, isExist := pd[participantID]
+	if !isExist {
+		return ProblemDescriptor{}, ErrNotFound
+	}
+
+	for i := 0; i < len(descriptors); i++ {
+		if descriptors[i].ProblemID == problemID {
+			return descriptors[i], nil
+		}
+	}
+
+	return ProblemDescriptor{}, ErrNotFound
+}
 
 type ReviewDistribution struct {
 	BetweenParticipants map[string][]string // mapping from participantID to list of solution IDs that he got
 	ToOrganizers        []string
+}
+
+func ProblemIDsFromSolutionIDs(solutions SolutionRepository, solutionIDs []string) ([]string, error) {
+	result := []string{}
+	for _, ID := range solutionIDs {
+		solution, err := solutions.Get(ID)
+		if err != nil {
+			return result, err
+		}
+
+		result = append(result, solution.ProblemID)
+	}
+
+	return result, nil
+}
+
+type SolutionDescriptor struct {
+	ProblemCaption string
+	SolutionNumber int
+	SolutionID     string
+}
+
+func SolutionDescriptorsForParticipant(problemIDs []string, solutionIDs []string,
+	participantID string, round Round) ([]SolutionDescriptor, error) {
+
+	result := []SolutionDescriptor{}
+
+	solutionNumbers := make(map[string]int)
+	if len(problemIDs) != len(solutionIDs) {
+		return result, errors.New("Expect the same count for problemIDs and solutionIDs")
+	}
+
+	for i := 0; i < len(problemIDs); i++ {
+		desc, err := round.ProblemDistribution.FindDescriptor(participantID, problemIDs[i])
+		if err != nil {
+			return result, err
+		}
+
+		solutionNumbers[desc.Caption]++
+
+		result = append(result, SolutionDescriptor{
+			ProblemCaption: desc.Caption,
+			SolutionNumber: solutionNumbers[desc.Caption],
+			SolutionID:     solutionIDs[i],
+		})
+
+	}
+
+	return result, nil
+}
+
+func SolutionDescriptorsFromSolutionIDs(solutions SolutionRepository,
+	participantID string, round Round) ([]SolutionDescriptor, error) {
+
+	solutionIDs := round.ReviewDistribution.BetweenParticipants[participantID]
+	problemIDs, err := ProblemIDsFromSolutionIDs(solutions, solutionIDs)
+	if err != nil {
+		return []SolutionDescriptor{}, err
+	}
+
+	return SolutionDescriptorsForParticipant(problemIDs, solutionIDs, participantID, round)
+}
+
+func FindSolutionIDbyDescriptor(item SolutionDescriptor, descriptors []SolutionDescriptor) (string, bool) {
+	for _, descriptor := range descriptors {
+		if descriptor.ProblemCaption == item.ProblemCaption &&
+			descriptor.SolutionNumber == item.SolutionNumber {
+			return descriptor.SolutionID, true
+		}
+	}
+
+	return "", false
 }
 
 func (d *ReviewDistribution) ToString() string {
@@ -99,12 +216,11 @@ func (d *ReviewDistribution) ToString() string {
 	return result
 }
 
-// Получить порядковые номера задач, которые были разосланы участнику в этом раунде
-func ProblemNumbers(round Round, participant Participant) []string {
-	problemIDs := round.ProblemDistribution[participant.ID]
+// Получить обозначения задач, которые были разосланы участнику в этом раунде
+func ProblemsCaptions(round Round, participant Participant) []string {
 	result := []string{}
-	for i := 0; i < len(problemIDs); i++ {
-		result = append(result, strconv.Itoa(i+1))
+	for _, descriptor := range round.ProblemDistribution[participant.ID] {
+		result = append(result, descriptor.Caption)
 	}
 	return result
 }
@@ -119,6 +235,17 @@ func SolutionNumbers(round Round, participant Participant) []string {
 	}
 
 	return result
+}
+
+func ValidateCaptions(userInput string, descriptors []ProblemDescriptor) (int, bool) {
+	userInput = strings.Trim(userInput, "\t\r\n ")
+	for i, desc := range descriptors {
+		if desc.Caption == userInput {
+			return i, true
+		}
+	}
+
+	return -1, false
 }
 
 func GetRoundStage(round Round) RoundStage {

@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"fmt"
 	mathbattle "mathbattle/models"
+	"mathbattle/mstd"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -65,28 +65,32 @@ func (h *GetProblems) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) 
 		return -1, noResponse(), err
 	}
 
-	var problemIDs []string
-	participantProblems, areExist := curRound.ProblemDistribution[participant.ID]
+	problemDescriptors, areExist := curRound.ProblemDistribution[participant.ID]
 	if !areExist {
 		// New participant
 		problems, err := h.ProblemDistributor.GetForParticipant(participant)
 		if err != nil {
 			return -1, noResponse(), err
 		}
-		problemIDs = mathbattle.GetProblemIDs(problems)
-		curRound.ProblemDistribution[participant.ID] = problemIDs
+		for i, problem := range problems {
+			curRound.ProblemDistribution[participant.ID] = append(curRound.ProblemDistribution[participant.ID],
+				mathbattle.ProblemDescriptor{
+					Caption:   mstd.IndexToLetter(i),
+					ProblemID: problem.ID,
+				})
+		}
+
 		err = h.Rounds.Update(curRound)
 		if err != nil {
 			return -1, noResponse(), err
 		}
-	} else {
-		// Exisiting participant
-		problemIDs = participantProblems
+
+		problemDescriptors = curRound.ProblemDistribution[participant.ID]
 	}
 
 	result := []mathbattle.TelegramResponse{}
-	for i, problemID := range problemIDs {
-		problem, err := h.Problems.GetByID(problemID)
+	for _, problemDescriptor := range problemDescriptors {
+		problem, err := h.Problems.GetByID(problemDescriptor.ProblemID)
 		if err != nil {
 			return -1, noResponse(), err
 		}
@@ -95,7 +99,7 @@ func (h *GetProblems) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) 
 			Extension: problem.Extension,
 			Content:   problem.Content,
 		})
-		msg.Text = fmt.Sprint(i + 1)
+		msg.Text = problemDescriptor.Caption
 
 		result = append(result, msg)
 	}

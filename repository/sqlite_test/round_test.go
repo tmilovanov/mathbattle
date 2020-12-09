@@ -25,11 +25,11 @@ func (s *roundTs) SetupTest() {
 
 func (s *roundTs) TestSetGetUpdateDelete() {
 	testRound := mathbattle.Round{
-		ProblemDistribution: map[string][]string{
-			"1": {"problem1", "problem2", "problem3"},
-			"2": {"problem1", "problem2", "problem3"},
-			"3": {"problem1", "problem2", "problem3"},
-			"4": {"problem1", "problem2", "problem3"},
+		ProblemDistribution: map[string][]mathbattle.ProblemDescriptor{
+			"1": {{"A", "problem1"}, {"B", "problem2"}, {"C", "problem3"}},
+			"2": {{"A", "problem1"}, {"B", "problem2"}, {"C", "problem3"}},
+			"3": {{"A", "problem1"}, {"B", "problem2"}, {"C", "problem3"}},
+			"4": {{"A", "problem1"}, {"B", "problem2"}, {"C", "problem3"}},
 		},
 		ReviewDistribution: mathbattle.ReviewDistribution{
 			BetweenParticipants: map[string][]string{
@@ -59,7 +59,7 @@ func (s *roundTs) TestSetGetUpdateDelete() {
 	round.SetSolveEndDate(time.Now())
 	round.SetReviewStartDate(time.Now())
 	round.SetReviewEndDate(time.Now())
-	round.ProblemDistribution["5"] = []string{"problem1", "problem2", "problem3"}
+	round.ProblemDistribution["5"] = []mathbattle.ProblemDescriptor{{"A", "problem1"}, {"B", "problem2"}, {"C", "problem3"}}
 	round.ReviewDistribution.BetweenParticipants["4"] = []string{"s5", "s6"}
 	round.ReviewDistribution.ToOrganizers = append(round.ReviewDistribution.ToOrganizers, "s8", "s9", "s10")
 	s.Require().Nil(s.rep.Update(round))

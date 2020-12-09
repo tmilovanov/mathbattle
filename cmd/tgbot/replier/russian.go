@@ -2,9 +2,12 @@ package replier
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	mathbattle "mathbattle/models"
+	"mathbattle/mstd"
 	"mathbattle/usecases"
 )
 
@@ -182,16 +185,16 @@ func (r RussianReplier) SolutionDeclineRewriteOld() string {
 	return "Отменено"
 }
 
-func (r RussianReplier) SolutionWrongProblemNumberFormat() string {
-	return "Неверный номер задачи."
+func (r RussianReplier) SolutionWrongProblemCaptionFormat() string {
+	return "Указана несуществующая задача."
 }
 
-func (r RussianReplier) SolutionWrongProblemNumber() string {
-	return "Неверный номер задачи."
+func (r RussianReplier) SolutionWrongProblemCaption() string {
+	return "Указана несуществующая задача."
 }
 
-func (r RussianReplier) SolutionExpectProblemNumber() string {
-	return "Введите номер задачи, для которой хотите отправить решение."
+func (r RussianReplier) SolutionExpectProblemCaption() string {
+	return "Укажите задачу, для которой хотите отправить решение."
 }
 
 func (r RussianReplier) SolutionFinishUploading() string {
@@ -220,7 +223,7 @@ func (r RussianReplier) StartReviewWrongDuration() string {
 func (r RussianReplier) StartReviewConfirmDuration(untilDate time.Time) string {
 	untillDateStr := untilDate.Format("02.01.2006 15:04")
 	result := fmt.Sprintf("После %s ревью приниматься не будут\n", untillDateStr)
-	hour, minute, sec := usecases.DurationToDayHourMinute(time.Until(untilDate))
+	hour, minute, sec := mstd.DurationToDayHourMinute(time.Until(untilDate))
 	result += fmt.Sprintf("Общая продолжительность фазы отсылки ревью: %dд. %dч. %dм.\n", hour, minute, sec)
 	result += "Верно?\n"
 	return result
@@ -230,12 +233,21 @@ func (r RussianReplier) StartReviewSuccess() string {
 	return "Решения разосланы, этап успешно начался."
 }
 
-func (r RussianReplier) ReviewPostBefore() string {
-	return "Это решения другого участника, в котором нужно проверить и найти недочёты, если они есть."
+func (r RussianReplier) ReviewPostBefore(stageDuration time.Duration, stageEnd time.Time) string {
+	msg := "Начался этап взаимной проверки решений. "
+	msg += "Во время него необходимо проверить решения других участников и найти в них недочёты, если они есть."
+
+	day, hour, minute := mstd.DurationToDayHourMinute(stageDuration)
+	msg += fmt.Sprintf("Этап продлится %dд. %dч. %dм. ", day, hour, minute)
+	msg += fmt.Sprintf("После %s по московскому времени отправлять отзывы будет нельзя.", stageEnd.Format("02.01.2006 15:04"))
+
+	msg += "\n"
+	msg += "Ниже решения других участников, которые вам необходимо проверить."
+	return msg
 }
 
-func (r RussianReplier) ReviewPostCaption(problemIndex int, solutionNumber int) string {
-	return fmt.Sprintf("%d (Решение на задачу %d)", solutionNumber, problemIndex)
+func (r RussianReplier) ReviewPostCaption(problemCaption string, solutionNumber int) string {
+	return fmt.Sprintf("(Решение %d на задачу %s)", solutionNumber, problemCaption)
 }
 
 func (r RussianReplier) ReviewPostAfter() string {
@@ -245,16 +257,44 @@ func (r RussianReplier) ReviewPostAfter() string {
 	return msg
 }
 
-func (r RussianReplier) ReviewExpectSolutionNumber() string {
-	return "Введите номер решения, для которого хотите отправить отзыв."
+func (r RussianReplier) ReviewGetSolutionCaptions(descriptors []mathbattle.SolutionDescriptor) []string {
+	result := []string{}
+
+	for _, descriptor := range descriptors {
+		result = append(result, r.ReviewPostCaption(descriptor.ProblemCaption, descriptor.SolutionNumber))
+	}
+
+	return result
 }
 
-func (r RussianReplier) ReviewWrongSolutionNumber() string {
-	return "Неверный номер решения."
+func (r RussianReplier) ReviewGetDescriptor(userInput string) (mathbattle.SolutionDescriptor, bool) {
+	userInput = strings.Trim(userInput, "\t\r\n ")
+	parts := strings.Split(userInput, " ")
+	if len(parts) < 5 {
+		return mathbattle.SolutionDescriptor{}, false
+	}
+
+	solutionNumber, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return mathbattle.SolutionDescriptor{}, false
+	}
+
+	return mathbattle.SolutionDescriptor{
+		ProblemCaption: parts[4][0 : len(parts[4])-1],
+		SolutionNumber: solutionNumber,
+	}, true
+}
+
+func (r RussianReplier) ReviewExpectSolutionCaption() string {
+	return "Укажите решение, для которого хотите отправить отзыв."
+}
+
+func (r RussianReplier) ReviewWrongSolutionCaption() string {
+	return "Указано несуществующее решение."
 }
 
 func (r RussianReplier) ReviewIsRewriteOld() string {
-	msg := "Для этой задачи вы уже отправляли отзыв. Новый отзыв перезапишет старый.\n"
+	msg := "Для этого решения вы уже отправляли отзыв. Новый отзыв перезапишет старый.\n"
 	msg += "\n"
 	msg += "Продолжить?"
 	return msg
@@ -287,11 +327,11 @@ func (r RussianReplier) FormatStat(stat usecases.Stat) string {
 
 	result += "\nСтатистика активного раунда:\n"
 	if stat.RoundStage == mathbattle.StageSolve {
-		days, hours, minutes := usecases.DurationToDayHourMinute(stat.TimeToSolveLeft)
+		days, hours, minutes := mstd.DurationToDayHourMinute(stat.TimeToSolveLeft)
 		result += "Идёт фаза отсылки решений\n"
 		result += fmt.Sprintf("До её конца осталось: %dд. %dч. %dм.\n", days, hours, minutes)
 	} else if stat.RoundStage == mathbattle.StageReview {
-		days, hours, minutes := usecases.DurationToDayHourMinute(stat.TimeToReviewLeft)
+		days, hours, minutes := mstd.DurationToDayHourMinute(stat.TimeToReviewLeft)
 		result += "Идёт фаза проверки решений\n"
 		result += fmt.Sprintf("До её конца осталось: %dд. %dч. %dм.\n", days, hours, minutes)
 	}

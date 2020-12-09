@@ -70,7 +70,10 @@ func (s *submitSolutionTestSuite) SetupTest() {
 	// Create round
 	duration, _ := time.ParseDuration("48h")
 	round := mathbattle.NewRound(duration)
-	round.ProblemDistribution[participant.ID] = []string{problem1.ID, problem2.ID}
+	round.ProblemDistribution[participant.ID] = []mathbattle.ProblemDescriptor{
+		{Caption: "A", ProblemID: problem1.ID},
+		{Caption: "B", ProblemID: problem2.ID},
+	}
 	round, err = rounds.Store(round)
 	s.Require().Nil(err)
 	s.curRound = round
@@ -96,8 +99,8 @@ func (s *submitSolutionTestSuite) sendPhotos(photos []tb.Message) mathbattle.Tel
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
 
 	testSequence := []reqRespSequence{
-		{textReq(""), mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectProblemNumber(), "1", "2"), 1},
-		{textReq("1"), mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectPart(), s.replier.SolutionFinishUploading()), 3},
+		{textReq(""), mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectProblemCaption(), "A", "B"), 1},
+		{textReq("A"), mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectPart(), s.replier.SolutionFinishUploading()), 3},
 	}
 
 	for i, photo := range photos {
@@ -121,7 +124,7 @@ func (s *submitSolutionTestSuite) sendPhotosTestDatabase(images []mathbattle.Ima
 
 	ctx := s.sendPhotos(photos)
 
-	problemID := s.curRound.ProblemDistribution[s.curParticipant.ID][0]
+	problemID := s.curRound.ProblemDistribution[s.curParticipant.ID][0].ProblemID
 	solution, err := s.handler.Solutions.Find(s.curRound.ID, s.curParticipant.ID, problemID)
 	s.Require().Nil(err)
 	s.Require().Equal(len(images), len(solution.Parts)) // Optional, but easy to see the difference in console
@@ -133,8 +136,8 @@ func (s *submitSolutionTestSuite) sendPhotosTestDatabase(images []mathbattle.Ima
 func (s *submitSolutionTestSuite) TestSendWrongFormatSolution() {
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
 	sendReqExpectRespSequence(s.Require(), &s.handler, ctx, []reqRespSequence{
-		{textReq(""), mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectProblemNumber(), "1", "2"), 1},
-		{textReq("1"), mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectPart(), s.replier.SolutionFinishUploading()), 3},
+		{textReq(""), mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectProblemCaption(), "A", "B"), 1},
+		{textReq("A"), mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectPart(), s.replier.SolutionFinishUploading()), 3},
 		{textReq("BlahBlah"), mathbattle.NewRespWithKeyboard(s.replier.SolutionWrongFormat(), s.replier.SolutionFinishUploading()), 3},
 		{photoReq("", "fake/path/p1.jpg", []byte("12345")),
 			mathbattle.NewRespWithKeyboard(s.replier.SolutionPartUploaded(1), s.replier.SolutionFinishUploading()), 3},
@@ -148,8 +151,8 @@ func (s *submitSolutionTestSuite) TestSendWrongFormatSolution() {
 func (s *submitSolutionTestSuite) TestSendNoSolution() {
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
 	sendReqExpectRespSequence(s.Require(), &s.handler, ctx, []reqRespSequence{
-		{textReq(""), mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectProblemNumber(), "1", "2"), 1},
-		{textReq("1"), mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectPart(), s.replier.SolutionFinishUploading()), 3},
+		{textReq(""), mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectProblemCaption(), "A", "B"), 1},
+		{textReq("A"), mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectPart(), s.replier.SolutionFinishUploading()), 3},
 		{textReq(s.replier.SolutionFinishUploading()), mathbattle.NewResp(s.replier.SolutionEmpty()), -1},
 	})
 }
@@ -178,8 +181,8 @@ func (s *submitSolutionTestSuite) TestSendSolutionTwoTimes() {
 
 	msg := textReq("")
 	ctx = sendAndTest(s.Require(), &s.handler, ctx,
-		&msg, mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectProblemNumber(), "1", "2"), 1)
-	msg = textReq("1")
+		&msg, mathbattle.NewRespWithKeyboard(s.replier.SolutionExpectProblemCaption(), "A", "B"), 1)
+	msg = textReq("A")
 	ctx = sendAndTest(s.Require(), &s.handler, ctx,
 		&msg, mathbattle.NewRespWithKeyboard(s.replier.SolutionIsRewriteOld(), s.replier.Yes(), s.replier.No()), 2)
 	msg = textReq(s.replier.Yes())

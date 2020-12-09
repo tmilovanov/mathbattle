@@ -2,7 +2,6 @@ package handlerstest
 
 import (
 	"fmt"
-	"strconv"
 	"testing"
 
 	"mathbattle/cmd/tgbot/handlers"
@@ -165,16 +164,19 @@ func (s *submitReviewTestSuite) TestSetOverwriteReview() {
 	s.Require().Nil(err)
 
 	ctx := mathbattle.NewTelegramUserContext(p.TelegramID)
-	solutionsNumbers := mathbattle.SolutionNumbers(round, p)
-	for _, sn := range solutionsNumbers {
-		solutionI, _ := strconv.Atoi(sn)
-		solutionI--
-		solutionID := round.ReviewDistribution.BetweenParticipants[p.ID][solutionI]
 
-		reviewContent := fmt.Sprintf("example_review_%s", sn)
+	descriptors, err := mathbattle.SolutionDescriptorsFromSolutionIDs(s.solutions, p.ID, round)
+	s.Require().Nil(err)
+	captions := s.handler.Replier.ReviewGetSolutionCaptions(descriptors)
+
+	for i := 0; i < len(descriptors); i++ {
+		solutionID := descriptors[i].SolutionID
+		caption := captions[i]
+
+		reviewContent := fmt.Sprintf("example_review_%s", caption)
 		sendReqExpectRespSequence(s.Require(), &s.handler, ctx, []reqRespSequence{
-			{textReq(""), mathbattle.NewRespWithKeyboard(s.handler.Replier.ReviewExpectSolutionNumber(), solutionsNumbers...), 1},
-			{textReq(sn), mathbattle.NewResp(s.handler.Replier.ReviewExpectContent()), 3},
+			{textReq(""), mathbattle.NewRespWithKeyboard(s.handler.Replier.ReviewExpectSolutionCaption(), captions...), 1},
+			{textReq(caption), mathbattle.NewResp(s.handler.Replier.ReviewExpectContent()), 3},
 			{textReq(reviewContent), mathbattle.NewResp(s.handler.Replier.ReviewUploadSuccess()), -1},
 		})
 
@@ -184,16 +186,16 @@ func (s *submitReviewTestSuite) TestSetOverwriteReview() {
 		s.Require().Equal(reviewContent, reviews[0].Content)
 
 		sendReqExpectRespSequence(s.Require(), &s.handler, ctx, []reqRespSequence{
-			{textReq(""), mathbattle.NewRespWithKeyboard(s.handler.Replier.ReviewExpectSolutionNumber(), solutionsNumbers...), 1},
-			{textReq(sn), mathbattle.NewRespWithKeyboard(s.handler.Replier.ReviewIsRewriteOld(),
+			{textReq(""), mathbattle.NewRespWithKeyboard(s.handler.Replier.ReviewExpectSolutionCaption(), captions...), 1},
+			{textReq(caption), mathbattle.NewRespWithKeyboard(s.handler.Replier.ReviewIsRewriteOld(),
 				s.handler.Replier.Yes(), s.handler.Replier.No()), 2},
 			{textReq(s.handler.Replier.No()), mathbattle.NewResp(s.handler.Replier.Cancel()), -1},
 		})
 
-		reviewContent = fmt.Sprintf("example_review_overwrite_%s", sn)
+		reviewContent = fmt.Sprintf("example_review_overwrite_%s", caption)
 		sendReqExpectRespSequence(s.Require(), &s.handler, ctx, []reqRespSequence{
-			{textReq(""), mathbattle.NewRespWithKeyboard(s.handler.Replier.ReviewExpectSolutionNumber(), solutionsNumbers...), 1},
-			{textReq(sn), mathbattle.NewRespWithKeyboard(s.handler.Replier.ReviewIsRewriteOld(),
+			{textReq(""), mathbattle.NewRespWithKeyboard(s.handler.Replier.ReviewExpectSolutionCaption(), captions...), 1},
+			{textReq(caption), mathbattle.NewRespWithKeyboard(s.handler.Replier.ReviewIsRewriteOld(),
 				s.handler.Replier.Yes(), s.handler.Replier.No()), 2},
 			{textReq(s.handler.Replier.Yes()), mathbattle.NewResp(s.handler.Replier.ReviewExpectContent()), 3},
 			{textReq(reviewContent), mathbattle.NewResp(s.handler.Replier.ReviewUploadSuccess()), -1},
@@ -218,10 +220,12 @@ func (s *submitReviewTestSuite) TestSetWrongSolutionNumber() {
 	s.Require().Nil(err)
 
 	ctx := mathbattle.NewTelegramUserContext(p.TelegramID)
-	solutionsNumbers := mathbattle.SolutionNumbers(round, p)
+	descriptors, err := mathbattle.SolutionDescriptorsFromSolutionIDs(s.solutions, p.ID, round)
+	s.Require().Nil(err)
+	captions := s.handler.Replier.ReviewGetSolutionCaptions(descriptors)
 	sendReqExpectRespSequence(s.Require(), &s.handler, ctx, []reqRespSequence{
-		{textReq(""), mathbattle.NewRespWithKeyboard(s.handler.Replier.ReviewExpectSolutionNumber(), solutionsNumbers...), 1},
-		{textReq("100"), mathbattle.NewRespWithKeyboard(s.handler.Replier.ReviewWrongSolutionNumber(), solutionsNumbers...), 1},
+		{textReq(""), mathbattle.NewRespWithKeyboard(s.handler.Replier.ReviewExpectSolutionCaption(), captions...), 1},
+		{textReq("100"), mathbattle.NewRespWithKeyboard(s.handler.Replier.ReviewWrongSolutionCaption(), captions...), 1},
 	})
 }
 

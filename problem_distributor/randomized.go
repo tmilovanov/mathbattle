@@ -5,31 +5,21 @@ import (
 
 	"mathbattle/containers"
 	mathbattle "mathbattle/models"
+	"mathbattle/mstd"
 
 	"github.com/pkg/errors"
 )
 
 type RandomDistributor struct{}
 
-func isFound(problems []string, problemID string) bool {
-	for i := 0; i < len(problems); i++ {
-		if problems[i] == problemID {
-			return true
-		}
-	}
-	return false
-}
-
 func isProblemAlreadyUsed(participant mathbattle.Participant, problem mathbattle.Problem, pastRounds []mathbattle.Round) bool {
 	for _, round := range pastRounds {
-		problemIDs, isExist := round.ProblemDistribution[participant.ID]
-		if !isExist { // User didn't participated in this round
+		_, err := round.ProblemDistribution.FindDescriptor(participant.ID, problem.ID)
+		if err != nil {
 			continue
 		}
 
-		if isFound(problemIDs, problem.ID) {
-			return true
-		}
+		return true
 	}
 
 	return false
@@ -52,7 +42,7 @@ func getSuitableProblems(participant mathbattle.Participant, problems []mathbatt
 
 func (d *RandomDistributor) GetForAll(participants []mathbattle.Participant, problems []mathbattle.Problem, rounds []mathbattle.Round, count int) (mathbattle.RoundDistribution, error) {
 
-	var result mathbattle.RoundDistribution = make(map[string][]string)
+	var result mathbattle.RoundDistribution = make(map[string][]mathbattle.ProblemDescriptor)
 	counter := containers.NewUsageCounter()
 
 	for _, participant := range participants {
@@ -65,7 +55,13 @@ func (d *RandomDistributor) GetForAll(participants []mathbattle.Participant, pro
 
 		counter.AddItems(problemIDs)
 
-		result[participant.ID] = counter.UseMostUnpopularFromSet(problemIDs, count)
+		problemsToSend := counter.UseMostUnpopularFromSet(problemIDs, count)
+		for i, problemID := range problemsToSend {
+			result[participant.ID] = append(result[participant.ID], mathbattle.ProblemDescriptor{
+				Caption:   mstd.IndexToLetter(i),
+				ProblemID: problemID,
+			})
+		}
 	}
 
 	return result, nil

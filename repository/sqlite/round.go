@@ -36,13 +36,26 @@ func NewRoundRepositoryTemp(dbName string) (RoundRepository, error) {
 	}, nil
 }
 
+type ProblemDescriptor struct {
+	Caption   string `json:"caption"`
+	ProblemID string `json:"id"`
+}
+
 type RoundDistribution struct {
-	Distribution map[string][]string `json:"problems_distribution"`
+	Distribution map[string][]ProblemDescriptor `json:"problems_distribution"`
 }
 
 func serializeProblemsDistribution(rd mathbattle.RoundDistribution) (string, error) {
 	localRoundDistribution := RoundDistribution{
-		Distribution: rd,
+		Distribution: make(map[string][]ProblemDescriptor),
+	}
+	for key, value := range rd {
+		for _, desc := range value {
+			localRoundDistribution.Distribution[key] = append(localRoundDistribution.Distribution[key], ProblemDescriptor{
+				Caption:   desc.Caption,
+				ProblemID: desc.ProblemID,
+			})
+		}
 	}
 
 	serliazed, err := json.Marshal(&localRoundDistribution)
@@ -56,7 +69,16 @@ func deserializeProblemsDistribution(input string) (mathbattle.RoundDistribution
 		return mathbattle.RoundDistribution{}, err
 	}
 
-	return mathbattle.RoundDistribution(rd.Distribution), nil
+	result := mathbattle.RoundDistribution{}
+	for key, value := range rd.Distribution {
+		for _, desc := range value {
+			result[key] = append(result[key], mathbattle.ProblemDescriptor{
+				Caption:   desc.Caption,
+				ProblemID: desc.ProblemID,
+			})
+		}
+	}
+	return result, nil
 }
 
 type ReviewDistribution struct {

@@ -75,7 +75,7 @@ func (h *SubmitReview) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message)
 	case 0:
 		return h.stepStart(ctx, m, r, p)
 	case 1:
-		return h.stepExpectSolutionNumber(ctx, m, r, p)
+		return h.stepExpectSolutionCaption(ctx, m, r, p)
 	case 2:
 		return h.stepAlreadySubmitted(ctx, m, r, p)
 	case 3:
@@ -88,21 +88,36 @@ func (h *SubmitReview) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message)
 func (h *SubmitReview) stepStart(ctx mathbattle.TelegramUserContext, m *tb.Message,
 	round mathbattle.Round, participant mathbattle.Participant) (int, []mathbattle.TelegramResponse, error) {
 
-	solutionNumbers := mathbattle.SolutionNumbers(round, participant)
-	return 1, mathbattle.OneWithKb(h.Replier.ReviewExpectSolutionNumber(), solutionNumbers...), nil
-}
-
-func (h *SubmitReview) stepExpectSolutionNumber(ctx mathbattle.TelegramUserContext, m *tb.Message,
-	round mathbattle.Round, participant mathbattle.Participant) (int, []mathbattle.TelegramResponse, error) {
-
-	solutionIDs := round.ReviewDistribution.BetweenParticipants[participant.ID]
-	solutionNumbers := mathbattle.SolutionNumbers(round, participant)
-	solutionNumber, isOk := mathbattle.ValidateIndex(m.Text, solutionIDs)
-	if !isOk {
-		return 1, mathbattle.OneWithKb(h.Replier.ReviewWrongSolutionNumber(), solutionNumbers...), nil
+	descriptors, err := mathbattle.SolutionDescriptorsFromSolutionIDs(h.Solutions, participant.ID, round)
+	if err != nil {
+		return -1, noResponse(), err
 	}
 
-	solutionID := round.ReviewDistribution.BetweenParticipants[participant.ID][solutionNumber]
+	captions := h.Replier.ReviewGetSolutionCaptions(descriptors)
+
+	return 1, mathbattle.OneWithKb(h.Replier.ReviewExpectSolutionCaption(), captions...), nil
+}
+
+func (h *SubmitReview) stepExpectSolutionCaption(ctx mathbattle.TelegramUserContext, m *tb.Message,
+	round mathbattle.Round, participant mathbattle.Participant) (int, []mathbattle.TelegramResponse, error) {
+
+	descriptors, err := mathbattle.SolutionDescriptorsFromSolutionIDs(h.Solutions, participant.ID, round)
+	if err != nil {
+		return -1, noResponse(), err
+	}
+
+	captions := h.Replier.ReviewGetSolutionCaptions(descriptors)
+
+	descriptor, isOk := h.Replier.ReviewGetDescriptor(m.Text)
+	if !isOk {
+		return 1, mathbattle.OneWithKb(h.Replier.ReviewWrongSolutionCaption(), captions...), nil
+	}
+
+	solutionID, isOk := mathbattle.FindSolutionIDbyDescriptor(descriptor, descriptors)
+	if !isOk {
+		return 1, mathbattle.OneWithKb(h.Replier.ReviewWrongSolutionCaption(), captions...), nil
+	}
+
 	ctx.Variables["solution_id"] = mathbattle.NewContextVariableStr(solutionID)
 	reviews, err := h.Reviews.FindMany(participant.ID, solutionID)
 	if err != nil {

@@ -83,21 +83,21 @@ func (h *SubmitSolution) Handle(ctx mathbattle.TelegramUserContext, m *tb.Messag
 func (h *SubmitSolution) stepStart(ctx mathbattle.TelegramUserContext, m *tb.Message,
 	round mathbattle.Round, participant mathbattle.Participant) (int, []mathbattle.TelegramResponse, error) {
 
-	problemNumbers := mathbattle.ProblemNumbers(round, participant)
-	return 1, mathbattle.OneWithKb(h.Replier.SolutionExpectProblemNumber(), problemNumbers...), nil
+	captions := mathbattle.ProblemsCaptions(round, participant)
+	return 1, mathbattle.OneWithKb(h.Replier.SolutionExpectProblemCaption(), captions...), nil
 }
 
 func (h *SubmitSolution) stepExpectProblemNumber(ctx mathbattle.TelegramUserContext, m *tb.Message,
 	round mathbattle.Round, participant mathbattle.Participant) (int, []mathbattle.TelegramResponse, error) {
 
-	problemIDs := round.ProblemDistribution[participant.ID]
-	problemNumbers := mathbattle.ProblemNumbers(round, participant)
-	problemNumber, isOk := mathbattle.ValidateIndex(m.Text, problemIDs)
+	problemDescriptors := round.ProblemDistribution[participant.ID]
+	captions := mathbattle.ProblemsCaptions(round, participant)
+	problemNumber, isOk := mathbattle.ValidateCaptions(m.Text, problemDescriptors)
 	if !isOk {
-		return 1, mathbattle.OneWithKb(h.Replier.SolutionWrongProblemNumber(), problemNumbers...), nil
+		return 1, mathbattle.OneWithKb(h.Replier.SolutionWrongProblemCaption(), captions...), nil
 	}
 
-	problemID := round.ProblemDistribution[participant.ID][problemNumber]
+	problemID := round.ProblemDistribution[participant.ID][problemNumber].ProblemID
 	ctx.Variables["problem_id"] = mathbattle.NewContextVariableStr(problemID)
 	ctx.Variables["total_uploaded"] = mathbattle.NewContextVariableInt(0)
 	currentSolution, err := h.Solutions.Find(round.ID, participant.ID, problemID)

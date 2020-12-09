@@ -46,12 +46,12 @@ func TestGet(t *testing.T) {
 	c := case1{grade: 7, participantsCount: 10, problemsCount: 1}
 	res, _ := d.GetForAll(c.Participants(), c.Problems(), c.Rounds(), 1)
 	t.Logf("%v", res)
-	for _, problemIDs := range res {
-		if len(problemIDs) != 1 {
+	for _, problemDescriptors := range res {
+		if len(problemDescriptors) != 1 {
 			t.Fail()
 		}
 
-		if problemIDs[0] != "0" {
+		if problemDescriptors[0].ProblemID != "0" {
 			t.Fail()
 		}
 	}
@@ -60,12 +60,12 @@ func TestGet(t *testing.T) {
 	res, _ = d.GetForAll(c.Participants(), c.Problems(), c.Rounds(), 1)
 	problemIDcount := make(map[string]int)
 	t.Logf("%v", res)
-	for _, problemIDs := range res {
-		if len(problemIDs) != 1 {
+	for _, problemDescriptors := range res {
+		if len(problemDescriptors) != 1 {
 			t.Fail()
 		}
 
-		problemIDcount[problemIDs[0]] += 1
+		problemIDcount[problemDescriptors[0].ProblemID] += 1
 	}
 	t.Logf("%v", problemIDcount)
 
@@ -73,12 +73,12 @@ func TestGet(t *testing.T) {
 	res, _ = d.GetForAll(c.Participants(), c.Problems(), c.Rounds(), 1)
 	problemIDcount = make(map[string]int)
 	t.Logf("%v", res)
-	for _, problemIDs := range res {
-		if len(problemIDs) != 1 {
+	for _, problemDescriptors := range res {
+		if len(problemDescriptors) != 1 {
 			t.Fail()
 		}
 
-		problemIDcount[problemIDs[0]] += 1
+		problemIDcount[problemDescriptors[0].ProblemID] += 1
 	}
 	t.Logf("%v", problemIDcount)
 }

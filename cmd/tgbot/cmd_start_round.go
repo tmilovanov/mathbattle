@@ -5,12 +5,12 @@ package main
 // "The API will not allow bulk notifications to more than ~30 users per second"
 
 import (
-	"fmt"
 	"log"
 	"time"
 
 	mreplier "mathbattle/cmd/tgbot/replier"
 	mathbattle "mathbattle/models"
+	"mathbattle/mstd"
 	problemdist "mathbattle/problem_distributor"
 
 	tgbotapi "gopkg.in/telegram-bot-api.v4"
@@ -37,15 +37,24 @@ func commandStartRound(storage mathbattle.Storage, telegramToken string, replier
 			log.Fatal(err)
 		}
 
+		for i, problem := range participantProblems {
+			round.ProblemDistribution[participant.ID] = append(round.ProblemDistribution[participant.ID],
+				mathbattle.ProblemDescriptor{
+					Caption:   mstd.IndexToLetter(i),
+					ProblemID: problem.ID,
+				})
+		}
+
 		log.Printf("%s - %v", participant.ID, mathbattle.GetProblemIDs(participantProblems))
 
 		if _, err = bot.Send(tgbotapi.NewMessage(participant.TelegramID, replier.ProblemsPostBefore())); err != nil {
 			log.Fatalf("Failed to send problem to participant: %v", err)
 		}
 
-		for i, problem := range participantProblems {
-			msg := tgbotapi.NewPhotoUpload(participant.TelegramID, tgbotapi.FileBytes{Name: "", Bytes: problem.Content})
-			msg.Caption = fmt.Sprintf("%d", i+1)
+		for i := 0; i < len(participantProblems); i++ {
+			msg := tgbotapi.NewPhotoUpload(participant.TelegramID, tgbotapi.FileBytes{Name: "", Bytes: participantProblems[i].Content})
+			msg.Caption = round.ProblemDistribution[participant.ID][i].Caption
+
 			if _, err := bot.Send(msg); err != nil {
 				log.Fatalf("Failed to send problem to participant: %v", err)
 			}
@@ -55,7 +64,6 @@ func commandStartRound(storage mathbattle.Storage, telegramToken string, replier
 			log.Fatalf("Failed to send problem to participant: %v", err)
 		}
 
-		round.ProblemDistribution[participant.ID] = mathbattle.GetProblemIDs(participantProblems)
 	}
 
 	round, err = storage.Rounds.Store(round)

@@ -4,7 +4,6 @@ import (
 	"errors"
 	mreplier "mathbattle/cmd/tgbot/replier"
 	mathbattle "mathbattle/models"
-	"mathbattle/mstd"
 	"mathbattle/usecases"
 	"time"
 
@@ -134,25 +133,41 @@ func (h *StartReviewStage) stepDistribute(ctx mathbattle.TelegramUserContext, m 
 
 	distribution := h.SolutionDistributor.Get(allRoundSolutions, h.ReviewersCount)
 
+	round.SetReviewStartDate(time.Now())
+	round.SetReviewEndDate(untilDate)
+	round.ReviewDistribution = distribution
+	if err = h.Rounds.Update(round); err != nil {
+		return -1, noResponse(), err
+	}
+
 	for participantID, solutionIDs := range distribution.BetweenParticipants {
 		p, err := h.Participants.GetByID(participantID)
 		if err != nil {
 			return -1, noResponse(), nil
 		}
 
-		err = h.Postman.PostText(p.TelegramID, h.Replier.ReviewPostBefore())
+		endMsk, err := round.GetReviewEndDateMsk()
+		if err != nil {
+			return -1, noResponse(), nil
+		}
+
+		err = h.Postman.PostText(p.TelegramID, h.Replier.ReviewPostBefore(round.GetReviewStageDuration(), endMsk))
 		if err != nil {
 			return -1, noResponse(), err
 		}
 
-		for i, solutionID := range solutionIDs {
-			solution, err := h.Solutions.Get(solutionID)
+		descriptors, err := mathbattle.SolutionDescriptorsFromSolutionIDs(h.Solutions, participantID, round)
+		if err != nil {
+			return -1, noResponse(), err
+		}
+
+		for i := 0; i < len(solutionIDs); i++ {
+			solution, err := h.Solutions.Get(solutionIDs[i])
 			if err != nil {
 				return -1, noResponse(), err
 			}
 
-			problemIndex := mstd.IndexOf(round.ProblemDistribution[p.ID], solution.ProblemID)
-			caption := h.Replier.ReviewPostCaption(problemIndex+1, i+1)
+			caption := h.Replier.ReviewPostCaption(descriptors[i].ProblemCaption, descriptors[i].SolutionNumber)
 			err = h.Postman.PostAlbum(p.TelegramID, caption, solution.Parts)
 			if err != nil {
 				return -1, noResponse(), err
@@ -163,13 +178,6 @@ func (h *StartReviewStage) stepDistribute(ctx mathbattle.TelegramUserContext, m 
 		if err != nil {
 			return -1, noResponse(), err
 		}
-	}
-
-	round.SetReviewStartDate(time.Now())
-	round.SetReviewEndDate(untilDate)
-	round.ReviewDistribution = distribution
-	if err = h.Rounds.Update(round); err != nil {
-		return -1, noResponse(), err
 	}
 
 	return -1, mathbattle.OneTextResp(h.Replier.StartReviewSuccess()), nil
