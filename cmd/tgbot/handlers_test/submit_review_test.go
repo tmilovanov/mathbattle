@@ -87,7 +87,7 @@ func (s *submitReviewTestSuite) SetupTest() {
 
 func (s *submitReviewTestSuite) TestNotSuitableWhenNoRoundNoParticipant() {
 	ctx := mathbattle.NewTelegramUserContext(12345)
-	isSuitable, err := s.handler.IsCommandSuitable(ctx)
+	isSuitable, _, err := s.handler.IsCommandSuitable(ctx)
 	s.Require().Nil(err)
 	s.Require().False(isSuitable)
 }
@@ -96,7 +96,7 @@ func (s *submitReviewTestSuite) TestNotSuitableWhenNoRound() {
 	_, err := s.handler.Participants.Store(mocks.GenParticipants(1, 11)[0])
 	s.Require().Nil(err)
 	ctx := mathbattle.NewTelegramUserContext(12345)
-	isSuitable, err := s.handler.IsCommandSuitable(ctx)
+	isSuitable, _, err := s.handler.IsCommandSuitable(ctx)
 	s.Require().Nil(err)
 	s.Require().False(isSuitable)
 }
@@ -109,7 +109,7 @@ func (s *submitReviewTestSuite) TestNotSuitableWhenNoParticipant() {
 		10, 3, []int{2, 2, 2}, 2)
 	s.Require().Nil(err)
 	ctx := mathbattle.NewTelegramUserContext(12345)
-	isSuitable, err := s.handler.IsCommandSuitable(ctx)
+	isSuitable, _, err := s.handler.IsCommandSuitable(ctx)
 	s.Require().Nil(err)
 	s.Require().False(isSuitable)
 }
@@ -127,7 +127,7 @@ func (s *submitReviewTestSuite) TestNotSuitableWhenNoSolutionWasSent() {
 	s.Require().Nil(err)
 
 	ctx := mathbattle.NewTelegramUserContext(p.TelegramID)
-	isSuitable, err := s.handler.IsCommandSuitable(ctx)
+	isSuitable, _, err := s.handler.IsCommandSuitable(ctx)
 	s.Require().Nil(err)
 	s.Require().False(isSuitable)
 }
@@ -145,7 +145,7 @@ func (s *submitReviewTestSuite) TestSuitable() {
 	s.Require().Nil(err)
 
 	ctx := mathbattle.NewTelegramUserContext(p.TelegramID)
-	isSuitable, err := s.handler.IsCommandSuitable(ctx)
+	isSuitable, _, err := s.handler.IsCommandSuitable(ctx)
 	s.Require().Nil(err)
 	s.Require().True(isSuitable)
 }

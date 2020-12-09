@@ -31,17 +31,17 @@ func (h *StartReviewStage) Description() string {
 }
 
 func (h *StartReviewStage) IsShowInHelp(ctx mathbattle.TelegramUserContext) bool {
-	res, _ := h.IsCommandSuitable(ctx)
+	res, _, _ := h.IsCommandSuitable(ctx)
 	return res
 }
 
-func (h *StartReviewStage) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, error) {
+func (h *StartReviewStage) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, string, error) {
 	_, err := h.Rounds.GetReviewPending()
 	if err == nil {
-		return true, nil
+		return true, "", nil
 	}
 
-	return false, err
+	return false, "", err
 }
 
 func (h *StartReviewStage) IsAdminOnly() bool {

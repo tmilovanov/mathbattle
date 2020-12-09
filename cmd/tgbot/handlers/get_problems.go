@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	mreplier "mathbattle/cmd/tgbot/replier"
 	mathbattle "mathbattle/models"
 	"mathbattle/mstd"
 
@@ -10,6 +11,7 @@ import (
 type GetProblems struct {
 	Handler
 
+	Replier            mreplier.Replier
 	Participants       mathbattle.ParticipantRepository
 	Rounds             mathbattle.RoundRepository
 	Problems           mathbattle.ProblemRepository
@@ -25,29 +27,29 @@ func (h *GetProblems) Description() string {
 }
 
 func (h *GetProblems) IsShowInHelp(ctx mathbattle.TelegramUserContext) bool {
-	res, _ := h.IsCommandSuitable(ctx)
+	res, _, _ := h.IsCommandSuitable(ctx)
 	return res
 }
 
-func (h *GetProblems) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, error) {
+func (h *GetProblems) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, string, error) {
 	isReg, err := mathbattle.IsRegistered(h.Participants, ctx.User.ChatID)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
 	if !isReg {
-		return false, nil
+		return false, h.Replier.NotParticipant(), nil
 	}
 
 	_, err = h.Rounds.GetSolveRunning()
 	if err != nil {
 		if err == mathbattle.ErrNotFound {
-			return false, nil
+			return false, h.Replier.NoRoundRunning(), nil
 		}
-		return false, err
+		return false, "", err
 	}
 
-	return true, nil
+	return true, "", nil
 }
 
 func (h *GetProblems) IsAdminOnly() bool {

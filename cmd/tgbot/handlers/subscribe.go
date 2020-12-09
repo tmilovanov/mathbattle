@@ -24,17 +24,21 @@ func (h *Subscribe) Description() string {
 }
 
 func (h *Subscribe) IsShowInHelp(ctx mathbattle.TelegramUserContext) bool {
-	res, _ := h.IsCommandSuitable(ctx)
+	res, _, _ := h.IsCommandSuitable(ctx)
 	return res
 }
 
-func (h *Subscribe) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, error) {
+func (h *Subscribe) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, string, error) {
 	isReg, err := mathbattle.IsRegistered(h.Participants, ctx.User.ChatID)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
-	return !isReg, nil
+	if isReg {
+		return false, h.Replier.AlreadyRegistered(), nil
+	}
+
+	return true, "", nil
 }
 
 func (h *Subscribe) IsAdminOnly() bool {

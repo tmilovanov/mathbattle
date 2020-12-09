@@ -166,6 +166,14 @@ func (r RussianReplier) InternalError() string {
 	return "Произошла внутрення ошибка. Свяжитесь с организаторами и опишите свою проблему."
 }
 
+func (r RussianReplier) NotParticipant() string {
+	return "Вы не являетесь участником. Сначала зарегистрируйтесь."
+}
+
+func (r RussianReplier) NoRoundRunning() string {
+	return "Раунд ещё не начался."
+}
+
 func (r RussianReplier) AlreadyRegistered() string {
 	return "Вы уже подписаны на рассылку задач."
 }

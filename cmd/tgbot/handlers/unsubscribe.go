@@ -23,30 +23,30 @@ func (h *Unsubscribe) Description() string {
 }
 
 func (h *Unsubscribe) IsShowInHelp(ctx mathbattle.TelegramUserContext) bool {
-	res, _ := h.IsCommandSuitable(ctx)
+	res, _, _ := h.IsCommandSuitable(ctx)
 	return res
 }
 
-func (h *Unsubscribe) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, error) {
+func (h *Unsubscribe) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, string, error) {
 	isReg, err := mathbattle.IsRegistered(h.Participants, ctx.User.ChatID)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
 	if !isReg {
-		return false, nil
+		return false, h.Replier.NotParticipant(), nil
 	}
 
 	_, err = h.Rounds.GetRunning()
 	if err != nil {
 		if err != mathbattle.ErrNotFound {
-			return false, err
+			return false, "", err
 		} else {
-			return true, nil
+			return true, "", nil
 		}
 	}
 
-	return false, nil
+	return false, "", nil
 }
 
 func (h *Unsubscribe) IsAdminOnly() bool {

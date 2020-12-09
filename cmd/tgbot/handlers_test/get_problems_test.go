@@ -40,6 +40,7 @@ func (s *getProblemsTs) SetupTest() {
 	s.Require().Nil(err)
 
 	s.handler = handlers.GetProblems{
+		Replier:      s.replier,
 		Participants: &s.participants,
 		Rounds:       &s.rounds,
 		Problems:     &s.problems,
@@ -48,7 +49,7 @@ func (s *getProblemsTs) SetupTest() {
 
 func (s *getProblemsTs) TestNotSuitableWhenNoRoundNoParticipant() {
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
-	isSuitable, err := s.handler.IsCommandSuitable(ctx)
+	isSuitable, _, err := s.handler.IsCommandSuitable(ctx)
 	s.Require().Nil(err)
 	s.Require().False(isSuitable)
 }
@@ -61,7 +62,7 @@ func (s *getProblemsTs) TestNotSuitableWhenNoRound() {
 	s.Require().Nil(err)
 
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
-	isSuitable, err := s.handler.IsCommandSuitable(ctx)
+	isSuitable, _, err := s.handler.IsCommandSuitable(ctx)
 	s.Require().Nil(err)
 	s.Require().False(isSuitable)
 }
@@ -72,7 +73,7 @@ func (s *getProblemsTs) TestNotSuitableWhenNoParticipant() {
 	s.Require().Nil(err)
 
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
-	isSuitable, err := s.handler.IsCommandSuitable(ctx)
+	isSuitable, _, err := s.handler.IsCommandSuitable(ctx)
 	s.Require().Nil(err)
 	s.Require().False(isSuitable)
 }
@@ -89,7 +90,7 @@ func (s *getProblemsTs) TestSuitableWhenRoundAndParticipant() {
 	s.Require().Nil(err)
 
 	ctx := mathbattle.NewTelegramUserContext(s.chatID)
-	isSuitable, err := s.handler.IsCommandSuitable(ctx)
+	isSuitable, _, err := s.handler.IsCommandSuitable(ctx)
 	s.Require().Nil(err)
 	s.Require().True(isSuitable)
 }

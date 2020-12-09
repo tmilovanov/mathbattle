@@ -27,33 +27,33 @@ func (h *SubmitReview) Description() string {
 }
 
 func (h *SubmitReview) IsShowInHelp(ctx mathbattle.TelegramUserContext) bool {
-	res, _ := h.IsCommandSuitable(ctx)
+	res, _, _ := h.IsCommandSuitable(ctx)
 	return res
 }
 
-func (h *SubmitReview) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, error) {
+func (h *SubmitReview) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, string, error) {
 	participant, err := h.Participants.GetByTelegramID(ctx.User.ChatID)
 	if err != nil {
 		if err == mathbattle.ErrNotFound {
-			return false, nil
+			return false, h.Replier.NotParticipant(), nil
 		}
-		return false, err
+		return false, "", err
 	}
 
 	round, err := h.Rounds.GetReviewRunning()
 	if err != nil {
 		if err == mathbattle.ErrNotFound {
-			return false, nil
+			return false, h.Replier.NoRoundRunning(), nil
 		}
-		return false, err
+		return false, "", err
 	}
 
 	_, isExist := round.ReviewDistribution.BetweenParticipants[participant.ID]
 	if !isExist {
-		return false, nil
+		return false, "", nil
 	}
 
-	return true, nil
+	return true, "", nil
 }
 
 func (h *SubmitReview) IsAdminOnly() bool {

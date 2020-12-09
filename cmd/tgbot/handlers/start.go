@@ -25,8 +25,8 @@ func (h *Start) IsShowInHelp(ctx mathbattle.TelegramUserContext) bool {
 	return false
 }
 
-func (h *Start) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, error) {
-	return true, nil
+func (h *Start) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, string, error) {
+	return true, "", nil
 }
 
 func (h *Start) IsAdminOnly() bool {

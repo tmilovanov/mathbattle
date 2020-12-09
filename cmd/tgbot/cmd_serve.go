@@ -91,6 +91,7 @@ func createCommands(storage mathbattle.Storage, replier mreplier.Replier,
 				Name:        replier.CmdGetProblemsName(),
 				Description: replier.CmdGetProblemsDesc(),
 			},
+			Replier:            replier,
 			Participants:       storage.Participants,
 			Rounds:             storage.Rounds,
 			Problems:           storage.Problems,
@@ -175,7 +176,7 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 
 	genericHandler := func(handler mathbattle.TelegramCommandHandler, m *tb.Message, startType mathbattle.CommandStep) {
 		ctx, err := ctxRepository.GetByTelegramID(int64(m.Sender.ID))
-		isSuitable, err := handler.IsCommandSuitable(ctx)
+		isSuitable, reason, err := handler.IsCommandSuitable(ctx)
 		if err != nil {
 			b.Send(m.Sender, replier.InternalError(), &tb.ReplyMarkup{
 				ReplyKeyboardRemove: true,
@@ -185,11 +186,18 @@ func commandServe(storage mathbattle.Storage, token string, ctxRepository mathba
 		}
 
 		if !isSuitable {
+			if reason != "" {
+				b.Send(m.Sender, reason, &tb.ReplyMarkup{
+					ReplyKeyboardRemove: true,
+				})
+			}
+
 			b.Send(m.Sender,
 				replier.GetAvailableCommands(mathbattle.FilterCommandsToShow(allCommands, ctx)),
 				&tb.ReplyMarkup{
 					ReplyKeyboardRemove: true,
 				})
+
 			return
 		}
 

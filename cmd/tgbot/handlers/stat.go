@@ -26,12 +26,12 @@ func (h *Stat) Description() string {
 }
 
 func (h *Stat) IsShowInHelp(ctx mathbattle.TelegramUserContext) bool {
-	res, _ := h.IsCommandSuitable(ctx)
+	res, _, _ := h.IsCommandSuitable(ctx)
 	return res
 }
 
-func (h *Stat) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, error) {
-	return true, nil
+func (h *Stat) IsCommandSuitable(ctx mathbattle.TelegramUserContext) (bool, string, error) {
+	return true, "", nil
 }
 
 func (h *Stat) IsAdminOnly() bool {

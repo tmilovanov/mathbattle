@@ -33,6 +33,8 @@ type Replier interface {
 	CmdStatDesc() string
 
 	InternalError() string
+	NotParticipant() string
+	NoRoundRunning() string
 
 	// Replies used in CmdSubscribe
 	AlreadyRegistered() string
