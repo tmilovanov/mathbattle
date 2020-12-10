@@ -206,8 +206,14 @@ func (r RussianReplier) UnsubscribeSuccess() string {
 	return "Вы успешно отписаны от рассылки задач."
 }
 
-func (r RussianReplier) ProblemsPostBefore() string {
-	return "Привет! А вот и задачи."
+func (r RussianReplier) ProblemsPostBefore(stageDuration time.Duration, stageEnd time.Time) string {
+	msg := "Привет! Начался новый раунд. Первый этап - этап решения задач. "
+
+	day, hour, minute := mstd.DurationToDayHourMinute(stageDuration)
+	msg += fmt.Sprintf("Этап продлится %dд. %dч. %dм. ", day, hour, minute)
+	msg += fmt.Sprintf("После %s по московскому времени решения приниматься не будут.", stageEnd.Format("02.01.2006 15:04"))
+
+	return msg
 }
 
 func (r RussianReplier) ProblemsPostAfter() string {

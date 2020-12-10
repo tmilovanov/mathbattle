@@ -49,7 +49,7 @@ type Replier interface {
 	UnsubscribeSuccess() string
 
 	// Replies used to post problems during start of round
-	ProblemsPostBefore() string
+	ProblemsPostBefore(stageDuration time.Duration, stageEnd time.Time) string
 	ProblemsPostAfter() string
 
 	// Replies used in CmdSubmitSolution

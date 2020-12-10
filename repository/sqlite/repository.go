@@ -97,6 +97,12 @@ func (r *sqliteRepository) CreateFirstTime() error {
 			solution_id INTEGER,
 			content TEXT
 		)`,
+		`CREATE TABLE IF NOT EXISTS scheduled_messages (
+			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+			type VARCHAR(32),
+			content TEXT,
+			recievers TEXT
+		)`,
 	}
 
 	for _, createStmt := range tableCreators {

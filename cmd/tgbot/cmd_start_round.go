@@ -47,7 +47,13 @@ func commandStartRound(storage mathbattle.Storage, telegramToken string, replier
 
 		log.Printf("%s - %v", participant.ID, mathbattle.GetProblemIDs(participantProblems))
 
-		if _, err = bot.Send(tgbotapi.NewMessage(participant.TelegramID, replier.ProblemsPostBefore())); err != nil {
+		duration := round.GetSolveStageDuration()
+		stageEndMsk, err := round.GetSolveEndDateMsk()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if _, err = bot.Send(tgbotapi.NewMessage(participant.TelegramID, replier.ProblemsPostBefore(duration, stageEndMsk))); err != nil {
 			log.Fatalf("Failed to send problem to participant: %v", err)
 		}
 

@@ -44,6 +44,10 @@ func (r *Round) GetSolveEndDate() time.Time {
 	return r.solveEndDate
 }
 
+func (r *Round) GetSolveStageDuration() time.Duration {
+	return r.GetSolveEndDate().Sub(r.GetSolveStartDate())
+}
+
 func (r *Round) GetSolveEndDateMsk() (time.Time, error) {
 	location, err := time.LoadLocation("Europe/Moscow")
 	if err != nil {
