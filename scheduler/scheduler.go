@@ -15,9 +15,9 @@ func NewMessageScheduler(repository mathbattle.ScheduledMessageRepository) Messa
 }
 
 func (s *MessageScheduler) Schedule(message mathbattle.ScheduledMessage) error {
-	s.repository.
+	return nil
 }
 
 func (s *MessageScheduler) Start() error {
-
+	return nil
 }

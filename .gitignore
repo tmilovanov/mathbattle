@@ -5,3 +5,4 @@ mydocs/
 *config.yaml
 *.sqlite
 *.test
+deploy.sh
