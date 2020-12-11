@@ -36,6 +36,9 @@ type Replier interface {
 	NotParticipant() string
 	NoRoundRunning() string
 
+	SolveStageEnd() string
+	ReviewStageEnd() string
+
 	// Replies used in CmdSubscribe
 	AlreadyRegistered() string
 	RegisterNameExpect() string

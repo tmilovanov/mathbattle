@@ -20,6 +20,7 @@ type ScheduledMessage struct {
 type ScheduledMessageRepository interface {
 	Store(msg ScheduledMessage) (ScheduledMessage, error)
 	Get(ID string) (ScheduledMessage, error)
+	GetAll() ([]ScheduledMessage, error)
 	Update(msg ScheduledMessage) error
 	Delete(ID string) error
 }

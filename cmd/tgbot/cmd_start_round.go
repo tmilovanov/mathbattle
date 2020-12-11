@@ -12,11 +12,13 @@ import (
 	mathbattle "mathbattle/models"
 	"mathbattle/mstd"
 	problemdist "mathbattle/problem_distributor"
+	"mathbattle/repository/sqlite"
+	"mathbattle/scheduler"
 
 	tgbotapi "gopkg.in/telegram-bot-api.v4"
 )
 
-func commandStartRound(storage mathbattle.Storage, telegramToken string, replier mreplier.Replier, problemCount int) {
+func commandStartRound(storage mathbattle.Storage, databasePath string, telegramToken string, replier mreplier.Replier, problemCount int) {
 	bot, err := tgbotapi.NewBotAPI(telegramToken)
 	if err != nil {
 		log.Fatal(err)
@@ -28,8 +30,27 @@ func commandStartRound(storage mathbattle.Storage, telegramToken string, replier
 	}
 
 	problemDistributor := problemdist.NewSimpleDistributor(storage.Problems, 3)
-	duration, _ := time.ParseDuration("48h")
+	//duration, _ := time.ParseDuration("48h")
+	duration := time.Minute
 	round := mathbattle.NewRound(duration)
+
+	postman := &TelegramPostman2{bot: bot}
+
+	scheduledMessageRepository, err := sqlite.NewScheduledMessageRepository(databasePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	scheduler := scheduler.NewMessageScheduler(&scheduledMessageRepository, storage.Participants, postman)
+	err = scheduler.Schedule(mathbattle.ScheduledMessage{
+		Message:       replier.SolveStageEnd(),
+		SendTime:      round.GetSolveEndDate(),
+		RecieversType: mathbattle.Everyone,
+		Recievers:     []string{},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	for _, participant := range participants {
 		participantProblems, err := problemDistributor.GetForParticipant(participant)

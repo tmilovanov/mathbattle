@@ -174,6 +174,17 @@ func (r RussianReplier) NoRoundRunning() string {
 	return "Раунд ещё не начался."
 }
 
+func (r RussianReplier) SolveStageEnd() string {
+	msg := "Этап решения задач завершён. Через некоторое время начнётся следующий этап - этап проверки решений. "
+	msg += "Когда этап начнётся, вам будут разосланы решения других участников для проверки."
+	return msg
+}
+
+func (r RussianReplier) ReviewStageEnd() string {
+	msg := "Этап проверки решений завершён. Скоро вы получите комментарии от участников и от жюри на свои решения"
+	return msg
+}
+
 func (r RussianReplier) AlreadyRegistered() string {
 	return "Вы уже подписаны на рассылку задач."
 }

@@ -100,6 +100,7 @@ func (r *sqliteRepository) CreateFirstTime() error {
 		`CREATE TABLE IF NOT EXISTS scheduled_messages (
 			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 			type VARCHAR(32),
+			send_time DATETIME,
 			content TEXT,
 			recievers TEXT
 		)`,

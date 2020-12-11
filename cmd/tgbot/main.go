@@ -46,7 +46,7 @@ func main() {
 		commandExample(cfg.Token)
 	case "start-round":
 		// Сейчас раунд добавляется "бесконечным". Добавить возможность передать срок окончания раунда
-		commandStartRound(storage, cfg.Token, mreplier.RussianReplier{}, 2)
+		commandStartRound(storage, cfg.DatabasePath, cfg.Token, mreplier.RussianReplier{}, 2)
 	case "delete-round":
 		commandDeleteRound(storage)
 	case "run":
@@ -55,7 +55,7 @@ func main() {
 			log.Fatal(err)
 		}
 		problemDistributor := problemdist.NewSimpleDistributor(storage.Problems, 3)
-		commandServe(storage, cfg.Token, &userCtxRepository, mreplier.RussianReplier{}, &problemDistributor)
+		commandServe(storage, cfg.DatabasePath, cfg.Token, &userCtxRepository, mreplier.RussianReplier{}, &problemDistributor)
 	case "debug-run":
 		userCtxRepository, err := memory.NewTelegramContextRepository(&telegramUserRepository)
 		if err != nil {
@@ -65,7 +65,7 @@ func main() {
 		problemDistributor := problemdist.NewSimpleDistributor(storage.Problems, 3)
 		mocks.GenReviewPendingRound(storage.Rounds, storage.Participants, storage.Solutions, storage.Problems,
 			&problemdistributor.SimpleDistributor{}, 10, 3, []int{1, 3, 6})
-		commandServe(storage, cfg.Token, &userCtxRepository, mreplier.RussianReplier{}, &problemDistributor)
+		commandServe(storage, cfg.DatabasePath, cfg.Token, &userCtxRepository, mreplier.RussianReplier{}, &problemDistributor)
 	}
 }
 
@@ -124,7 +124,7 @@ func getStorage(cfg config, isDebug bool) mathbattle.Storage {
 		}
 		storage.Rounds = &rounds
 
-		reviews, err := sqlite.NewReviewRepositoryTemp(cfg.DatabasePath)
+		reviews, err := sqlite.NewReviewRepositoryTemp(dbName)
 		if err != nil {
 			log.Fatal(err)
 		}
