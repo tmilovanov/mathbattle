@@ -31,6 +31,8 @@ type Replier interface {
 	CmdSubmitReviewDesc() string
 	CmdStatName() string
 	CmdStatDesc() string
+	CmdGetReviewsName() string
+	CmdGetReviewsDesc() string
 
 	InternalError() string
 	NotParticipant() string

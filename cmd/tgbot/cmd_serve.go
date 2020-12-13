@@ -16,7 +16,8 @@ import (
 )
 
 func createCommands(storage mathbattle.Storage, replier mreplier.Replier,
-	postman mathbattle.TelegramPostman, problemDistributor mathbattle.ProblemDistributor) []mathbattle.TelegramCommandHandler {
+	postman mathbattle.TelegramPostman, problemDistributor mathbattle.ProblemDistributor,
+	scheduler mathbattle.MessageScheduler) []mathbattle.TelegramCommandHandler {
 	solutionDistributor := solutiondist.SolutionDistributor{}
 
 	commandStart := &handlers.Start{
@@ -82,6 +83,7 @@ func createCommands(storage mathbattle.Storage, replier mreplier.Replier,
 			SolutionDistributor: &solutionDistributor,
 			ReviewersCount:      2,
 			Postman:             postman,
+			Scheduler:           scheduler,
 		},
 		&handlers.SubmitReview{
 			Handler: handlers.Handler{
@@ -105,6 +107,17 @@ func createCommands(storage mathbattle.Storage, replier mreplier.Replier,
 			Rounds:       storage.Rounds,
 			Solutions:    storage.Solutions,
 			Reviews:      storage.Reviews,
+		},
+		&handlers.GetReviews{
+			Handler: handlers.Handler{
+				Name:        replier.CmdGetReviewsName(),
+				Description: replier.CmdGetReviewsDesc(),
+			},
+			Replier:     replier,
+			Participant: storage.Participants,
+			Reviews:     storage.Reviews,
+			Rounds:      storage.Rounds,
+			Solutions:   storage.Solutions,
 		},
 		commandStart,
 	}
@@ -148,7 +161,7 @@ func commandServe(storage mathbattle.Storage, databasePath string, token string,
 		log.Fatal(err)
 	}
 
-	allCommands := createCommands(storage, replier, postman, problemDistributor)
+	allCommands := createCommands(storage, replier, postman, problemDistributor, &scheduler)
 
 	genericHandler := func(handler mathbattle.TelegramCommandHandler, m *tb.Message, startType mathbattle.CommandStep) {
 		ctx, err := ctxRepository.GetByTelegramID(int64(m.Sender.ID))
@@ -219,7 +232,7 @@ func commandServe(storage mathbattle.Storage, databasePath string, token string,
 					b2.Send(msg)
 				} else {
 					// text message only
-					b.Send(m.Sender, item.Text, item.Keyboard)
+					b.Send(m.Sender, item.Text, item.Keyboard, tb.ModeMarkdown)
 				}
 			}
 

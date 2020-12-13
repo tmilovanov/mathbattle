@@ -31,7 +31,7 @@ func commandStartRound(storage mathbattle.Storage, databasePath string, telegram
 
 	problemDistributor := problemdist.NewSimpleDistributor(storage.Problems, 3)
 	//duration, _ := time.ParseDuration("48h")
-	duration := time.Minute
+	duration := time.Minute * 3
 	round := mathbattle.NewRound(duration)
 
 	postman := &TelegramPostman2{bot: bot}

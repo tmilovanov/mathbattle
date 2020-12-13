@@ -27,5 +27,5 @@ type ScheduledMessageRepository interface {
 
 type MessageScheduler interface {
 	Schedule(message ScheduledMessage) error
-	Start() error
+	StartAll() error
 }

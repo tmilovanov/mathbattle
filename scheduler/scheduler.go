@@ -22,10 +22,6 @@ func NewMessageScheduler(repository mathbattle.ScheduledMessageRepository, parti
 }
 
 func (s *MessageScheduler) scheduleSend(message mathbattle.ScheduledMessage) {
-	if message.SendTime.Before(time.Now()) {
-		return
-	}
-
 	time.AfterFunc(time.Until(message.SendTime), func(msg mathbattle.ScheduledMessage) func() {
 		return func() {
 			participants, err := s.participants.GetAll()
@@ -40,6 +36,7 @@ func (s *MessageScheduler) scheduleSend(message mathbattle.ScheduledMessage) {
 }
 
 func (s *MessageScheduler) Schedule(message mathbattle.ScheduledMessage) error {
+	log.Println("Schedule()")
 	msg, err := s.repository.Store(message)
 	if err != nil {
 		return err
@@ -54,8 +51,13 @@ func (s *MessageScheduler) StartAll() error {
 	if err != nil {
 		return err
 	}
+
 	for _, msg := range messages {
-		s.scheduleSend(msg)
+		if msg.SendTime.Before(time.Now()) {
+			log.Printf("No need to run. Now: %v, SendTIme: %v", time.Now(), msg.SendTime)
+		} else {
+			s.scheduleSend(msg)
+		}
 	}
 	return nil
 }

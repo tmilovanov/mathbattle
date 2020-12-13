@@ -282,6 +282,21 @@ func (r *RoundRepository) GetReviewRunning() (mathbattle.Round, error) {
 	return r.Get(ID)
 }
 
+func (r *RoundRepository) GetLast() (mathbattle.Round, error) {
+	res := r.db.QueryRow("SELECT id FROM rounds ORDER BY ID DESC LIMIT 1")
+
+	var ID string
+	err := res.Scan(&ID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return mathbattle.Round{}, mathbattle.ErrNotFound
+		}
+		return mathbattle.Round{}, err
+	}
+
+	return r.Get(ID)
+}
+
 func (r *RoundRepository) Update(round mathbattle.Round) error {
 	serializedRoundDistribution, err := serializeProblemsDistribution(round.ProblemDistribution)
 	if err != nil {

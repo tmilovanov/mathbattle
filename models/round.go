@@ -28,6 +28,15 @@ type Round struct {
 	ReviewDistribution  ReviewDistribution
 }
 
+func (r *Round) IsActive() bool {
+	stage := GetRoundStage(*r)
+	if stage == StageFinished || stage == StageNotStarted {
+		return false
+	}
+
+	return true
+}
+
 func (r *Round) SetSolveStartDate(datetime time.Time) {
 	r.solveStartDate = datetime.Round(0).UTC()
 }
@@ -92,6 +101,7 @@ type RoundRepository interface {
 	GetReviewPending() (Round, error)
 	GetReviewRunning() (Round, error)
 	GetAll() ([]Round, error)
+	GetLast() (Round, error)
 	Update(round Round) error
 	Delete(roundID string) error
 }

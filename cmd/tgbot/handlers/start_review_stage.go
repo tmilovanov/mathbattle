@@ -20,6 +20,7 @@ type StartReviewStage struct {
 	SolutionDistributor mathbattle.SolutionDistributor
 	ReviewersCount      uint
 	Postman             mathbattle.TelegramPostman
+	Scheduler           mathbattle.MessageScheduler
 }
 
 func (h *StartReviewStage) Name() string {
@@ -139,6 +140,13 @@ func (h *StartReviewStage) stepDistribute(ctx mathbattle.TelegramUserContext, m 
 	if err = h.Rounds.Update(round); err != nil {
 		return -1, noResponse(), err
 	}
+
+	h.Scheduler.Schedule(mathbattle.ScheduledMessage{
+		Message:       h.Replier.ReviewStageEnd(),
+		SendTime:      round.GetReviewEndDate(),
+		RecieversType: mathbattle.Everyone,
+		Recievers:     []string{},
+	})
 
 	for participantID, solutionIDs := range distribution.BetweenParticipants {
 		p, err := h.Participants.GetByID(participantID)
