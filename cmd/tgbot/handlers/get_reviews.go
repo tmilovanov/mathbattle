@@ -75,14 +75,21 @@ func (h *GetReviews) Handle(ctx mathbattle.TelegramUserContext, m *tb.Message) (
 	}
 
 	result := []mathbattle.TelegramResponse{}
-	i := 1
 	for _, solution := range solutions {
+
 		reviews, err := h.Reviews.FindMany("", solution.ID)
 		if err != nil {
 			return -1, noResponse(), err
 		}
-		for _, review := range reviews {
-			msg := fmt.Sprintf("Комментарий №%d", i)
+		for i, review := range reviews {
+			problemCaption := ""
+			for _, desc := range lastRound.ProblemDistribution[participant.ID] {
+				if desc.ProblemID == solution.ProblemID {
+					problemCaption = desc.Caption
+				}
+			}
+
+			msg := fmt.Sprintf("Комментарий №%d на задачу %s", i+1, problemCaption)
 			msg += "\n"
 			msg += review.Content
 			result = append(result, mathbattle.NewResp(msg))

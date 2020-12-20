@@ -29,10 +29,14 @@ func commandStartRound(storage mathbattle.Storage, databasePath string, telegram
 		log.Fatal(err)
 	}
 
-	problemDistributor := problemdist.NewSimpleDistributor(storage.Problems, 3)
-	//duration, _ := time.ParseDuration("48h")
+	problemDistributor := problemdist.NewSimpleDistributor(storage.Problems, problemCount)
 	duration := time.Minute * 3
 	round := mathbattle.NewRound(duration)
+	endDate, err := mathbattle.ParseStageEndDate("18.12.2020")
+	if err != nil {
+		log.Fatal(err)
+	}
+	round.SetSolveEndDate(endDate)
 
 	postman := &TelegramPostman2{bot: bot}
 

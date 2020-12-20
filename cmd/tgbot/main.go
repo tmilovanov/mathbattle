@@ -17,6 +17,13 @@ import (
 )
 
 func main() {
+	//file, err := os.OpenFile("logs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	//if err != nil {
+	//log.Fatal(err)
+	//}
+
+	//log.SetOutput(file)
+
 	log.Printf("Application started, arguments: %v", os.Args)
 
 	if len(os.Args) < 3 {
@@ -46,7 +53,7 @@ func main() {
 		commandExample(cfg.Token)
 	case "start-round":
 		// Сейчас раунд добавляется "бесконечным". Добавить возможность передать срок окончания раунда
-		commandStartRound(storage, cfg.DatabasePath, cfg.Token, mreplier.RussianReplier{}, 2)
+		commandStartRound(storage, cfg.DatabasePath, cfg.Token, mreplier.RussianReplier{}, 4)
 	case "delete-round":
 		commandDeleteRound(storage)
 	case "run":
@@ -54,7 +61,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		problemDistributor := problemdist.NewSimpleDistributor(storage.Problems, 3)
+		problemDistributor := problemdist.NewSimpleDistributor(storage.Problems, 4)
 		commandServe(storage, cfg.DatabasePath, cfg.Token, &userCtxRepository, mreplier.RussianReplier{}, &problemDistributor)
 	case "debug-run":
 		userCtxRepository, err := memory.NewTelegramContextRepository(&telegramUserRepository)
@@ -62,7 +69,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		problemDistributor := problemdist.NewSimpleDistributor(storage.Problems, 3)
+		problemDistributor := problemdist.NewSimpleDistributor(storage.Problems, 4)
 		mocks.GenReviewPendingRound(storage.Rounds, storage.Participants, storage.Solutions, storage.Problems,
 			&problemdistributor.SimpleDistributor{}, 10, 3, []int{1, 3, 6})
 		commandServe(storage, cfg.DatabasePath, cfg.Token, &userCtxRepository, mreplier.RussianReplier{}, &problemDistributor)

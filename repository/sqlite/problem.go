@@ -99,7 +99,7 @@ func (r *ProblemRepository) GetByID(ID string) (mathbattle.Problem, error) {
 }
 
 func (r *ProblemRepository) GetAll() ([]mathbattle.Problem, error) {
-	rows, err := r.db.Query("SELECT id, sha256sum, grade_min, grade_max, extension FROM problems")
+	rows, err := r.db.Query("SELECT id, sha256sum, grade_min, grade_max, extension FROM problems ORDER BY id")
 	if err != nil {
 		return []mathbattle.Problem{}, err
 	}
