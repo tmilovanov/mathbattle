@@ -1,22 +1,23 @@
-## Cборка
+### О проекте
+mathbattle - это платформа для проведения соревнований по [математическим боям](https://ru.wikipedia.org/wiki/%D0%9C%D0%B0%D1%82%D0%B1%D0%BE%D0%B9). Включает в себя API server (mbserver) и Телеграмм бота (mbbot)
 
-    make build
+### Сборка и использование
+
+```bash
+git clone https://github.com/tmilovanov/mathbattle.git
+make
+```
+
+Скопируйте шаблон конфигурации в директорию со скомпилированным mbserver и mbbot
+
+    cp config/config_template.yaml bin/config.yaml
     cd bin
 
-## Использование
+Отредактируйте конфигурацию. В поле `token` укажите [telegram token](https://core.telegram.org/bots/api#authorizing-your-bot)
 
- Инициализировать базу данных
+Запустите mbbot и mbserver
 
-    ./adminclient init
-
-Загрузить задачи в базу
-
-     ./adminclient add-problems ../example_problems
-
-Запустить бота
-
-    ./tgbot run
-
-Начать раунд и разослать задачи участникам
-
-    ./tgbot start-round
+```
+./mbserver &
+./mbbot &
+```
