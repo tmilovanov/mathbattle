@@ -1,0 +1,7 @@
+token: ""
+db_path: "mathbattle.sqlite"
+
+# Задачи и решения в виде фотографий не пишутся напрямую в базу, а копируются в директории,
+# Чтобы можно было легко глянуть, не залезая в базу
+problems_path: "problem_storage"
+solutions_path: "solution_storage"

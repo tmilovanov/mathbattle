@@ -1,6 +1,6 @@
 package mocks
 
-import mathbattle "mathbattle/models"
+import "mathbattle/models/mathbattle"
 
 type Postman struct {
 	impl map[int64][]string

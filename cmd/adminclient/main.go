@@ -13,87 +13,24 @@ import (
 	"strconv"
 	"unicode"
 
-	"mathbattle/fstraverser"
-	mathbattle "mathbattle/models"
-	"mathbattle/repository/sqlite"
-
-	"gopkg.in/yaml.v2"
+	"mathbattle/config"
+	"mathbattle/infrastructure"
+	"mathbattle/libs/fstraverser"
+	"mathbattle/models/mathbattle"
 )
 
 func main() {
-	cfg, err := getConfig()
-	if err != nil {
-		log.Fatalf("Failed to get config: %v", err)
-	}
-
 	if len(os.Args) < 2 {
 		fmt.Println("Expect command")
 		return
 	}
 
 	switch os.Args[1] {
-	case "init":
-		initApp(cfg)
 	case "add-problems":
-		db, err := sqlite.NewProblemRepository(cfg.SqlitePath, cfg.ProblemsPath)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		addProblemsToRepository(&db, os.Args[2])
+		container := infrastructure.NewContainer(config.LoadConfig("config.yaml"))
+		addProblemsToRepository(container.ProblemRepository(), os.Args[2])
 	default:
 		fmt.Println("Unknow command")
-	}
-}
-
-type config struct {
-	SqlitePath    string `yaml:"db_path"`
-	ProblemsPath  string `yaml:"problems_path"`
-	SolutionsPath string `yaml:"solutions_path"`
-}
-
-func getConfig() (config, error) {
-	f, err := os.Open("config.yaml")
-	if err != nil {
-		return config{}, err
-	}
-	defer f.Close()
-
-	var cfg config
-	decoder := yaml.NewDecoder(f)
-	err = decoder.Decode(&cfg)
-	if err != nil {
-		return config{}, err
-	}
-
-	return cfg, nil
-}
-
-func initApp(cfg config) {
-	db, err := sqlite.NewProblemRepository(cfg.SqlitePath, cfg.ProblemsPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// В данный момент всё хранится в одной базе, поэтому CreateFirstTime() для любого из репозиториев
-	// создаёт базу для всех сущностей. Если в будущем сущности будут разнесены по разным базам initApp() станет неполным
-	err = db.CreateFirstTime()
-	if err != nil {
-		log.Fatalf("Failed to initialize sqlite. %v", err)
-	}
-
-	if _, err := os.Stat(cfg.ProblemsPath); os.IsNotExist(err) {
-		err = os.Mkdir(cfg.ProblemsPath, 0777)
-		if err != nil {
-			log.Fatalf("Failed to create directory for problems: %v", err)
-		}
-	}
-
-	if _, err := os.Stat(cfg.SolutionsPath); os.IsNotExist(err) {
-		err = os.Mkdir(cfg.SolutionsPath, 0777)
-		if err != nil {
-			log.Fatalf("Failed to create directory for solutions: %v", err)
-		}
 	}
 }
 

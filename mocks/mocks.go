@@ -10,9 +10,11 @@ import (
 	"log"
 	"time"
 
-	"mathbattle/combinator"
-	mathbattle "mathbattle/models"
-	"mathbattle/mstd"
+	problemdistributor "mathbattle/application/problem_distributor"
+	solutiondistributor "mathbattle/application/solution_distributor"
+	"mathbattle/libs/combinator"
+	"mathbattle/libs/mstd"
+	"mathbattle/models/mathbattle"
 )
 
 func GenProblems(problemsCount int, minGrade int, maxGrade int) []mathbattle.Problem {
@@ -81,7 +83,7 @@ func GenSolutionsForRound(roundID string, rd mathbattle.RoundDistribution, needS
 }
 
 func GenSolutionStageRound(rounds mathbattle.RoundRepository, participants mathbattle.ParticipantRepository,
-	problems mathbattle.ProblemRepository, problemDistributor mathbattle.ProblemDistributor,
+	problems mathbattle.ProblemRepository, problemDistributor problemdistributor.SimpleDistributor,
 	participantsCount int, problemOnEach int) (mathbattle.Round, error) {
 
 	var err error
@@ -130,7 +132,7 @@ func GenSolutionStageRound(rounds mathbattle.RoundRepository, participants mathb
 }
 
 func GenReviewPendingRound(rounds mathbattle.RoundRepository, participants mathbattle.ParticipantRepository,
-	solutions mathbattle.SolutionRepository, problems mathbattle.ProblemRepository, problemDistributor mathbattle.ProblemDistributor,
+	solutions mathbattle.SolutionRepository, problems mathbattle.ProblemRepository, problemDistributor problemdistributor.SimpleDistributor,
 	participantsCount int, problemOnEach int, solutionsCount []int) (mathbattle.Round, error) {
 
 	round, err := GenSolutionStageRound(rounds, participants, problems,
@@ -166,7 +168,7 @@ func GenReviewPendingRound(rounds mathbattle.RoundRepository, participants mathb
 
 func GenReviewStageRound(rounds mathbattle.RoundRepository, participants mathbattle.ParticipantRepository,
 	solutions mathbattle.SolutionRepository, problems mathbattle.ProblemRepository,
-	problemDistributor mathbattle.ProblemDistributor, solutionsDistributor mathbattle.SolutionDistributor,
+	problemDistributor problemdistributor.SimpleDistributor, solutionsDistributor solutiondistributor.SolutionDistributor,
 	participantsCount int, problemOnEach int, solutionsCount []int, reviewersCount uint) (mathbattle.Round, error) {
 
 	round, err := GenReviewPendingRound(rounds, participants, solutions, problems, problemDistributor,
