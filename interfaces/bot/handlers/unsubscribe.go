@@ -29,12 +29,17 @@ func (h *Unsubscribe) IsShowInHelp(ctx infrastructure.TelegramUserContext) bool 
 }
 
 func (h *Unsubscribe) IsCommandSuitable(ctx infrastructure.TelegramUserContext) (bool, string, error) {
-	_, err := h.ParticipantService.GetByTelegramID(ctx.User.ChatID)
+	participant, err := h.ParticipantService.GetByTelegramID(ctx.User.TelegramID)
 	if err != nil {
 		if err == mathbattle.ErrNotFound {
 			return false, h.Replier.NotSubscribed(), nil
 		}
+
 		return false, "", err
+	}
+
+	if !participant.IsActive {
+		return false, h.Replier.NotSubscribed(), nil
 	}
 
 	_, err = h.RoundService.GetRunning()
@@ -54,7 +59,7 @@ func (h *Unsubscribe) IsAdminOnly() bool {
 }
 
 func (h *Unsubscribe) Handle(ctx infrastructure.TelegramUserContext, m *tb.Message) (int, []TelegramResponse, error) {
-	participant, err := h.ParticipantService.GetByTelegramID(ctx.User.ChatID)
+	participant, err := h.ParticipantService.GetByTelegramID(ctx.User.TelegramID)
 	if err != nil && err != mathbattle.ErrNotFound {
 		return -1, noResponse(), err
 	}

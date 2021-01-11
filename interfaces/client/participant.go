@@ -35,7 +35,7 @@ func (a *APIParticipant) GetAll() ([]mathbattle.Participant, error) {
 }
 
 func (a *APIParticipant) Update(participant mathbattle.Participant) error {
-	return PutJsonRecieveNone(fmt.Sprintf("%s%s", a.BaseUrl, "/participants"), participant)
+	return PutJsonRecieveNone(fmt.Sprintf("%s%s/%s", a.BaseUrl, "/participants", participant.ID), participant)
 }
 
 func (a *APIParticipant) Delete(ID string) error {

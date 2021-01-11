@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -22,11 +23,13 @@ type ProblemRepository struct {
 func NewProblemRepository(dbPath, problemPath string) (*ProblemRepository, error) {
 	sqliteRepository, err := newSqliteRepository(dbPath)
 	if err != nil {
+		log.Printf("Fld to get sqlite rep, err: %v", err)
 		return nil, err
 	}
 
 	if _, err := os.Stat(problemPath); os.IsNotExist(err) {
-		if err := os.Mkdir(problemPath, 0777); err != nil {
+		if err := os.MkdirAll(problemPath, 0777); err != nil {
+			log.Printf("Fld to create %v sqlite rep, err: %v", problemPath, err)
 			return nil, err
 		}
 	}

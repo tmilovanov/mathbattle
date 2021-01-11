@@ -1,4 +1,4 @@
-package sqlitetest
+package repositorytest
 
 import (
 	"os"

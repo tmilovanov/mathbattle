@@ -31,5 +31,11 @@ func (ps *ParticipantService) Delete(ID string) error {
 }
 
 func (ps *ParticipantService) Unsubscribe(ID string) error {
-	return ps.Rep.Delete(ID)
+	participant, err := ps.GetByID(ID)
+	if err != nil {
+		return err
+	}
+
+	participant.IsActive = false
+	return ps.Rep.Update(participant)
 }

@@ -24,6 +24,7 @@ func sendReq(method string, endpoint string, object interface{}) (*http.Response
 		if err != nil {
 			return nil, err
 		}
+		log.Printf("Sending json: %s", string(jsonStr))
 		body = bytes.NewBuffer(jsonStr)
 	}
 

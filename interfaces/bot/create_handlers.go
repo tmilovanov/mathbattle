@@ -5,7 +5,7 @@ import (
 	"mathbattle/interfaces/bot/handlers"
 )
 
-func createCommands(container infrastructure.Container) []handlers.TelegramCommandHandler {
+func createCommands(container infrastructure.MBotContainer) []handlers.TelegramCommandHandler {
 	commandStart := &handlers.Start{
 		Handler: handlers.Handler{Name: "/start", Description: ""},
 		Replier: container.Replier(),
@@ -25,7 +25,7 @@ func createCommands(container infrastructure.Container) []handlers.TelegramComma
 				Description: container.Replier().CmdStartReviewStageDesc(),
 			},
 			Replier:      container.Replier(),
-			RoundService: container.APIRoundService(),
+			RoundService: container.RoundService(),
 		},
 		&handlers.StartRound{
 			Handler: handlers.Handler{
@@ -33,7 +33,7 @@ func createCommands(container infrastructure.Container) []handlers.TelegramComma
 				Description: container.Replier().CmdStartRoundDesc(),
 			},
 			Replier:      container.Replier(),
-			RoundService: container.APIRoundService(),
+			RoundService: container.RoundService(),
 		},
 		&handlers.Stat{
 			Handler: handlers.Handler{
@@ -41,7 +41,7 @@ func createCommands(container infrastructure.Container) []handlers.TelegramComma
 				Description: container.Replier().CmdStatDesc(),
 			},
 			Replier:     container.Replier(),
-			StatService: container.APIStatService(),
+			StatService: container.StatService(),
 		},
 		&handlers.Subscribe{
 			Handler: handlers.Handler{
@@ -49,7 +49,7 @@ func createCommands(container infrastructure.Container) []handlers.TelegramComma
 				Description: container.Replier().CmdSubscribeDesc(),
 			},
 			Replier:            container.Replier(),
-			ParticipantService: container.APIParticipantService(),
+			ParticipantService: container.ParticipantService(),
 		},
 		&handlers.Unsubscribe{
 			Handler: handlers.Handler{
@@ -57,8 +57,8 @@ func createCommands(container infrastructure.Container) []handlers.TelegramComma
 				Description: container.Replier().CmdUnsubscribeDesc(),
 			},
 			Replier:            container.Replier(),
-			ParticipantService: container.APIParticipantService(),
-			RoundService:       container.APIRoundService(),
+			ParticipantService: container.ParticipantService(),
+			RoundService:       container.RoundService(),
 		},
 		&handlers.SubmitSolution{
 			Handler: handlers.Handler{
@@ -66,9 +66,9 @@ func createCommands(container infrastructure.Container) []handlers.TelegramComma
 				Description: container.Replier().CmdSubmitSolutionDesc(),
 			},
 			Replier:            container.Replier(),
-			ParticipantService: container.APIParticipantService(),
-			RoundService:       container.APIRoundService(),
-			SolutionService:    container.APISolutionService(),
+			ParticipantService: container.ParticipantService(),
+			RoundService:       container.RoundService(),
+			SolutionService:    container.SolutionService(),
 		},
 		&handlers.SubmitReview{
 			Handler: handlers.Handler{
@@ -76,9 +76,9 @@ func createCommands(container infrastructure.Container) []handlers.TelegramComma
 				Description: container.Replier().CmdSubmitReviewDesc(),
 			},
 			Replier:            container.Replier(),
-			ParticipantService: container.APIParticipantService(),
-			RoundService:       container.APIRoundService(),
-			ReviewService:      container.APIReviewService(),
+			ParticipantService: container.ParticipantService(),
+			RoundService:       container.RoundService(),
+			ReviewService:      container.ReviewService(),
 		},
 		&handlers.GetReviews{
 			Handler: handlers.Handler{
@@ -86,10 +86,10 @@ func createCommands(container infrastructure.Container) []handlers.TelegramComma
 				Description: container.Replier().CmdGetReviewsDesc(),
 			},
 			Replier:            container.Replier(),
-			ParticipantService: container.APIParticipantService(),
-			ReviewService:      container.APIReviewService(),
-			RoundService:       container.APIRoundService(),
-			SolutionService:    container.APISolutionService(),
+			ParticipantService: container.ParticipantService(),
+			ReviewService:      container.ReviewService(),
+			RoundService:       container.RoundService(),
+			SolutionService:    container.SolutionService(),
 		},
 		&handlers.GetProblems{
 			Handler: handlers.Handler{
@@ -97,9 +97,9 @@ func createCommands(container infrastructure.Container) []handlers.TelegramComma
 				Description: container.Replier().CmdGetProblemsDesc(),
 			},
 			Replier:            container.Replier(),
-			ParticipantService: container.APIParticipantService(),
-			RoundService:       container.APIRoundService(),
-			ProblemService:     container.APIProblemService(),
+			ParticipantService: container.ParticipantService(),
+			RoundService:       container.RoundService(),
+			ProblemService:     container.ProblemService(),
 		},
 		commandStart,
 	}

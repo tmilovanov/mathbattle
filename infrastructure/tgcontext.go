@@ -13,21 +13,34 @@ type TelegramUserContext struct {
 	CurrentCommand string
 }
 
+type TelegramUserData struct {
+	ChatID   int64
+	Username string
+}
+
 type TelegramContextRepository interface {
-	GetByTelegramID(chatID int64) (TelegramUserContext, error)
+	GetByUserData(userData TelegramUserData) (TelegramUserContext, error)
 	Update(chatID int64, ctx TelegramUserContext) error
 }
 
-func NewTelegramUserContext(chatID int64) TelegramUserContext {
+func NewTelegramUserContext(userData TelegramUserData) TelegramUserContext {
 	return TelegramUserContext{
 		User: mathbattle.User{
-			ChatID:  chatID,
-			IsAdmin: false,
+			TelegramID:   userData.ChatID,
+			TelegramName: userData.Username,
+			IsAdmin:      false,
 		},
 		Variables:      make(map[string]ContextVariable),
 		CurrentStep:    0,
 		CurrentCommand: "",
 	}
+}
+
+func NewTelegramUserContextByChatID(chatID int64) TelegramUserContext {
+	return NewTelegramUserContext(TelegramUserData{
+		ChatID:   chatID,
+		Username: "",
+	})
 }
 
 type ContextVariable struct {

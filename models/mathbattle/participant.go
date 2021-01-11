@@ -2,17 +2,16 @@ package mathbattle
 
 import (
 	"strconv"
-	"time"
 	"unicode"
 )
 
 type Participant struct {
-	ID               string    `json:"id"`
-	TelegramID       int64     `json:"telegram_id"`
-	Name             string    `json:"name"`
-	School           string    `json:"school"`
-	Grade            int       `json:"grade"`
-	RegistrationTime time.Time `json:"registration_time"`
+	User     `json:"user"`
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	School   string `json:"school"`
+	Grade    int    `json:"grade"`
+	IsActive bool   `json:"is_active"`
 }
 
 type ParticipantRepository interface {

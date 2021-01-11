@@ -84,7 +84,20 @@ func (h *ParticipantHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ParticipantHandler) Update(w http.ResponseWriter, r *http.Request) {
-	ResponseJSON(w, http.StatusInternalServerError, nil)
+	var participant mathbattle.Participant
+	err := json.NewDecoder(r.Body).Decode(&participant)
+	if err != nil {
+		ResponseJSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	err = h.Ps.Update(participant)
+	if err != nil {
+		ResponseJSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	ResponseJSON(w, http.StatusOK, nil)
 }
 
 func (h *ParticipantHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +115,7 @@ func (h *ParticipantHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h *ParticipantHandler) Unsubscribe(w http.ResponseWriter, r *http.Request) {
 	ID := mux.Vars(r)["id"]
 
-	err := h.Ps.Delete(ID)
+	err := h.Ps.Unsubscribe(ID)
 	if err != nil {
 		ResponseJSON(w, http.StatusInternalServerError, nil)
 		return

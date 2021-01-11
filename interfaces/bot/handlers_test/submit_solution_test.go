@@ -54,7 +54,7 @@ func (s *submitSolutionTestSuite) sendSolutionParts(ctx infrastructure.TelegramU
 }
 
 func (s *submitSolutionTestSuite) sendPhotos(photos []tb.Message) infrastructure.TelegramUserContext {
-	ctx := infrastructure.NewTelegramUserContext(s.chatID)
+	ctx := infrastructure.NewTelegramUserContextByChatID(s.chatID)
 
 	testSequence := []reqRespSequence{
 		{text(""), handlers.NewRespWithKeyboard(s.handler.Replier.SolutionExpectProblemCaption(), "A", "B"), 1},
@@ -98,7 +98,7 @@ func (s *submitSolutionTestSuite) sendPhotosTestDatabase(images []mathbattle.Ima
 }
 
 func (s *submitSolutionTestSuite) TestSendNoSolution() {
-	ctx := infrastructure.NewTelegramUserContext(s.chatID)
+	ctx := infrastructure.NewTelegramUserContextByChatID(s.chatID)
 	sendReqExpectRespSequence(s.Require(), &s.handler, ctx, []reqRespSequence{
 		{text(""), handlers.NewRespWithKeyboard(s.handler.Replier.SolutionExpectProblemCaption(), "A", "B"), 1},
 		{text("A"), handlers.NewRespWithKeyboard(s.handler.Replier.SolutionExpectPart(), s.handler.Replier.SolutionFinishUploading()), 3},
@@ -107,7 +107,7 @@ func (s *submitSolutionTestSuite) TestSendNoSolution() {
 }
 
 func (s *submitSolutionTestSuite) TestSendSolutionFirstTime() {
-	ctx := infrastructure.NewTelegramUserContext(s.chatID)
+	ctx := infrastructure.NewTelegramUserContextByChatID(s.chatID)
 	sendReqExpectRespSequence(s.Require(), &s.handler, ctx, []reqRespSequence{
 		{text(""), handlers.NewRespWithKeyboard(s.handler.Replier.SolutionExpectProblemCaption(), "A", "B"), 1},
 		{text("A"), handlers.NewRespWithKeyboard(s.handler.Replier.SolutionExpectPart(), s.handler.Replier.SolutionFinishUploading()), 3},
@@ -122,7 +122,7 @@ func (s *submitSolutionTestSuite) TestSendSolutionFirstTime() {
 }
 
 func (s *submitSolutionTestSuite) TestSendSolutionSecondTime() {
-	ctx := infrastructure.NewTelegramUserContext(s.chatID)
+	ctx := infrastructure.NewTelegramUserContextByChatID(s.chatID)
 	sendReqExpectRespSequence(s.Require(), &s.handler, ctx, []reqRespSequence{
 		{text(""), handlers.NewRespWithKeyboard(s.handler.Replier.SolutionExpectProblemCaption(), "A", "B"), 1},
 		{text("A"), handlers.NewRespWithKeyboard(s.handler.Replier.SolutionExpectPart(), s.handler.Replier.SolutionFinishUploading()), 3},

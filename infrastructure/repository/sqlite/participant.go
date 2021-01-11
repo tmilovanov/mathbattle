@@ -3,6 +3,7 @@ package sqlite
 import (
 	"database/sql"
 	"errors"
+	"log"
 	"strconv"
 
 	"mathbattle/models/mathbattle"
@@ -10,9 +11,10 @@ import (
 
 type ParticipantRepository struct {
 	sqliteRepository
+	userRepository *UserRepository
 }
 
-func NewParticipantRepository(dbPath string) (*ParticipantRepository, error) {
+func NewParticipantRepository(dbPath string, userRepository *UserRepository) (*ParticipantRepository, error) {
 	sqliteRepository, err := newSqliteRepository(dbPath)
 	if err != nil {
 		return nil, err
@@ -20,6 +22,7 @@ func NewParticipantRepository(dbPath string) (*ParticipantRepository, error) {
 
 	result := &ParticipantRepository{
 		sqliteRepository: sqliteRepository,
+		userRepository:   userRepository,
 	}
 
 	if err := result.CreateTable(); err != nil {
@@ -32,20 +35,24 @@ func NewParticipantRepository(dbPath string) (*ParticipantRepository, error) {
 func (r *ParticipantRepository) CreateTable() error {
 	createStmt := `CREATE TABLE IF NOT EXISTS participants (
 			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-			tg_chat_id VARCHAR(100),
+			user_id INTEGER NOT NULL,
 			name VARCHAR(100),
 			school VARCHAR(256),
 			grade INTEGER,
-			register_time DATETIME
+			is_active BOOL,
+			FOREIGN KEY(user_id) REFERENCES users(id)
 		)`
 	_, err := r.db.Exec(createStmt)
+	if err != nil {
+		log.Printf("ParticipantRepository::CreateTabe(), error: %v", err)
+	}
 	return err
 }
 
 func (r *ParticipantRepository) Store(participant mathbattle.Participant) (mathbattle.Participant, error) {
 	result := participant
-	res, err := r.db.Exec("INSERT INTO participants (tg_chat_id, name, school, grade, register_time) VALUES (?, ?, ?, ?, ?)",
-		participant.TelegramID, participant.Name, participant.School, participant.Grade, participant.RegistrationTime)
+	res, err := r.db.Exec("INSERT INTO participants (user_id, name, school, grade, is_active) VALUES (?, ?, ?, ?, ?)",
+		participant.User.ID, participant.Name, participant.School, participant.Grade, participant.IsActive)
 
 	if err != nil {
 		return result, err
@@ -59,43 +66,46 @@ func (r *ParticipantRepository) Store(participant mathbattle.Participant) (mathb
 	return result, nil
 }
 
-func (r *ParticipantRepository) GetByID(ID string) (mathbattle.Participant, error) {
-	intID, err := strconv.Atoi(ID)
-	if err != nil {
-		return mathbattle.Participant{}, err
-	}
-
-	row := r.db.QueryRow("SELECT tg_chat_id, name, school, grade, register_time FROM participants WHERE id = ?", intID)
+func (r *ParticipantRepository) getWhere(whereStr string, whereArgs ...interface{}) (mathbattle.Participant, error) {
 	result := mathbattle.Participant{}
-	err = row.Scan(&result.TelegramID, &result.Name, &result.School, &result.Grade, &result.RegistrationTime)
+	row := r.db.QueryRow("SELECT id, user_id, name, school, grade, is_active FROM participants WHERE "+whereStr, whereArgs...)
+	err := row.Scan(&result.ID, &result.User.ID, &result.Name, &result.School, &result.Grade, &result.IsActive)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return mathbattle.Participant{}, mathbattle.ErrNotFound
+			return result, mathbattle.ErrNotFound
 		}
-		return mathbattle.Participant{}, err
+		return result, err
 	}
-	result.ID = ID
+
+	user, err := r.userRepository.GetByID(result.User.ID)
+	if err != nil {
+		return result, err
+	}
+
+	result.User = user
 
 	return result, nil
+}
+
+func (r *ParticipantRepository) GetByID(ID string) (mathbattle.Participant, error) {
+	return r.getWhere("id = ?", ID)
 }
 
 func (r *ParticipantRepository) GetByTelegramID(telegramID int64) (mathbattle.Participant, error) {
-	result := mathbattle.Participant{}
-
-	row := r.db.QueryRow("SELECT id, tg_chat_id, name, school, grade, register_time FROM participants WHERE tg_chat_id = ?", telegramID)
-	err := row.Scan(&result.ID, &result.TelegramID, &result.Name, &result.School, &result.Grade, &result.RegistrationTime)
+	user, err := r.userRepository.GetByTelegramID(telegramID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return mathbattle.Participant{}, mathbattle.ErrNotFound
-		}
 		return mathbattle.Participant{}, err
 	}
 
-	return result, nil
+	return r.getWhere("user_id = ?", user.ID)
+}
+
+func (r *ParticipantRepository) GetByUserID(userID string) (mathbattle.Participant, error) {
+	return r.getWhere("user_id = ?", userID)
 }
 
 func (r *ParticipantRepository) GetAll() ([]mathbattle.Participant, error) {
-	rows, err := r.db.Query("SELECT id, tg_chat_id, name, school, grade, register_time FROM participants")
+	rows, err := r.db.Query("SELECT id, user_id, name, school, grade, is_active FROM participants")
 	if err != nil {
 		return []mathbattle.Participant{}, err
 	}
@@ -103,32 +113,37 @@ func (r *ParticipantRepository) GetAll() ([]mathbattle.Participant, error) {
 
 	result := []mathbattle.Participant{}
 	for rows.Next() {
-		var id int
 		curParticipant := mathbattle.Participant{}
-		err = rows.Scan(&id, &curParticipant.TelegramID, &curParticipant.Name, &curParticipant.School,
-			&curParticipant.Grade, &curParticipant.RegistrationTime)
+		err = rows.Scan(&curParticipant.ID, &curParticipant.User.ID, &curParticipant.Name, &curParticipant.School,
+			&curParticipant.Grade, &curParticipant.IsActive)
 		if err != nil {
 			return []mathbattle.Participant{}, err
 		}
-		curParticipant.ID = strconv.Itoa(id)
+
+		user, err := r.userRepository.GetByID(curParticipant.User.ID)
+		if err != nil {
+			return []mathbattle.Participant{}, err
+		}
+
+		curParticipant.User = user
+
 		result = append(result, curParticipant)
 	}
 	return result, nil
 }
 
 func (r *ParticipantRepository) Update(participant mathbattle.Participant) error {
-	_, err := r.db.Exec("UPDATE participants SET tg_chat_id = ?, name = ?, grade = ?, school = ?, register_time = ? WHERE id = ?",
-		participant.TelegramID, participant.Name, participant.Grade, participant.School, participant.RegistrationTime,
+	_, err := r.db.Exec("UPDATE participants SET user_id = ?, name = ?, grade = ?, school = ?, is_active = ? WHERE id = ?",
+		participant.User.ID, participant.Name, participant.Grade, participant.School, participant.IsActive,
 		participant.ID)
-	return err
-}
-
-func (r *ParticipantRepository) Delete(ID string) error {
-	intID, err := strconv.Atoi(ID)
 	if err != nil {
 		return err
 	}
 
-	_, err = r.db.Exec("DELETE FROM participants WHERE id = ?", intID)
+	return r.userRepository.Update(participant.User)
+}
+
+func (r *ParticipantRepository) Delete(ID string) error {
+	_, err := r.db.Exec("DELETE FROM participants WHERE id = ?", ID)
 	return err
 }

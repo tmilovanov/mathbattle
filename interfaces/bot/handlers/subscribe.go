@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"time"
-
 	"mathbattle/application"
 	"mathbattle/infrastructure"
 	"mathbattle/models/mathbattle"
@@ -30,13 +28,17 @@ func (h *Subscribe) IsShowInHelp(ctx infrastructure.TelegramUserContext) bool {
 }
 
 func (h *Subscribe) IsCommandSuitable(ctx infrastructure.TelegramUserContext) (bool, string, error) {
-	_, err := h.ParticipantService.GetByTelegramID(ctx.User.ChatID)
-	if err == nil {
-		return false, h.Replier.AlreadyRegistered(), nil
+	participant, err := h.ParticipantService.GetByTelegramID(ctx.User.TelegramID)
+	if err != nil {
+		if err == mathbattle.ErrNotFound {
+			return true, "", nil
+		}
+
+		return false, "", err
 	}
 
-	if err != mathbattle.ErrNotFound {
-		return false, "", err
+	if participant.IsActive {
+		return false, h.Replier.AlreadyRegistered(), nil
 	}
 
 	return true, "", nil
@@ -49,7 +51,7 @@ func (h *Subscribe) IsAdminOnly() bool {
 func (h *Subscribe) Handle(ctx infrastructure.TelegramUserContext, m *tb.Message) (int, []TelegramResponse, error) {
 	switch ctx.CurrentStep {
 	case 0:
-		return 1, OneTextResp(h.Replier.RegisterNameExpect()), nil
+		return h.stepCheckExistance(ctx, m)
 	case 1:
 		return h.stepAcceptName(ctx, m)
 	case 2:
@@ -57,6 +59,25 @@ func (h *Subscribe) Handle(ctx infrastructure.TelegramUserContext, m *tb.Message
 	default:
 		return -1, noResponse(), nil
 	}
+}
+
+func (h *Subscribe) stepCheckExistance(ctx infrastructure.TelegramUserContext, m *tb.Message) (int, []TelegramResponse, error) {
+	participant, err := h.ParticipantService.GetByTelegramID(ctx.User.TelegramID)
+	if err != nil && err != mathbattle.ErrNotFound {
+		return -1, noResponse(), err
+	}
+
+	if err == mathbattle.ErrNotFound {
+		return 1, OneTextResp(h.Replier.RegisterNameExpect()), nil
+	}
+
+	participant.IsActive = true
+	err = h.ParticipantService.Update(participant)
+	if err != nil {
+		return -1, noResponse(), err
+	}
+
+	return -1, OneTextResp(h.Replier.RegisterSuccess()), nil
 }
 
 func (h *Subscribe) stepAcceptName(ctx infrastructure.TelegramUserContext, m *tb.Message) (int, []TelegramResponse, error) {
@@ -77,11 +98,11 @@ func (h *Subscribe) stepAcceptGradeAndFinish(ctx infrastructure.TelegramUserCont
 	}
 
 	_, err := h.ParticipantService.Store(mathbattle.Participant{
-		TelegramID:       ctx.User.ChatID,
-		Name:             ctx.Variables["name"].AsString(),
-		School:           ctx.Variables["school"].AsString(),
-		Grade:            grade,
-		RegistrationTime: time.Now(),
+		User:     ctx.User,
+		Name:     ctx.Variables["name"].AsString(),
+		School:   ctx.Variables["school"].AsString(),
+		Grade:    grade,
+		IsActive: true,
 	})
 
 	if err != nil {

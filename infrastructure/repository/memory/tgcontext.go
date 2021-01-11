@@ -11,21 +11,32 @@ type TelegramContextRepository struct {
 	userRepository mathbattle.UserRepository
 }
 
-func NewTelegramContextRepository(userRepository mathbattle.UserRepository) (TelegramContextRepository, error) {
-	return TelegramContextRepository{
+func NewTelegramContextRepository(userRepository mathbattle.UserRepository) (*TelegramContextRepository, error) {
+	return &TelegramContextRepository{
 		userContexts:   make(map[int64]infrastructure.TelegramUserContext),
 		userRepository: userRepository,
 	}, nil
 }
 
-func (r *TelegramContextRepository) GetByTelegramID(chatID int64) (infrastructure.TelegramUserContext, error) {
-	if ctx, isExist := r.userContexts[chatID]; isExist {
+func (r *TelegramContextRepository) GetByUserData(userData infrastructure.TelegramUserData) (infrastructure.TelegramUserContext, error) {
+	if ctx, isExist := r.userContexts[userData.ChatID]; isExist {
 		return ctx, nil
 	}
 
-	user, err := r.userRepository.GetOrCreateByTelegramID(chatID)
+	user, err := r.userRepository.GetByTelegramID(userData.ChatID)
 	if err != nil {
-		return infrastructure.TelegramUserContext{}, err
+		if err != mathbattle.ErrNotFound {
+			return infrastructure.TelegramUserContext{}, err
+		}
+
+		user, err = r.userRepository.Store(mathbattle.User{
+			TelegramID:   userData.ChatID,
+			TelegramName: userData.Username,
+			IsAdmin:      false,
+		})
+		if err != nil {
+			return infrastructure.TelegramUserContext{}, err
+		}
 	}
 
 	newCtx := infrastructure.TelegramUserContext{
@@ -34,7 +45,7 @@ func (r *TelegramContextRepository) GetByTelegramID(chatID int64) (infrastructur
 		CurrentStep:    0,
 		CurrentCommand: "",
 	}
-	r.userContexts[chatID] = newCtx
+	r.userContexts[userData.ChatID] = newCtx
 
 	return newCtx, nil
 }

@@ -43,9 +43,11 @@ func GenParticipants(participantsCount int, grade int) []mathbattle.Participant 
 
 	for i := 0; i < participantsCount; i++ {
 		result = append(result, mathbattle.Participant{
-			TelegramID: int64(i),
-			Name:       fmt.Sprintf("%d fake name", i),
-			Grade:      grade,
+			User: mathbattle.User{
+				TelegramID: int64(i),
+			},
+			Name:  fmt.Sprintf("%d fake name", i),
+			Grade: grade,
 		})
 	}
 

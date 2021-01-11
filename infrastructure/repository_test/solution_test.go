@@ -1,9 +1,9 @@
-package sqlitetest
+package repositorytest
 
 import (
 	"testing"
 
-	"mathbattle/infrastructure/repository/sqlite"
+	"mathbattle/infrastructure"
 	"mathbattle/models/mathbattle"
 
 	"github.com/stretchr/testify/suite"
@@ -12,15 +12,12 @@ import (
 type testSuite struct {
 	suite.Suite
 
-	rep *sqlite.SolutionRepository
+	rep mathbattle.SolutionRepository
 }
 
 func (s *testSuite) SetupSuite() {
-	var err error
-
-	DeleteTempDatabase()
-	s.rep, err = sqlite.NewSolutionRepository(TestDbPath(), TestSolutionsPath())
-	s.Require().Nil(err)
+	container := infrastructure.NewTestContainer()
+	s.rep = container.SolutionRepository()
 }
 
 func (s *testSuite) TestCreateNewEmpty() {

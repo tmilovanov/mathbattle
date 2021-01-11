@@ -1,10 +1,12 @@
-package sqlitetest
+package repositorytest
 
 import (
+	"log"
 	"testing"
 
-	"mathbattle/infrastructure/repository/sqlite"
+	"mathbattle/infrastructure"
 	"mathbattle/mocks"
+	"mathbattle/models/mathbattle"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -12,18 +14,16 @@ import (
 type problemTs struct {
 	suite.Suite
 
-	rep *sqlite.ProblemRepository
+	rep mathbattle.ProblemRepository
 }
 
 func (s *problemTs) SetupTest() {
-	var err error
-
-	DeleteTempDatabase()
-	s.rep, err = sqlite.NewProblemRepository(TestDbPath(), TestProblemsPath())
-	s.Require().Nil(err)
+	container := infrastructure.NewTestContainer()
+	s.rep = container.ProblemRepository()
 }
 
 func (s *problemTs) TestStore() {
+	log.Printf("TestStore")
 	for _, problem := range mocks.GenProblems(10, 1, 11) {
 		p, err := s.rep.Store(problem)
 		s.Require().Nil(err)
@@ -35,6 +35,7 @@ func (s *problemTs) TestStore() {
 }
 
 func (s *problemTs) TestGetAll() {
+	log.Printf("TestGetAll")
 	var err error
 
 	problems := mocks.GenProblems(10, 1, 11)

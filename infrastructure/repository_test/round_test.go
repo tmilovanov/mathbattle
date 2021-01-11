@@ -1,10 +1,10 @@
-package sqlitetest
+package repositorytest
 
 import (
 	"testing"
 	"time"
 
-	"mathbattle/infrastructure/repository/sqlite"
+	"mathbattle/infrastructure"
 	"mathbattle/models/mathbattle"
 
 	"github.com/stretchr/testify/suite"
@@ -13,15 +13,12 @@ import (
 type roundTs struct {
 	suite.Suite
 
-	rep *sqlite.RoundRepository
+	rep mathbattle.RoundRepository
 }
 
 func (s *roundTs) SetupTest() {
-	var err error
-
-	DeleteTempDatabase()
-	s.rep, err = sqlite.NewRoundRepository(TestDbPath())
-	s.Require().Nil(err)
+	container := infrastructure.NewTestContainer()
+	s.rep = container.RoundRepository()
 }
 
 func (s *roundTs) TestSetGetUpdateDelete() {

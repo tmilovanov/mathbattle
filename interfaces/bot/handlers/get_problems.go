@@ -31,7 +31,7 @@ func (h *GetProblems) IsShowInHelp(ctx infrastructure.TelegramUserContext) bool 
 }
 
 func (h *GetProblems) IsCommandSuitable(ctx infrastructure.TelegramUserContext) (bool, string, error) {
-	_, err := h.ParticipantService.GetByTelegramID(ctx.User.ChatID)
+	_, err := h.ParticipantService.GetByTelegramID(ctx.User.TelegramID)
 	if err != nil {
 		return false, "", err
 	}
@@ -52,7 +52,7 @@ func (h *GetProblems) IsAdminOnly() bool {
 }
 
 func (h *GetProblems) Handle(ctx infrastructure.TelegramUserContext, m *tb.Message) (int, []TelegramResponse, error) {
-	participant, err := h.ParticipantService.GetByTelegramID(ctx.User.ChatID)
+	participant, err := h.ParticipantService.GetByTelegramID(ctx.User.TelegramID)
 	if err != nil {
 		return -1, noResponse(), err
 	}

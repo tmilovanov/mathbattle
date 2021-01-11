@@ -1,9 +1,11 @@
 package infrastructure
 
 import (
+	"fmt"
 	"log"
 	"os"
-	"path"
+	"os/user"
+	"path/filepath"
 	"time"
 
 	"mathbattle/application"
@@ -12,6 +14,7 @@ import (
 	"mathbattle/config"
 	"mathbattle/infrastructure/repository/sqlite"
 	"mathbattle/interfaces/replier"
+	"mathbattle/libs/fstraverser"
 	"mathbattle/libs/mstd"
 	"mathbattle/mocks"
 	"mathbattle/models/mathbattle"
@@ -30,27 +33,60 @@ type TestContainer struct {
 	solutionService    mathbattle.SolutionService
 
 	replier                application.Replier
-	userRepository         mathbattle.UserRepository
-	participantRepsitory   mathbattle.ParticipantRepository
-	roundRepository        mathbattle.RoundRepository
-	problemRepository      mathbattle.ProblemRepository
-	solutionRepository     mathbattle.SolutionRepository
-	reviewRepository       mathbattle.ReviewRepository
+	userRepository         *sqlite.UserRepository
+	participantRepsitory   *sqlite.ParticipantRepository
+	roundRepository        *sqlite.RoundRepository
+	problemRepository      *sqlite.ProblemRepository
+	solutionRepository     *sqlite.SolutionRepository
+	reviewRepository       *sqlite.ReviewRepository
 	postman                mathbattle.Postman
 	solveStageDistributor  application.ProblemDistributor
 	reviewStageDistributor application.SolutionDistributor
 }
 
 func NewTestContainer() TestContainer {
-	testStoragePath := path.Join(os.TempDir(), "mathbattle_test_storage")
-	if _, err := os.Stat(testStoragePath); !os.IsNotExist(err) {
-		os.RemoveAll(testStoragePath)
+	log.Printf("NewTestContainer()")
+	var err error
+
+	usr, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Current user: %v %v %v %v", usr.Name, usr.Username, usr.Uid, usr.Gid)
+
+	testStoragePath := filepath.Join(usr.HomeDir, "mathbattle_test_storage")
+	cfg := config.TestConfig{
+		DatabasePath:  filepath.Join(testStoragePath, "test_mathbattle.sqlite"),
+		ProblemsPath:  filepath.Join(testStoragePath, "test_problems"),
+		SolutionsPath: filepath.Join(testStoragePath, "test_solutions"),
 	}
 
-	cfg := config.TestConfig{
-		DatabasePath:  path.Join(testStoragePath, "test_mathbattle.sqlite"),
-		ProblemsPath:  path.Join(testStoragePath, "test_problems"),
-		SolutionsPath: path.Join(testStoragePath, "test_solutions"),
+	if _, err := os.Stat(testStoragePath); os.IsNotExist(err) {
+		return TestContainer{
+			cfg: cfg,
+		}
+	}
+
+	info, err := os.Stat(testStoragePath)
+	if err != nil {
+		log.Fatalf("Failed to get info about database, error: %v", err)
+	}
+
+	log.Printf("Database permissions: %v", info.Mode().String())
+
+	fstraverser.TraverseStartingFrom(testStoragePath, func(fi fstraverser.FileInformation) {
+		//log.Printf("---> %s", fi.Path)
+	})
+
+	log.Printf("Removing %v", testStoragePath)
+	err = sqlite.Deinit()
+	if err != nil {
+		log.Fatalf("Failed to deinit database, err: %v", err)
+	}
+
+	err = os.RemoveAll(testStoragePath)
+	if err != nil {
+		log.Fatalf("Failed to remove test storage path: %v, error: %v", testStoragePath, err)
 	}
 
 	return TestContainer{
@@ -128,6 +164,13 @@ func (c *TestContainer) UserRepository() mathbattle.UserRepository {
 		if err != nil {
 			log.Fatalf("Failed to get user repository, error: %v", err)
 		}
+
+		c.participantRepsitory, err = sqlite.NewParticipantRepository(c.Config().DatabasePath, c.userRepository)
+		if err != nil {
+			log.Fatalf("Failed to get participant repository, error: %v", err)
+		}
+
+		c.userRepository.SetParticipantRepository(c.participantRepsitory)
 	}
 
 	return c.userRepository
@@ -147,10 +190,18 @@ func (c *TestContainer) RoundRepository() mathbattle.RoundRepository {
 
 func (c *TestContainer) ParticipantRepository() mathbattle.ParticipantRepository {
 	if c.participantRepsitory == nil {
+		if c.userRepository == nil {
+			var err error
+			c.userRepository, err = sqlite.NewUserRepository(c.Config().DatabasePath)
+			if err != nil {
+				log.Fatalf("TestContainer::ParticipantRepository(), failed to initialize user repository, error: %v", err)
+			}
+		}
+
 		var err error
-		c.participantRepsitory, err = sqlite.NewParticipantRepository(c.Config().DatabasePath)
+		c.participantRepsitory, err = sqlite.NewParticipantRepository(c.Config().DatabasePath, c.userRepository)
 		if err != nil {
-			log.Fatalf("Failed to get participant repository, error: %v", err)
+			log.Fatalf("TestContainer::ParticipantRepository(), failed to get participant repository, error: %v", err)
 		}
 	}
 
@@ -219,6 +270,45 @@ func (c *TestContainer) ReviewStageDistributor() application.SolutionDistributor
 	return c.reviewStageDistributor
 }
 
+func (c *TestContainer) CreateUsers(count int) {
+	for i := 0; i < count; i++ {
+		_, err := c.UserRepository().Store(mathbattle.User{
+			TelegramID:       int64(i),
+			TelegramName:     fmt.Sprintf("FakeTelegramUserName_%d", i),
+			IsAdmin:          false,
+			RegistrationTime: time.Now(),
+		})
+		if err != nil {
+			log.Fatalf("TestContainer::CreateUsers failed, error: %v", err)
+		}
+	}
+}
+
+func (c *TestContainer) CreateParticipants(count int) {
+	users, err := c.UserRepository().GetAll()
+	if err != nil {
+		log.Fatalf("TestContainer::CreateParticipants, failed to get all users, error: %v", err)
+	}
+
+	if len(users) < count {
+		log.Fatalf("TestContainer::CreateParticipants, not enough users, to create participants")
+	}
+
+	for i := 0; i < count; i++ {
+		_, err := c.ParticipantRepository().Store(mathbattle.Participant{
+			User:     users[i],
+			Name:     fmt.Sprintf("FakeName_%d", i),
+			School:   "FakeSchool",
+			Grade:    11,
+			IsActive: true,
+		})
+
+		if err != nil {
+			log.Fatalf("TestContainer::CreateParticipants, failed to store participant, err: %v", err)
+		}
+	}
+}
+
 func (c *TestContainer) CreateSolveStageRound(desc TestRoundDescription) mathbattle.Round {
 	for _, problem := range mocks.GenProblems(desc.ProblemsOnEach, 1, 11) {
 		_, err := c.ProblemRepository().Store(problem)
@@ -227,13 +317,10 @@ func (c *TestContainer) CreateSolveStageRound(desc TestRoundDescription) mathbat
 		}
 	}
 
-	for _, participant := range mocks.GenParticipants(desc.ParticipantsCount, 11) {
-		_, err := c.ParticipantRepository().Store(participant)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	allParticipants, err := c.participantRepsitory.GetAll()
+	c.CreateUsers(desc.ParticipantsCount)
+	c.CreateParticipants(desc.ParticipantsCount)
+
+	allParticipants, err := c.ParticipantRepository().GetAll()
 	if err != nil {
 		log.Fatal(err)
 	}

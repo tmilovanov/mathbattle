@@ -33,7 +33,7 @@ func (h *SubmitSolution) IsShowInHelp(ctx infrastructure.TelegramUserContext) bo
 }
 
 func (h *SubmitSolution) IsCommandSuitable(ctx infrastructure.TelegramUserContext) (bool, string, error) {
-	_, err := h.ParticipantService.GetByTelegramID(ctx.User.ChatID)
+	_, err := h.ParticipantService.GetByTelegramID(ctx.User.TelegramID)
 	if err != nil {
 		if err == mathbattle.ErrNotFound {
 			return false, h.Replier.NotParticipant(), nil
@@ -66,7 +66,7 @@ func (h *SubmitSolution) Handle(ctx infrastructure.TelegramUserContext, m *tb.Me
 		return -1, noResponse(), err
 	}
 
-	p, err := h.ParticipantService.GetByTelegramID(ctx.User.ChatID)
+	p, err := h.ParticipantService.GetByTelegramID(ctx.User.TelegramID)
 	if err != nil {
 		return -1, noResponse(), err
 	}

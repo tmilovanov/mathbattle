@@ -7,5 +7,5 @@ import (
 )
 
 func main() {
-	bot.Start(infrastructure.NewContainer(config.LoadConfig("config.yaml")))
+	bot.Start(infrastructure.NewMBotContainer(config.LoadConfig("config.yaml")))
 }

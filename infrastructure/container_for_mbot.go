@@ -8,22 +8,21 @@ import (
 	solutiondistributor "mathbattle/application/solution_distributor"
 	"mathbattle/config"
 	"mathbattle/infrastructure/repository/sqlite"
+	"mathbattle/interfaces/client"
 	"mathbattle/interfaces/replier"
 	"mathbattle/models/mathbattle"
 )
 
-type Container struct {
+type MBotContainer struct {
 	cfg config.Config
 
-	// Server side services
-	roundService       *application.RoundService
-	statService        *application.StatService
-	participantService *application.ParticipantService
-	solutionService    *application.SolutionService
-	reviewService      *application.ReviewService
-	problemService     *application.ProblemService
+	roundService       *client.APIRound
+	statService        *client.APIStat
+	participantService *client.APIParticipant
+	solutionService    *client.APISolution
+	reviewService      *client.APIReview
+	problemService     *client.APIProblem
 
-	// Others
 	replier                application.Replier
 	userRepository         *sqlite.UserRepository
 	participantRepsitory   *sqlite.ParticipantRepository
@@ -36,94 +35,69 @@ type Container struct {
 	reviewStageDistributor application.SolutionDistributor
 }
 
-func NewContainer(config config.Config) Container {
-	return Container{
+func NewMBotContainer(config config.Config) MBotContainer {
+	return MBotContainer{
 		cfg: config,
 	}
 }
 
-func (c *Container) Config() config.Config {
+func (c *MBotContainer) Config() config.Config {
 	return c.cfg
 }
 
-func (c *Container) RoundService() mathbattle.RoundService {
+func (c *MBotContainer) APIBaseUrl() string {
+	return "http://" + c.Config().APIUrl
+}
+
+func (c *MBotContainer) RoundService() mathbattle.RoundService {
 	if c.roundService == nil {
-		result := &application.RoundService{
-			Rep:                    c.RoundRepository(),
-			Replier:                c.Replier(),
-			Postman:                c.Postman(),
-			Participants:           c.ParticipantRepository(),
-			Solutions:              c.SolutionRepository(),
-			SolveStageDistributor:  c.SolveStageDistributor(),
-			ReviewStageDistributor: c.ReviewStageDistributor(),
-			ReviewersCount:         2,
-		}
-		if err := result.StartSchedulingActions(); err != nil {
-			log.Fatal(err)
-		}
-		c.roundService = result
+		c.roundService = &client.APIRound{BaseUrl: c.APIBaseUrl()}
 	}
 
 	return c.roundService
 }
 
-func (c *Container) StatService() mathbattle.StatService {
+func (c *MBotContainer) StatService() mathbattle.StatService {
 	if c.statService == nil {
-		c.statService = &application.StatService{
-			Participants: c.ParticipantRepository(),
-			Rounds:       c.RoundRepository(),
-			Solutions:    c.SolutionRepository(),
-			Reviews:      c.ReviewRepository(),
-		}
+		c.statService = &client.APIStat{BaseUrl: c.APIBaseUrl()}
 	}
 
 	return c.statService
 }
 
-func (c *Container) ParticipantService() mathbattle.ParticipantService {
+func (c *MBotContainer) ParticipantService() mathbattle.ParticipantService {
 	if c.participantService == nil {
-		c.participantService = &application.ParticipantService{
-			Rep: c.ParticipantRepository(),
-		}
+		c.participantService = &client.APIParticipant{BaseUrl: c.APIBaseUrl()}
 	}
 
 	return c.participantService
 }
 
-func (c *Container) SolutionService() mathbattle.SolutionService {
+func (c *MBotContainer) SolutionService() mathbattle.SolutionService {
 	if c.solutionService == nil {
-		c.solutionService = &application.SolutionService{
-			Rep:    c.SolutionRepository(),
-			Rounds: c.RoundRepository(),
-		}
+		c.solutionService = &client.APISolution{BaseUrl: c.APIBaseUrl()}
 	}
 
 	return c.solutionService
 }
 
-func (c *Container) ReviewService() mathbattle.ReviewService {
+func (c *MBotContainer) ReviewService() mathbattle.ReviewService {
 	if c.reviewService == nil {
-		c.reviewService = &application.ReviewService{
-			Rep:       c.ReviewRepository(),
-			Rounds:    c.RoundRepository(),
-			Solutions: c.SolutionRepository(),
-		}
+		c.reviewService = &client.APIReview{BaseUrl: c.APIBaseUrl()}
 	}
 
 	return c.reviewService
 }
 
-func (c *Container) ProblemService() mathbattle.ProblemService {
+func (c *MBotContainer) ProblemService() mathbattle.ProblemService {
 	if c.problemService == nil {
-		c.problemService = &application.ProblemService{
-			Rep: c.ProblemRepository(),
-		}
+		c.problemService = &client.APIProblem{BaseUrl: c.APIBaseUrl()}
 	}
 
 	return c.problemService
 }
 
-func (c *Container) Replier() application.Replier {
+func (c *MBotContainer) Replier() application.Replier {
 	if c.replier == nil {
 		c.replier = &replier.RussianReplier{}
 	}
@@ -131,7 +105,7 @@ func (c *Container) Replier() application.Replier {
 	return c.replier
 }
 
-func (c *Container) UserRepository() mathbattle.UserRepository {
+func (c *MBotContainer) UserRepository() mathbattle.UserRepository {
 	if c.userRepository == nil {
 		var err error
 		c.userRepository, err = sqlite.NewUserRepository(c.Config().DatabasePath)
@@ -150,7 +124,7 @@ func (c *Container) UserRepository() mathbattle.UserRepository {
 	return c.userRepository
 }
 
-func (c *Container) RoundRepository() mathbattle.RoundRepository {
+func (c *MBotContainer) RoundRepository() mathbattle.RoundRepository {
 	if c.roundRepository == nil {
 		var err error
 		c.roundRepository, err = sqlite.NewRoundRepository(c.Config().DatabasePath)
@@ -162,7 +136,7 @@ func (c *Container) RoundRepository() mathbattle.RoundRepository {
 	return c.roundRepository
 }
 
-func (c *Container) ParticipantRepository() mathbattle.ParticipantRepository {
+func (c *MBotContainer) ParticipantRepository() mathbattle.ParticipantRepository {
 	if c.participantRepsitory == nil {
 		if c.userRepository == nil {
 			var err error
@@ -182,7 +156,7 @@ func (c *Container) ParticipantRepository() mathbattle.ParticipantRepository {
 	return c.participantRepsitory
 }
 
-func (c *Container) ProblemRepository() mathbattle.ProblemRepository {
+func (c *MBotContainer) ProblemRepository() mathbattle.ProblemRepository {
 	if c.problemRepository == nil {
 		var err error
 		c.problemRepository, err = sqlite.NewProblemRepository(c.Config().DatabasePath, c.Config().ProblemsPath)
@@ -194,7 +168,7 @@ func (c *Container) ProblemRepository() mathbattle.ProblemRepository {
 	return c.problemRepository
 }
 
-func (c *Container) SolutionRepository() mathbattle.SolutionRepository {
+func (c *MBotContainer) SolutionRepository() mathbattle.SolutionRepository {
 	if c.solutionRepository == nil {
 		var err error
 		c.solutionRepository, err = sqlite.NewSolutionRepository(c.Config().DatabasePath, c.Config().SolutionsPath)
@@ -206,7 +180,7 @@ func (c *Container) SolutionRepository() mathbattle.SolutionRepository {
 	return c.solutionRepository
 }
 
-func (c *Container) ReviewRepository() mathbattle.ReviewRepository {
+func (c *MBotContainer) ReviewRepository() mathbattle.ReviewRepository {
 	if c.reviewRepository == nil {
 		var err error
 		c.reviewRepository, err = sqlite.NewReviewRepository(c.Config().DatabasePath)
@@ -218,7 +192,7 @@ func (c *Container) ReviewRepository() mathbattle.ReviewRepository {
 	return c.reviewRepository
 }
 
-func (c *Container) Postman() mathbattle.Postman {
+func (c *MBotContainer) Postman() mathbattle.Postman {
 	if c.postman == nil {
 		result, err := NewTelegramPostman(c.Config().TelegramToken)
 		if err != nil {
@@ -230,7 +204,7 @@ func (c *Container) Postman() mathbattle.Postman {
 	return c.postman
 }
 
-func (c *Container) SolveStageDistributor() application.ProblemDistributor {
+func (c *MBotContainer) SolveStageDistributor() application.ProblemDistributor {
 	if c.solveStageDistributor == nil {
 		result := problemdistributor.NewSimpleDistributor(c.ProblemRepository(), 3)
 		c.solveStageDistributor = &result
@@ -239,7 +213,7 @@ func (c *Container) SolveStageDistributor() application.ProblemDistributor {
 	return c.solveStageDistributor
 }
 
-func (c *Container) ReviewStageDistributor() application.SolutionDistributor {
+func (c *MBotContainer) ReviewStageDistributor() application.SolutionDistributor {
 	if c.reviewStageDistributor == nil {
 		result := solutiondistributor.SolutionDistributor{}
 		c.reviewStageDistributor = &result

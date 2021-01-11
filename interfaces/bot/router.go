@@ -12,7 +12,16 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-func Start(container infrastructure.Container) {
+func TelegramContextRepository(container infrastructure.MBotContainer) *memory.TelegramContextRepository {
+	telegramContextRepository, err := memory.NewTelegramContextRepository(container.UserRepository())
+	if err != nil {
+		log.Fatalf("Failed to get telegram context repository, error: %v", err)
+	}
+
+	return telegramContextRepository
+}
+
+func Start(container infrastructure.MBotContainer) {
 	b, err := tb.NewBot(tb.Settings{
 		Token:       container.Config().TelegramToken,
 		Poller:      &tb.LongPoller{Timeout: 10 * time.Second},
@@ -31,15 +40,14 @@ func Start(container infrastructure.Container) {
 	}
 
 	allCommands := createCommands(container)
-
-	ctxRepository, err := memory.NewTelegramContextRepository(container.UserRepository())
-	if err != nil {
-		log.Fatal(err)
-	}
+	ctxRepository := TelegramContextRepository(container)
 
 	genericHandler := func(handler handlers.TelegramCommandHandler, m *tb.Message, startType handlers.CommandStep) {
-		log.Printf("%s - %s - %s\n", m.Sender.FirstName, m.Sender.LastName, m.Sender.Username)
-		ctx, err := ctxRepository.GetByTelegramID(int64(m.Sender.ID))
+		ctx, err := ctxRepository.GetByUserData(infrastructure.TelegramUserData{
+			ChatID:   int64(m.Sender.ID),
+			Username: m.Sender.Username,
+		})
+
 		isSuitable, reason, err := handler.IsCommandSuitable(ctx)
 		if err != nil {
 			b.Send(m.Sender, container.Replier().InternalError(), &tb.ReplyMarkup{
@@ -101,7 +109,7 @@ func Start(container infrastructure.Container) {
 			for _, item := range response {
 				if len(item.Img.Content) > 0 {
 					// message with photo
-					msg := tgbotapi.NewPhotoUpload(ctx.User.ChatID, tgbotapi.FileBytes{Name: "", Bytes: item.Img.Content})
+					msg := tgbotapi.NewPhotoUpload(ctx.User.TelegramID, tgbotapi.FileBytes{Name: "", Bytes: item.Img.Content})
 					msg.Caption = item.Text
 					// msg.ReplyMarkup = item.Keyboard
 					b2.Send(msg)
@@ -137,7 +145,10 @@ func Start(container infrastructure.Container) {
 	}
 
 	genericMessagesHandler := func(m *tb.Message) {
-		ctx, err := ctxRepository.GetByTelegramID(int64(m.Sender.ID))
+		ctx, err := ctxRepository.GetByUserData(infrastructure.TelegramUserData{
+			ChatID:   int64(m.Sender.ID),
+			Username: m.Sender.Username,
+		})
 		if err != nil {
 			b.Send(m.Sender, container.Replier().InternalError())
 			log.Printf("Failed to get user context: %v", err)

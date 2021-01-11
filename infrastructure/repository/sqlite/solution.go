@@ -24,7 +24,7 @@ func NewSolutionRepository(dbPath, solutionPath string) (*SolutionRepository, er
 	}
 
 	if _, err := os.Stat(solutionPath); os.IsNotExist(err) {
-		if err := os.Mkdir(solutionPath, 0777); err != nil {
+		if err := os.MkdirAll(solutionPath, 0777); err != nil {
 			return nil, err
 		}
 	}
