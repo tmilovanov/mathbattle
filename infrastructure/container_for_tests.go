@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/user"
 	"path/filepath"
 	"time"
 
@@ -12,9 +11,8 @@ import (
 	problemdistributor "mathbattle/application/problem_distributor"
 	solutiondistributor "mathbattle/application/solution_distributor"
 	"mathbattle/config"
-	"mathbattle/infrastructure/repository/sqlite"
+	"mathbattle/infrastructure/repository/sqldb"
 	"mathbattle/interfaces/replier"
-	"mathbattle/libs/fstraverser"
 	"mathbattle/libs/mstd"
 	"mathbattle/mocks"
 	"mathbattle/models/mathbattle"
@@ -33,32 +31,26 @@ type TestContainer struct {
 	solutionService    mathbattle.SolutionService
 
 	replier                application.Replier
-	userRepository         *sqlite.UserRepository
-	participantRepsitory   *sqlite.ParticipantRepository
-	roundRepository        *sqlite.RoundRepository
-	problemRepository      *sqlite.ProblemRepository
-	solutionRepository     *sqlite.SolutionRepository
-	reviewRepository       *sqlite.ReviewRepository
+	userRepository         *sqldb.UserRepository
+	participantRepsitory   *sqldb.ParticipantRepository
+	roundRepository        *sqldb.RoundRepository
+	problemRepository      *sqldb.ProblemRepository
+	solutionRepository     *sqldb.SolutionRepository
+	reviewRepository       *sqldb.ReviewRepository
 	postman                mathbattle.Postman
 	solveStageDistributor  application.ProblemDistributor
 	reviewStageDistributor application.SolutionDistributor
 }
 
 func NewTestContainer() TestContainer {
-	log.Printf("NewTestContainer()")
 	var err error
 
-	usr, err := user.Current()
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Current user: %v %v %v %v", usr.Name, usr.Username, usr.Uid, usr.Gid)
-
-	testStoragePath := filepath.Join(usr.HomeDir, "mathbattle_test_storage")
+	testStoragePath := filepath.Join(os.TempDir(), "mathbattle_test_storage")
 	cfg := config.TestConfig{
-		DatabasePath:  filepath.Join(testStoragePath, "test_mathbattle.sqlite"),
-		ProblemsPath:  filepath.Join(testStoragePath, "test_problems"),
-		SolutionsPath: filepath.Join(testStoragePath, "test_solutions"),
+		DatabaseType:             "postgres",
+		DatabaseConnectionString: "host=localhost user=postgres password=htlmrf dbname=mathbattle_test sslmode=disable",
+		ProblemsPath:             filepath.Join(testStoragePath, "test_problems"),
+		SolutionsPath:            filepath.Join(testStoragePath, "test_solutions"),
 	}
 
 	if _, err := os.Stat(testStoragePath); os.IsNotExist(err) {
@@ -67,26 +59,9 @@ func NewTestContainer() TestContainer {
 		}
 	}
 
-	info, err := os.Stat(testStoragePath)
-	if err != nil {
-		log.Fatalf("Failed to get info about database, error: %v", err)
-	}
-
-	log.Printf("Database permissions: %v", info.Mode().String())
-
-	fstraverser.TraverseStartingFrom(testStoragePath, func(fi fstraverser.FileInformation) {
-		//log.Printf("---> %s", fi.Path)
-	})
-
-	log.Printf("Removing %v", testStoragePath)
-	err = sqlite.Deinit()
+	err = sqldb.DeinitAndRemove(cfg.DatabaseType, cfg.DatabaseConnectionString)
 	if err != nil {
 		log.Fatalf("Failed to deinit database, err: %v", err)
-	}
-
-	err = os.RemoveAll(testStoragePath)
-	if err != nil {
-		log.Fatalf("Failed to remove test storage path: %v, error: %v", testStoragePath, err)
 	}
 
 	return TestContainer{
@@ -160,12 +135,12 @@ func (c *TestContainer) Replier() application.Replier {
 func (c *TestContainer) UserRepository() mathbattle.UserRepository {
 	if c.userRepository == nil {
 		var err error
-		c.userRepository, err = sqlite.NewUserRepository(c.Config().DatabasePath)
+		c.userRepository, err = sqldb.NewUserRepository(c.Config().DatabaseType, c.Config().DatabaseConnectionString)
 		if err != nil {
 			log.Fatalf("Failed to get user repository, error: %v", err)
 		}
 
-		c.participantRepsitory, err = sqlite.NewParticipantRepository(c.Config().DatabasePath, c.userRepository)
+		c.participantRepsitory, err = sqldb.NewParticipantRepository(c.Config().DatabaseType, c.Config().DatabaseConnectionString, c.userRepository)
 		if err != nil {
 			log.Fatalf("Failed to get participant repository, error: %v", err)
 		}
@@ -179,7 +154,7 @@ func (c *TestContainer) UserRepository() mathbattle.UserRepository {
 func (c *TestContainer) RoundRepository() mathbattle.RoundRepository {
 	if c.roundRepository == nil {
 		var err error
-		c.roundRepository, err = sqlite.NewRoundRepository(c.Config().DatabasePath)
+		c.roundRepository, err = sqldb.NewRoundRepository(c.Config().DatabaseType, c.Config().DatabaseConnectionString)
 		if err != nil {
 			log.Fatalf("Failed to get round repository, error: %v", err)
 		}
@@ -192,14 +167,14 @@ func (c *TestContainer) ParticipantRepository() mathbattle.ParticipantRepository
 	if c.participantRepsitory == nil {
 		if c.userRepository == nil {
 			var err error
-			c.userRepository, err = sqlite.NewUserRepository(c.Config().DatabasePath)
+			c.userRepository, err = sqldb.NewUserRepository(c.Config().DatabaseType, c.Config().DatabaseConnectionString)
 			if err != nil {
 				log.Fatalf("TestContainer::ParticipantRepository(), failed to initialize user repository, error: %v", err)
 			}
 		}
 
 		var err error
-		c.participantRepsitory, err = sqlite.NewParticipantRepository(c.Config().DatabasePath, c.userRepository)
+		c.participantRepsitory, err = sqldb.NewParticipantRepository(c.Config().DatabaseType, c.Config().DatabaseConnectionString, c.userRepository)
 		if err != nil {
 			log.Fatalf("TestContainer::ParticipantRepository(), failed to get participant repository, error: %v", err)
 		}
@@ -211,7 +186,7 @@ func (c *TestContainer) ParticipantRepository() mathbattle.ParticipantRepository
 func (c *TestContainer) ProblemRepository() mathbattle.ProblemRepository {
 	if c.problemRepository == nil {
 		var err error
-		c.problemRepository, err = sqlite.NewProblemRepository(c.Config().DatabasePath, c.Config().ProblemsPath)
+		c.problemRepository, err = sqldb.NewProblemRepository(c.Config().DatabaseType, c.Config().DatabaseConnectionString, c.Config().ProblemsPath)
 		if err != nil {
 			log.Fatalf("Failed to get problems repository, error: %v", err)
 		}
@@ -223,7 +198,7 @@ func (c *TestContainer) ProblemRepository() mathbattle.ProblemRepository {
 func (c *TestContainer) SolutionRepository() mathbattle.SolutionRepository {
 	if c.solutionRepository == nil {
 		var err error
-		c.solutionRepository, err = sqlite.NewSolutionRepository(c.Config().DatabasePath, c.Config().SolutionsPath)
+		c.solutionRepository, err = sqldb.NewSolutionRepository(c.Config().DatabaseType, c.Config().DatabaseConnectionString, c.Config().SolutionsPath)
 		if err != nil {
 			log.Fatalf("Failed to get solutions repository, error: %v", err)
 		}
@@ -235,7 +210,7 @@ func (c *TestContainer) SolutionRepository() mathbattle.SolutionRepository {
 func (c *TestContainer) ReviewRepository() mathbattle.ReviewRepository {
 	if c.reviewRepository == nil {
 		var err error
-		c.reviewRepository, err = sqlite.NewReviewRepository(c.Config().DatabasePath)
+		c.reviewRepository, err = sqldb.NewReviewRepository(c.Config().DatabaseType, c.Config().DatabaseConnectionString)
 		if err != nil {
 			log.Fatalf("Failed to get review repository, error: %v", err)
 		}

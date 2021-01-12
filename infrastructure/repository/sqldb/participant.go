@@ -1,28 +1,28 @@
-package sqlite
+package sqldb
 
 import (
 	"database/sql"
 	"errors"
-	"log"
+	"fmt"
 	"strconv"
 
 	"mathbattle/models/mathbattle"
 )
 
 type ParticipantRepository struct {
-	sqliteRepository
+	sqlRepository
 	userRepository *UserRepository
 }
 
-func NewParticipantRepository(dbPath string, userRepository *UserRepository) (*ParticipantRepository, error) {
-	sqliteRepository, err := newSqliteRepository(dbPath)
+func NewParticipantRepository(dbType, connectionString string, userRepository *UserRepository) (*ParticipantRepository, error) {
+	sqlRepository, err := newSqlRepository(dbType, connectionString)
 	if err != nil {
 		return nil, err
 	}
 
 	result := &ParticipantRepository{
-		sqliteRepository: sqliteRepository,
-		userRepository:   userRepository,
+		sqlRepository:  sqlRepository,
+		userRepository: userRepository,
 	}
 
 	if err := result.CreateTable(); err != nil {
@@ -33,7 +33,10 @@ func NewParticipantRepository(dbPath string, userRepository *UserRepository) (*P
 }
 
 func (r *ParticipantRepository) CreateTable() error {
-	createStmt := `CREATE TABLE IF NOT EXISTS participants (
+	var createStmt string
+	switch r.dbType {
+	case "sqlite3":
+		createStmt = `CREATE TABLE IF NOT EXISTS participants (
 			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 			user_id INTEGER NOT NULL,
 			name VARCHAR(100),
@@ -42,28 +45,58 @@ func (r *ParticipantRepository) CreateTable() error {
 			is_active BOOL,
 			FOREIGN KEY(user_id) REFERENCES users(id)
 		)`
-	_, err := r.db.Exec(createStmt)
-	if err != nil {
-		log.Printf("ParticipantRepository::CreateTabe(), error: %v", err)
+	case "postgres":
+		createStmt = `CREATE TABLE IF NOT EXISTS participants (
+			id SERIAL UNIQUE,
+			user_id INTEGER NOT NULL,
+			name VARCHAR(100),
+			school VARCHAR(256),
+			grade INTEGER,
+			is_active BOOL,
+			FOREIGN KEY(user_id) REFERENCES users(id)
+		)`
 	}
+
+	_, err := r.db.Exec(createStmt)
+
 	return err
 }
 
 func (r *ParticipantRepository) Store(participant mathbattle.Participant) (mathbattle.Participant, error) {
 	result := participant
-	res, err := r.db.Exec("INSERT INTO participants (user_id, name, school, grade, is_active) VALUES (?, ?, ?, ?, ?)",
-		participant.User.ID, participant.Name, participant.School, participant.Grade, participant.IsActive)
 
-	if err != nil {
-		return result, err
-	}
-	insertedID, err := res.LastInsertId()
-	if err != nil {
-		return result, err
-	}
-	result.ID = strconv.FormatInt(insertedID, 10)
+	switch r.dbType {
+	case "sqlite3":
+		res, err := r.db.Exec("INSERT INTO participants (user_id, name, school, grade, is_active) VALUES (?, ?, ?, ?, ?)",
+			participant.User.ID, participant.Name, participant.School, participant.Grade, participant.IsActive)
 
-	return result, nil
+		if err != nil {
+			return result, err
+		}
+		insertedID, err := res.LastInsertId()
+		if err != nil {
+			return result, err
+		}
+		result.ID = strconv.FormatInt(insertedID, 10)
+
+		return result, nil
+	case "postgres":
+		query := "INSERT INTO participants (user_id, name, school, grade, is_active) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+		stmt, err := r.db.Prepare(query)
+		if err != nil {
+			return result, err
+		}
+		defer stmt.Close()
+
+		err = stmt.QueryRow(participant.User.ID, participant.Name, participant.School, participant.Grade, participant.IsActive).Scan(&result.ID)
+		if err != nil {
+			return result, err
+		}
+
+		return result, nil
+	default:
+		return result, fmt.Errorf("Unexpected db type")
+	}
 }
 
 func (r *ParticipantRepository) getWhere(whereStr string, whereArgs ...interface{}) (mathbattle.Participant, error) {
@@ -88,7 +121,7 @@ func (r *ParticipantRepository) getWhere(whereStr string, whereArgs ...interface
 }
 
 func (r *ParticipantRepository) GetByID(ID string) (mathbattle.Participant, error) {
-	return r.getWhere("id = ?", ID)
+	return r.getWhere("id = $1", ID)
 }
 
 func (r *ParticipantRepository) GetByTelegramID(telegramID int64) (mathbattle.Participant, error) {
@@ -97,11 +130,11 @@ func (r *ParticipantRepository) GetByTelegramID(telegramID int64) (mathbattle.Pa
 		return mathbattle.Participant{}, err
 	}
 
-	return r.getWhere("user_id = ?", user.ID)
+	return r.getWhere("user_id = $1", user.ID)
 }
 
 func (r *ParticipantRepository) GetByUserID(userID string) (mathbattle.Participant, error) {
-	return r.getWhere("user_id = ?", userID)
+	return r.getWhere("user_id = $1", userID)
 }
 
 func (r *ParticipantRepository) GetAll() ([]mathbattle.Participant, error) {
@@ -133,7 +166,7 @@ func (r *ParticipantRepository) GetAll() ([]mathbattle.Participant, error) {
 }
 
 func (r *ParticipantRepository) Update(participant mathbattle.Participant) error {
-	_, err := r.db.Exec("UPDATE participants SET user_id = ?, name = ?, grade = ?, school = ?, is_active = ? WHERE id = ?",
+	_, err := r.db.Exec("UPDATE participants SET user_id = $1, name = $2, grade = $3, school = $4, is_active = $5 WHERE id = $6",
 		participant.User.ID, participant.Name, participant.Grade, participant.School, participant.IsActive,
 		participant.ID)
 	if err != nil {
@@ -144,6 +177,6 @@ func (r *ParticipantRepository) Update(participant mathbattle.Participant) error
 }
 
 func (r *ParticipantRepository) Delete(ID string) error {
-	_, err := r.db.Exec("DELETE FROM participants WHERE id = ?", ID)
+	_, err := r.db.Exec("DELETE FROM participants WHERE id = $1", ID)
 	return err
 }

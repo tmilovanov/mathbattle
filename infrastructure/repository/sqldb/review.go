@@ -1,26 +1,26 @@
-package sqlite
+package sqldb
 
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"strconv"
-	"strings"
 
 	"mathbattle/models/mathbattle"
 )
 
 type ReviewRepository struct {
-	sqliteRepository
+	sqlRepository
 }
 
-func NewReviewRepository(dbPath string) (*ReviewRepository, error) {
-	sqliteRepository, err := newSqliteRepository(dbPath)
+func NewReviewRepository(dbType, connectionString string) (*ReviewRepository, error) {
+	sqlRepository, err := newSqlRepository(dbType, connectionString)
 	if err != nil {
 		return nil, err
 	}
 
 	result := &ReviewRepository{
-		sqliteRepository: sqliteRepository,
+		sqlRepository: sqlRepository,
 	}
 
 	if err := result.CreateTable(); err != nil {
@@ -31,29 +31,62 @@ func NewReviewRepository(dbPath string) (*ReviewRepository, error) {
 }
 
 func (r *ReviewRepository) CreateTable() error {
-	createStmt := `CREATE TABLE IF NOT EXISTS reviews (
+	var createStmt string
+
+	switch r.dbType {
+	case "sqlite3":
+		createStmt = `CREATE TABLE IF NOT EXISTS reviews (
 			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 			reviewer_id INTEGER,
 			solution_id INTEGER,
 			content TEXT
 		)`
+	case "postgres":
+		createStmt = `CREATE TABLE IF NOT EXISTS reviews (
+			id SERIAL UNIQUE,
+			reviewer_id INTEGER,
+			solution_id INTEGER,
+			content TEXT
+		)`
+	}
 	_, err := r.db.Exec(createStmt)
 	return err
 }
 
 func (r *ReviewRepository) Store(review mathbattle.Review) (mathbattle.Review, error) {
 	result := review
-	res, err := r.db.Exec("INSERT INTO reviews (reviewer_id, solution_id, content) VALUES (?, ?, ?)",
-		review.ReviewerID, review.SolutionID, review.Content)
 
-	if err != nil {
-		return result, err
+	switch r.dbType {
+	case "sqlite3":
+		res, err := r.db.Exec("INSERT INTO reviews (reviewer_id, solution_id, content) VALUES (?, ?, ?)",
+			review.ReviewerID, review.SolutionID, review.Content)
+
+		if err != nil {
+			return result, err
+		}
+		insertedID, err := res.LastInsertId()
+		if err != nil {
+			return result, err
+		}
+		result.ID = strconv.FormatInt(insertedID, 10)
+	case "postgres":
+		query := "INSERT INTO reviews (reviewer_id, solution_id, content) VALUES ($1, $2, $3) RETURNING id"
+		stmt, err := r.db.Prepare(query)
+		if err != nil {
+			return result, err
+		}
+		defer stmt.Close()
+
+		err = stmt.QueryRow(review.ReviewerID, review.SolutionID, review.Content).Scan(&result.ID)
+		if err != nil {
+			return result, err
+		}
+
+		return result, nil
+	default:
+		return result, fmt.Errorf("Unknown dbtype")
+
 	}
-	insertedID, err := res.LastInsertId()
-	if err != nil {
-		return result, err
-	}
-	result.ID = strconv.FormatInt(insertedID, 10)
 
 	return result, nil
 }
@@ -75,19 +108,9 @@ func (r *ReviewRepository) Get(ID string) (mathbattle.Review, error) {
 
 func (r *ReviewRepository) FindMany(reviewerID, solutionID string) ([]mathbattle.Review, error) {
 	query := "SELECT id, reviewer_id, solution_id, content FROM reviews"
-	whereClauses := []string{}
-	whereArgs := []interface{}{}
-	if reviewerID != "" {
-		whereClauses = append(whereClauses, " reviewer_id = ?")
-		whereArgs = append(whereArgs, reviewerID)
-	}
-	if solutionID != "" {
-		whereClauses = append(whereClauses, " solution_id = ?")
-		whereArgs = append(whereArgs, solutionID)
-	}
-	if len(whereClauses) != 0 {
-		query += " WHERE " + strings.Join(whereClauses, " AND ")
-	}
+	query, whereArgs := createWhereClause(query, []whereDescriptor{
+		{"reviewer_id", reviewerID},
+		{"solution_id", solutionID}})
 
 	rows, err := r.db.Query(query, whereArgs...)
 	if err != nil {
@@ -117,12 +140,12 @@ func (r *ReviewRepository) FindMany(reviewerID, solutionID string) ([]mathbattle
 }
 
 func (r *ReviewRepository) Update(review mathbattle.Review) error {
-	_, err := r.db.Exec("UPDATE reviews SET reviewer_id = ?, solution_id = ?, content = ? WHERE id = ?",
+	_, err := r.db.Exec("UPDATE reviews SET reviewer_id = $1, solution_id = $2, content = $3 WHERE id = $4",
 		review.ReviewerID, review.SolutionID, review.Content, review.ID)
 	return err
 }
 
 func (r *ReviewRepository) Delete(ID string) error {
-	_, err := r.db.Exec("DELETE FROM reviews WHERE id = ?", ID)
+	_, err := r.db.Exec("DELETE FROM reviews WHERE id = $1", ID)
 	return err
 }

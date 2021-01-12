@@ -7,5 +7,5 @@ import (
 )
 
 func main() {
-	server.Start(infrastructure.NewContainer(config.LoadConfig("config.yaml")))
+	server.Start(infrastructure.NewServerContainer(config.LoadConfig("config.yaml")))
 }

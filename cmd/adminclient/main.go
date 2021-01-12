@@ -11,12 +11,15 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 	"unicode"
 
 	"mathbattle/config"
 	"mathbattle/infrastructure"
 	"mathbattle/libs/fstraverser"
 	"mathbattle/models/mathbattle"
+
+	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 func main() {
@@ -27,11 +30,32 @@ func main() {
 
 	switch os.Args[1] {
 	case "add-problems":
-		container := infrastructure.NewContainer(config.LoadConfig("config.yaml"))
+		container := infrastructure.NewServerContainer(config.LoadConfig("config.yaml"))
 		addProblemsToRepository(container.ProblemRepository(), os.Args[2])
+	case "get-info":
+		getInfo()
 	default:
 		fmt.Println("Unknow command")
 	}
+}
+
+func getInfo() {
+	container := infrastructure.NewServerContainer(config.LoadConfig("config.yaml"))
+
+	b, err := tb.NewBot(tb.Settings{
+		Token:       container.Config().TelegramToken,
+		Poller:      &tb.LongPoller{Timeout: 10 * time.Second},
+		Synchronous: true,
+		//Verbose:     true,
+	})
+
+	chatID := "442504899"
+	chat, err := b.ChatByID(chatID)
+	if err != nil {
+		log.Fatalf("Failed to get chat by id %s", chatID)
+	}
+
+	log.Printf("Username: %v", chat.Username)
 }
 
 func addProblemsToRepository(repository mathbattle.ProblemRepository, problemsPath string) {

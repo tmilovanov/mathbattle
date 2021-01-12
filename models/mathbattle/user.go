@@ -10,6 +10,10 @@ type User struct {
 	RegistrationTime time.Time `json:"registration_time"`
 }
 
+func (u *User) SetRegistrationTime(t time.Time) {
+	u.RegistrationTime = t.Round(time.Second).UTC()
+}
+
 type UserRepository interface {
 	Store(user User) (User, error)
 	GetAll() ([]User, error)

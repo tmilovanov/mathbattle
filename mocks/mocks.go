@@ -23,11 +23,16 @@ func GenProblems(problemsCount int, minGrade int, maxGrade int) []mathbattle.Pro
 	for i := 0; i < problemsCount; i++ {
 		problemContent := []byte(fmt.Sprintf("%d fake problem", i))
 		h := sha256.New()
-		io.Copy(h, bytes.NewReader(problemContent))
+
+		_, err := io.Copy(h, bytes.NewReader(problemContent))
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		sha256sum := hex.EncodeToString(h.Sum(nil))
 
 		result = append(result, mathbattle.Problem{
-			ID:        sha256sum,
+			Sha256sum: sha256sum,
 			MinGrade:  minGrade,
 			MaxGrade:  maxGrade,
 			Extension: ".jpg",
@@ -44,10 +49,14 @@ func GenParticipants(participantsCount int, grade int) []mathbattle.Participant 
 	for i := 0; i < participantsCount; i++ {
 		result = append(result, mathbattle.Participant{
 			User: mathbattle.User{
-				TelegramID: int64(i),
+				TelegramID:       int64(i),
+				TelegramName:     fmt.Sprintf("fake_telegram_name_%d", i),
+				IsAdmin:          false,
+				RegistrationTime: mstd.UTCNowRoundSeconds(),
 			},
-			Name:  fmt.Sprintf("%d fake name", i),
-			Grade: grade,
+			Name:   fmt.Sprintf("%d fake name", i),
+			School: fmt.Sprintf("Fake school %d", i),
+			Grade:  grade,
 		})
 	}
 

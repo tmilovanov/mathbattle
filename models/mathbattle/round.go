@@ -47,7 +47,7 @@ func (r *Round) IsActive() bool {
 }
 
 func (r *Round) SetSolveStartDate(datetime time.Time) {
-	r.SolveStartDate = datetime.Round(0).UTC()
+	r.SolveStartDate = datetime.Round(time.Second).UTC()
 }
 
 func (r *Round) GetSolveStartDate() time.Time {
@@ -55,7 +55,7 @@ func (r *Round) GetSolveStartDate() time.Time {
 }
 
 func (r *Round) SetSolveEndDate(datetime time.Time) {
-	r.SolveEndDate = datetime.Round(0).UTC()
+	r.SolveEndDate = datetime.Round(time.Second).UTC()
 }
 
 func (r *Round) GetSolveEndDate() time.Time {
@@ -75,7 +75,7 @@ func (r *Round) GetSolveEndDateMsk() (time.Time, error) {
 }
 
 func (r *Round) SetReviewStartDate(datetime time.Time) {
-	r.ReviewStartDate = datetime.Round(0).UTC()
+	r.ReviewStartDate = datetime.Round(time.Second).UTC()
 }
 
 func (r *Round) GetReviewStartDate() time.Time {
@@ -83,7 +83,7 @@ func (r *Round) GetReviewStartDate() time.Time {
 }
 
 func (r *Round) SetReviewEndDate(datetime time.Time) {
-	r.ReviewEndDate = datetime.Round(0).UTC()
+	r.ReviewEndDate = datetime.Round(time.Second).UTC()
 }
 
 func (r *Round) GetReviewEndDate() time.Time {

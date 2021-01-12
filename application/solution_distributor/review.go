@@ -10,11 +10,13 @@ func MapSolutionsToParticipants(solutions []mathbattle.Solution, reviewerCount u
 	// Maps solutionID to participants it needs to be sent
 	result := make(map[string][]string)
 	targets := append(solutions[1:], solutions[:reviewerCount]...)
+
 	for i := 0; i < len(solutions); i++ {
 		for j := uint(0); j < reviewerCount; j++ {
 			result[solutions[i].ID] = append(result[solutions[i].ID], targets[uint(i)+j].ParticipantID)
 		}
 	}
+
 	return result
 }
 

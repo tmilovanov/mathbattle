@@ -1,4 +1,4 @@
-package sqlite
+package sqldb
 
 import (
 	"bytes"
@@ -16,27 +16,27 @@ import (
 )
 
 type ProblemRepository struct {
-	sqliteRepository
+	sqlRepository
 	problemFolder string
 }
 
-func NewProblemRepository(dbPath, problemPath string) (*ProblemRepository, error) {
-	sqliteRepository, err := newSqliteRepository(dbPath)
+func NewProblemRepository(dbType, connectionString, problemPath string) (*ProblemRepository, error) {
+	sqlRepository, err := newSqlRepository(dbType, connectionString)
 	if err != nil {
-		log.Printf("Fld to get sqlite rep, err: %v", err)
+		log.Printf("Fld to get sql rep, err: %v", err)
 		return nil, err
 	}
 
 	if _, err := os.Stat(problemPath); os.IsNotExist(err) {
 		if err := os.MkdirAll(problemPath, 0777); err != nil {
-			log.Printf("Fld to create %v sqlite rep, err: %v", problemPath, err)
+			log.Printf("Fld to create %v rep, err: %v", problemPath, err)
 			return nil, err
 		}
 	}
 
 	result := &ProblemRepository{
-		sqliteRepository: sqliteRepository,
-		problemFolder:    problemPath,
+		sqlRepository: sqlRepository,
+		problemFolder: problemPath,
 	}
 
 	if err := result.CreateTable(); err != nil {
@@ -47,13 +47,29 @@ func NewProblemRepository(dbPath, problemPath string) (*ProblemRepository, error
 }
 
 func (r *ProblemRepository) CreateTable() error {
-	createStmt := `CREATE TABLE IF NOT EXISTS problems (
+	var createStmt string
+
+	switch r.dbType {
+	case "sqlite3":
+		createStmt = `CREATE TABLE IF NOT EXISTS problems (
 			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 			sha256sum VARCHAR(64) UNIQUE,
 			grade_min INTEGER,
 			grade_max INTEGER,
 			extension varchar(20)
 		)`
+	case "postgres":
+		createStmt = `CREATE TABLE IF NOT EXISTS problems (
+			id SERIAL UNIQUE,
+			sha256sum VARCHAR(64) UNIQUE,
+			grade_min INTEGER,
+			grade_max INTEGER,
+			extension varchar(20)
+		)`
+	default:
+		return fmt.Errorf("Unsupported database type")
+	}
+
 	_, err := r.db.Exec(createStmt)
 	return err
 }
@@ -75,23 +91,39 @@ func (r *ProblemRepository) Store(problem mathbattle.Problem) (mathbattle.Proble
 		return problem, err
 	}
 
-	insertRes, err := r.db.Exec("INSERT INTO problems (sha256sum, grade_min, grade_max, extension) VALUES (?, ?, ?, ?)",
-		problem.Sha256sum, problem.MinGrade, problem.MaxGrade, problem.Extension)
-	if err != nil {
-		return problem, err
-	}
+	switch r.dbType {
+	case "sqlite3":
+		insertRes, err := r.db.Exec("INSERT INTO problems (sha256sum, grade_min, grade_max, extension) VALUES ($1, $2, $3, $4)",
+			problem.Sha256sum, problem.MinGrade, problem.MaxGrade, problem.Extension)
+		if err != nil {
+			return problem, err
+		}
 
-	id, err := insertRes.LastInsertId()
-	if err != nil {
-		return problem, err
+		id, err := insertRes.LastInsertId()
+		if err != nil {
+			return problem, err
+		}
+
+		problem.ID = strconv.FormatInt(id, 10)
+	case "postgres":
+		query := "INSERT INTO problems (sha256sum, grade_min, grade_max, extension) VALUES ($1, $2, $3, $4) RETURNING id"
+		stmt, err := r.db.Prepare(query)
+		if err != nil {
+			return problem, err
+		}
+		defer stmt.Close()
+
+		err = stmt.QueryRow(problem.Sha256sum, problem.MinGrade, problem.MaxGrade, problem.Extension).Scan(&problem.ID)
+		if err != nil {
+			return problem, err
+		}
 	}
-	problem.ID = strconv.FormatInt(id, 10)
 
 	return problem, nil
 }
 
 func (r *ProblemRepository) GetByID(ID string) (mathbattle.Problem, error) {
-	row := r.db.QueryRow("SELECT id, sha256sum, grade_min, grade_max, extension FROM problems WHERE id = ?", ID)
+	row := r.db.QueryRow("SELECT id, sha256sum, grade_min, grade_max, extension FROM problems WHERE id = $1", ID)
 	result := mathbattle.Problem{}
 	err := row.Scan(&result.ID, &result.Sha256sum, &result.MinGrade, &result.MaxGrade, &result.Extension)
 	if err != nil {

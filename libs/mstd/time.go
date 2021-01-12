@@ -13,3 +13,7 @@ func DurationToDayHourMinute(d time.Duration) (int, int, int) {
 
 	return int(days), int(hours), int(minutes)
 }
+
+func UTCNowRoundSeconds() time.Time {
+	return time.Now().Round(time.Second).UTC()
+}

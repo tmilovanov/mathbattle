@@ -8,11 +8,12 @@ import (
 )
 
 type Config struct {
-	TelegramToken string `yaml:"telegram_token"`
-	APIUrl        string `yaml:"api_url"`
-	DatabasePath  string `yaml:"db_path"`
-	ProblemsPath  string `yaml:"problems_path"`
-	SolutionsPath string `yaml:"solutions_path"`
+	TelegramToken            string `yaml:"telegram_token"`
+	APIUrl                   string `yaml:"api_url"`
+	DatabaseType             string `yaml:"db_type"`
+	DatabaseConnectionString string `yaml:"db_connection_string"`
+	ProblemsPath             string `yaml:"problems_path"`
+	SolutionsPath            string `yaml:"solutions_path"`
 }
 
 func LoadConfig(configPath string) Config {

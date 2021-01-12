@@ -1,4 +1,4 @@
-package sqlite
+package sqldb
 
 import (
 	"database/sql"
@@ -13,12 +13,12 @@ import (
 )
 
 type SolutionRepository struct {
-	sqliteRepository
+	sqlRepository
 	solutionFolder string
 }
 
-func NewSolutionRepository(dbPath, solutionPath string) (*SolutionRepository, error) {
-	sqliteRepository, err := newSqliteRepository(dbPath)
+func NewSolutionRepository(dbType, connectionString, solutionPath string) (*SolutionRepository, error) {
+	sqlRepository, err := newSqlRepository(dbType, connectionString)
 	if err != nil {
 		return nil, err
 	}
@@ -30,8 +30,8 @@ func NewSolutionRepository(dbPath, solutionPath string) (*SolutionRepository, er
 	}
 
 	result := &SolutionRepository{
-		sqliteRepository: sqliteRepository,
-		solutionFolder:   solutionPath,
+		sqlRepository:  sqlRepository,
+		solutionFolder: solutionPath,
 	}
 
 	if err := result.CreateTable(); err != nil {
@@ -42,14 +42,29 @@ func NewSolutionRepository(dbPath, solutionPath string) (*SolutionRepository, er
 }
 
 func (r *SolutionRepository) CreateTable() error {
-	createStmt := `CREATE TABLE IF NOT EXISTS solutions (
+	var createStmt string
+
+	switch r.dbType {
+	case "sqlite3":
+		createStmt = `CREATE TABLE IF NOT EXISTS solutions (
 			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 			round_id INTEGER,
 			participant_id INTEGER,
 			problem_id INTEGER,
 			parts TEXT
 		)`
+	case "postgres":
+		createStmt = `CREATE TABLE IF NOT EXISTS solutions (
+			id SERIAL UNIQUE,
+			round_id INTEGER,
+			participant_id INTEGER,
+			problem_id INTEGER,
+			parts TEXT
+		)`
+	}
+
 	_, err := r.db.Exec(createStmt)
+
 	return err
 }
 
@@ -76,32 +91,47 @@ func (r *SolutionRepository) Store(solution mathbattle.Solution) (mathbattle.Sol
 		extensions = extensions[:len(extensions)-1]
 	}
 
-	res, err := r.db.Exec("INSERT INTO solutions (round_id, participant_id, problem_id, parts) VALUES (?,?,?,?)",
-		solution.RoundID, solution.ParticipantID, solution.ProblemID, extensions)
-	if err != nil {
-		return result, err
-	}
+	switch r.dbType {
+	case "sqlite3":
+		res, err := r.db.Exec("INSERT INTO solutions (round_id, participant_id, problem_id, parts) VALUES (?,?,?,?)",
+			solution.RoundID, solution.ParticipantID, solution.ProblemID, extensions)
+		if err != nil {
+			return result, err
+		}
 
-	newID, err := res.LastInsertId()
-	if err != nil {
-		return result, err
-	}
-	result.ID = strconv.FormatInt(newID, 10)
+		newID, err := res.LastInsertId()
+		if err != nil {
+			return result, err
+		}
+		result.ID = strconv.FormatInt(newID, 10)
 
-	return result, nil
+		return result, nil
+	case "postgres":
+		query := "INSERT INTO solutions (round_id, participant_id, problem_id, parts) VALUES ($1,$2,$3,$4) RETURNING id"
+		stmt, err := r.db.Prepare(query)
+		if err != nil {
+			return result, err
+		}
+		defer stmt.Close()
+
+		err = stmt.QueryRow(solution.RoundID, solution.ParticipantID, solution.ProblemID, extensions).Scan(&result.ID)
+		if err != nil {
+			return result, err
+		}
+
+		return result, nil
+	default:
+		return result, fmt.Errorf("Unknown dbtype")
+	}
 }
 
-func (r *SolutionRepository) Get(ID string) (mathbattle.Solution, error) {
-	intID, err := strconv.Atoi(ID)
-	if err != nil {
-		return mathbattle.Solution{}, err
-	}
-
-	res := r.db.QueryRow("SELECT id, round_id, participant_id, problem_id, parts FROM solutions WHERE id = ?", intID)
-	var partsExtensions string
+func (r *SolutionRepository) getWhere(whereStr string, whereArgs ...interface{}) (mathbattle.Solution, error) {
 	result := mathbattle.Solution{}
 
-	err = res.Scan(&result.ID, &result.RoundID, &result.ParticipantID, &result.ProblemID, &partsExtensions)
+	res := r.db.QueryRow("SELECT id, round_id, participant_id, problem_id, parts FROM solutions WHERE "+whereStr, whereArgs...)
+
+	var partsExtensions string
+	err := res.Scan(&result.ID, &result.RoundID, &result.ParticipantID, &result.ProblemID, &partsExtensions)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return result, mathbattle.ErrNotFound
@@ -129,43 +159,22 @@ func (r *SolutionRepository) Get(ID string) (mathbattle.Solution, error) {
 	return result, nil
 }
 
+func (r *SolutionRepository) Get(ID string) (mathbattle.Solution, error) {
+	return r.getWhere("id = $1", ID)
+}
+
 func (r *SolutionRepository) Find(roundID string, participantID string, problemID string) (mathbattle.Solution, error) {
-	res := r.db.QueryRow("SELECT id FROM solutions WHERE round_id = ? AND participant_id = ? AND problem_id = ?",
+	return r.getWhere("round_id = $1 AND participant_id = $2 AND problem_id = $3",
 		roundID, participantID, problemID)
-
-	var intID int
-	err := res.Scan(&intID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return mathbattle.Solution{}, mathbattle.ErrNotFound
-		}
-		return mathbattle.Solution{}, err
-	}
-
-	ID := strconv.Itoa(intID)
-
-	return r.Get(ID)
 }
 
 func (r *SolutionRepository) FindMany(roundID string, participantID string, problemID string) ([]mathbattle.Solution, error) {
 	query := "SELECT id, round_id, participant_id, problem_id, parts FROM solutions"
-	whereClauses := []string{}
-	whereArgs := []interface{}{}
-	if roundID != "" {
-		whereClauses = append(whereClauses, " round_id = ?")
-		whereArgs = append(whereArgs, roundID)
-	}
-	if participantID != "" {
-		whereClauses = append(whereClauses, " participant_id = ?")
-		whereArgs = append(whereArgs, participantID)
-	}
-	if problemID != "" {
-		whereClauses = append(whereClauses, " problem_id = ?")
-		whereArgs = append(whereArgs, problemID)
-	}
-	if len(whereClauses) != 0 {
-		query += " WHERE " + strings.Join(whereClauses, " AND ")
-	}
+	query, whereArgs := createWhereClause(query, []whereDescriptor{
+		{"round_id", roundID},
+		{"participant_id", participantID},
+		{"problem_id", problemID},
+	})
 
 	rows, err := r.db.Query(query, whereArgs...)
 	if err != nil {
@@ -249,7 +258,7 @@ func (r *SolutionRepository) AppendPart(ID string, item mathbattle.Image) error 
 	if err != nil {
 		return err
 	}
-	_, err = r.db.Exec("UPDATE solutions SET parts = ? WHERE id = ?", extensions, intID)
+	_, err = r.db.Exec("UPDATE solutions SET parts = $1 WHERE id = $2", extensions, intID)
 
 	return err
 }
@@ -261,7 +270,7 @@ func (r *SolutionRepository) Update(solution mathbattle.Solution) error {
 	}
 	extensions = extensions[:len(extensions)-1]
 
-	_, err := r.db.Exec("UPDATE solutions SET round_id = ?, participant_id = ?, problem_id = ?, parts = ? WHERE id = ?",
+	_, err := r.db.Exec("UPDATE solutions SET round_id = $1, participant_id = $2, problem_id = $3, parts = $4 WHERE id = $5",
 		solution.RoundID, solution.ParticipantID, solution.ProblemID, extensions, solution.ID)
 
 	if err == sql.ErrNoRows {
@@ -285,6 +294,7 @@ func (r *SolutionRepository) Delete(ID string) error {
 		}
 	}
 
-	_, err = r.db.Exec("DELETE FROM solutions WHERE id = ?", solution.ID)
+	_, err = r.db.Exec("DELETE FROM solutions WHERE id = $1", solution.ID)
+
 	return err
 }
