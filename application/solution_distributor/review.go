@@ -1,13 +1,21 @@
 package solutiondistributor
 
 import (
+	"math/rand"
 	"mathbattle/models/mathbattle"
+	"time"
 )
 
 type SolutionDistributor struct{}
 
 func MapSolutionsToParticipants(solutions []mathbattle.Solution, reviewerCount uint) map[string][]string {
-	// Maps solutionID to participants it needs to be sent
+	// Shuffle
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(solutions), func(i, j int) {
+		solutions[i], solutions[j] = solutions[j], solutions[i]
+	})
+
+	// Map each solution ID to participant IDs it needs to be sent
 	result := make(map[string][]string)
 	targets := append(solutions[1:], solutions[:reviewerCount]...)
 

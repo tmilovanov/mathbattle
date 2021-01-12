@@ -255,11 +255,11 @@ func (r RussianReplier) UnsubscribeSuccess() string {
 
 func (r RussianReplier) ProblemsPostBefore(stageDuration time.Duration, stageEnd time.Time) string {
 	msg := "Привет! Начался новый раунд. Первый этап - этап решения задач. "
-
+	msg += "\n\n"
 	day, hour, minute := mstd.DurationToDayHourMinute(stageDuration)
 	msg += fmt.Sprintf("Этап продлится %dд. %dч. %dм. ", day, hour, minute)
 	msg += fmt.Sprintf("После %s по московскому времени решения приниматься не будут.", stageEnd.Format("02.01.2006 15:04"))
-	msg += "\n"
+	msg += "\n\n"
 	msg += "Требования к решению:\n"
 	msg += "•  Решение должно быть полным, все утверждения должны быть обоснованы.\n"
 	msg += "•  Решение должно быть аккуратно оформлено, разборчивым почерком.\n"
@@ -378,11 +378,11 @@ func (r RussianReplier) StartRoundSuccess() string {
 func (r RussianReplier) ReviewPostBefore(stageDuration time.Duration, stageEnd time.Time) string {
 	msg := "Начался этап взаимной проверки решений. "
 	msg += "Во время него необходимо проверить решения других участников и найти в них недочёты, если они есть."
-
+	msg += "\n\n"
 	day, hour, minute := mstd.DurationToDayHourMinute(stageDuration)
 	msg += fmt.Sprintf("Этап продлится %dд. %dч. %dм. ", day, hour, minute)
 	msg += fmt.Sprintf("После %s по московскому времени отправлять комментарии будет нельзя.", stageEnd.Format("02.01.2006 15:04"))
-
+	msg += "\n\n"
 	msg += "Требования к комментарию:\n"
 	msg += "•  Начните с того, считаете вы решение верным или нет. Решение верное, если оно доведено до конца и все утверждения правильно обоснованы. \n"
 	msg += "•  Если считаете решение верным, можно ничего больше не писать или указать небольшие недочёты, если они есть.\n"
