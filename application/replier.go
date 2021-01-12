@@ -40,6 +40,8 @@ type Replier interface {
 	CmdGetReviewsDesc() string
 	CmdStartRoundName() string
 	CmdStartRoundDesc() string
+	CmdServiceMsgName() string
+	CmdServiceMsgDesc() string
 
 	InternalError() string
 	NotParticipant() string
@@ -107,4 +109,7 @@ type Replier interface {
 
 	// Replies used in CmdStat
 	FormatStat(stat mathbattle.Stat) string
+
+	// Replies used in CmdSendServiceMessage
+	ServiceMsgGetText() string
 }

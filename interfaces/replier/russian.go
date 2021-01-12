@@ -189,6 +189,14 @@ func (r RussianReplier) CmdStartRoundDesc() string {
 	return "Начать новый рануд"
 }
 
+func (r RussianReplier) CmdServiceMsgName() string {
+	return "/send_service_message"
+}
+
+func (r RussianReplier) CmdServiceMsgDesc() string {
+	return "Разослать сообщение всем участникам"
+}
+
 func (r RussianReplier) InternalError() string {
 	return "Произошла внутрення ошибка. Свяжитесь с организаторами и опишите свою проблему."
 }
@@ -491,4 +499,8 @@ func (r RussianReplier) FormatStat(stat mathbattle.Stat) string {
 	result += fmt.Sprintf("Всего комментариев прислано: %d\n", stat.ReviewsTotal)
 
 	return result
+}
+
+func (r RussianReplier) ServiceMsgGetText() string {
+	return "Введите сообщение, которое вы хотите разослать всем участникам."
 }
