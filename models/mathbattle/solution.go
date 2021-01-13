@@ -5,6 +5,8 @@ type Solution struct {
 	ParticipantID string  `json:"participant_id"`
 	ProblemID     string  `json:"problem_id"`
 	RoundID       string  `json:"round_id"`
+	JuriComment   string  `json:"juri_comment"`
+	Mark          Mark    `json:"mark"`
 	Parts         []Image `json:"parts"`
 }
 

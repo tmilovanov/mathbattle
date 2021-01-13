@@ -2,10 +2,12 @@ package mathbattle
 
 // Review is review on solution that one participant sends to another
 type Review struct {
-	ID         string `json:"id"`
-	ReviewerID string `json:"reviewer_id"`
-	SolutionID string `json:"solution_id"`
-	Content    string `json:"content"`
+	ID          string `json:"id"`
+	ReviewerID  string `json:"reviewer_id"`
+	SolutionID  string `json:"solution_id"`
+	Content     string `json:"content"`
+	JuriComment string `json:"juri_comment"`
+	Mark        Mark   `json:"mark"`
 }
 
 type ReviewRepository interface {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -34,6 +35,8 @@ func main() {
 		addProblemsToRepository(container.ProblemRepository(), os.Args[2])
 	case "get-info":
 		getInfo()
+	case "send-kb":
+		sendKb()
 	default:
 		fmt.Println("Unknow command")
 	}
@@ -56,6 +59,141 @@ func getInfo() {
 	}
 
 	log.Printf("Username: %v", chat.Username)
+}
+
+func sendKb() {
+	container := infrastructure.NewServerContainer(config.LoadConfig("config.yaml"))
+
+	b, _ := tb.NewBot(tb.Settings{
+		Token:       container.Config().TelegramToken,
+		Poller:      &tb.LongPoller{Timeout: 10 * time.Second},
+		Synchronous: true,
+		//Verbose:     true,
+	})
+
+	srep := container.SolutionRepository()
+	solutions, err := srep.FindMany("1", "", "")
+	if err != nil {
+		log.Panic(err)
+	}
+
+	curSolutionI := 0
+	controlBlock := []*tb.Message{}
+	solutionBlock := []tb.Message{}
+	b.Handle("/try", func(m *tb.Message) {
+		controlBlock = append(controlBlock, m)
+
+		// Solution content
+		album := tb.Album{}
+		for _, part := range solutions[curSolutionI].Parts {
+			album = append(album, &tb.Photo{
+				File: tb.FromReader(bytes.NewReader(part.Content)),
+			})
+		}
+		messages, err := b.SendAlbum(m.Sender, album)
+		if err != nil {
+			log.Panic(err)
+		}
+		for _, m := range messages {
+			solutionBlock = append(solutionBlock, m)
+		}
+
+		// Solution description
+		menu := &tb.ReplyMarkup{}
+		rows := []tb.Row{}
+		rows = append(rows, menu.Row(
+			tb.Btn{Text: "Комментировать", Data: "comment"},
+			tb.Btn{Text: "Оценить", Data: "mark"},
+		))
+		rows = append(rows, menu.Row(
+			tb.Btn{Text: "Комментарии других участников (0)", Data: "data2"},
+		))
+		if curSolutionI != len(solutions)-1 {
+			rows = append(rows, menu.Row(
+				tb.Btn{Text: "Следующее решение", Data: "data3"},
+				tb.Btn{Text: "Отмена", Data: "data4"},
+			))
+		} else {
+			rows = append(rows, menu.Row(
+				tb.Btn{Text: "Отмена", Data: "data4"},
+			))
+		}
+		menu.Inline(rows...)
+		solutionDescription := fmt.Sprintf("Решение %d/%d", curSolutionI+1, len(solutions))
+		if solutions[curSolutionI].Mark == -1 {
+			solutionDescription += " НЕ ОЦЕНЕНО"
+		}
+		if solutions[curSolutionI].JuriComment == "" {
+			solutionDescription += " НЕ ПРОКОММЕНТИРОВАННО"
+		}
+		msg, err := b.Send(m.Sender, solutionDescription, menu)
+		if err != nil {
+			log.Panic(err)
+		}
+
+		controlBlock = append(controlBlock, msg)
+	})
+
+	b.Handle(tb.OnQuery, func(q *tb.Query) {
+		log.Printf("Got query: %v", q)
+	})
+
+	b.Handle(tb.OnCallback, func(cb *tb.Callback) {
+		log.Printf("Got callback: '%s'", cb.Data)
+
+		switch cb.Data {
+		case "comment":
+			b.Send(cb.Sender, "Введите комментарий:")
+
+		case "data1":
+			// Show solution
+			album := tb.Album{}
+			for _, part := range solutions[curSolutionI].Parts {
+				album = append(album, &tb.Photo{
+					File: tb.FromReader(bytes.NewReader(part.Content)),
+				})
+			}
+			msg, err := b.SendAlbum(cb.Sender, album)
+			if err != nil {
+				log.Panic(err)
+			}
+			for _, m := range msg {
+				solutionBlock = append(solutionBlock, m)
+			}
+
+			txt := "Нажмите /comment для комментирования решения\n"
+			txt += "Нажмите /mark для выставления оценки\n"
+			b.Send(cb.Sender, txt)
+
+			log.Println(len(msg))
+		case "data2":
+			// Show comments
+		case "data3":
+			// Next solution
+		case "data4":
+			// Cancel
+			for _, msg := range controlBlock {
+				b.Delete(msg)
+			}
+			controlBlock = []*tb.Message{}
+			for _, msg := range solutionBlock {
+				b.Delete(&msg)
+			}
+			solutionBlock = []tb.Message{}
+		}
+
+		b.Respond(cb, &tb.CallbackResponse{})
+	})
+
+	b.Start()
+
+	//album := tb.Album{}
+	//for _, part := range solutions[0].Parts {
+	//album = append(album, &tb.Photo{
+	//File: tb.FromReader(bytes.NewReader(part.Content)),
+	//})
+	//}
+	//b.Send(tb.ChatID(chatID), "Hello!", menu)
 }
 
 func addProblemsToRepository(repository mathbattle.ProblemRepository, problemsPath string) {

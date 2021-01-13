@@ -227,6 +227,11 @@ func (rs *RoundService) StartReviewStage(startOrder mathbattle.StartOrder) (math
 		}
 	}
 
+	err = rs.StartSchedulingActions()
+	if err != nil {
+		return round, err
+	}
+
 	return round, nil
 }
 

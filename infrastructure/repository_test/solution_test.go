@@ -93,6 +93,8 @@ func (s *solutionTs) TestCreateNewNotEmptyAndAppend() {
 			{Extension: ".jpg", Content: []byte("123456")},
 			{Extension: ".png", Content: []byte("654321")},
 		},
+		JuriComment: "good solution",
+		Mark:        10,
 	}
 	solution, err := s.rep.Store(newSolution)
 	newSolution.ID = solution.ID

@@ -130,6 +130,7 @@ func (h *SubmitSolution) stepExpectProblemNumber(ctx infrastructure.TelegramUser
 			ParticipantID: participant.ID,
 			ProblemID:     ctx.Variables["problem_id"].AsString(),
 			RoundID:       round.ID,
+			Mark:          -1,
 		})
 		if err != nil {
 			return -1, noResponse(), err
@@ -162,6 +163,7 @@ func (h *SubmitSolution) stepAlreadySubmitted(ctx infrastructure.TelegramUserCon
 			ParticipantID: participant.ID,
 			ProblemID:     ctx.Variables["problem_id"].AsString(),
 			RoundID:       round.ID,
+			Mark:          -1,
 		})
 		if err != nil {
 			return -1, noResponse(), err

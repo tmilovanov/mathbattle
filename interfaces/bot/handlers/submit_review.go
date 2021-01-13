@@ -168,6 +168,7 @@ func (h *SubmitReview) stepAcceptReview(ctx infrastructure.TelegramUserContext, 
 		ReviewerID: participant.ID,
 		SolutionID: solutionID,
 		Content:    m.Text,
+		Mark:       -1,
 	})
 	if err != nil {
 		return -1, noResponse(), err

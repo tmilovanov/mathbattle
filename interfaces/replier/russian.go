@@ -197,6 +197,14 @@ func (r RussianReplier) CmdServiceMsgDesc() string {
 	return "Разослать сообщение всем участникам"
 }
 
+func (r RussianReplier) CmdGetMyResultsName() string {
+	return "/get_my_results"
+}
+
+func (r RussianReplier) CmdGetMyResultsDesc() string {
+	return "Показать комментарии и оценки жюри"
+}
+
 func (r RussianReplier) InternalError() string {
 	return "Произошла внутрення ошибка. Свяжитесь с организаторами и опишите свою проблему."
 }
@@ -503,4 +511,34 @@ func (r RussianReplier) FormatStat(stat mathbattle.Stat) string {
 
 func (r RussianReplier) ServiceMsgGetText() string {
 	return "Введите сообщение, которое вы хотите разослать всем участникам."
+}
+
+func (r RussianReplier) MyResultsProblemResults(problemCaption string, isSolved bool, juriComment string, mark mathbattle.Mark) string {
+	result := ""
+	result += fmt.Sprintf("*Задача*: %s\n", problemCaption)
+	if !isSolved {
+		result += fmt.Sprintf("*Оценка*: %d\n", 0)
+		result += "К сожалению, вы не решили эту задачу :("
+	} else {
+		result += fmt.Sprintf("*Оценка*: %d\n", mark)
+		result += "*Комментарий от жюри:*\n"
+		result += juriComment
+	}
+	return result
+}
+
+func (r RussianReplier) MyResultsReviewResults(problemCaption string, solutionNumber int, isCommented bool,
+	juriComment string, mark mathbattle.Mark) string {
+
+	result := ""
+	result += fmt.Sprintf("Ваш комментарий на решение %d задачи %s:\n", solutionNumber, problemCaption)
+	if !isCommented {
+		result += fmt.Sprintf("*Оценка*: %d\n", 0)
+		result += "К сожалению, вы никак не прокомментировали это решение :("
+	} else {
+		result += fmt.Sprintf("*Оценка*: %d\n", mark)
+		result += "*Комментарий от жюри:*\n"
+		result += juriComment
+	}
+	return result
 }

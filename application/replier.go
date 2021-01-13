@@ -42,6 +42,8 @@ type Replier interface {
 	CmdStartRoundDesc() string
 	CmdServiceMsgName() string
 	CmdServiceMsgDesc() string
+	CmdGetMyResultsName() string
+	CmdGetMyResultsDesc() string
 
 	InternalError() string
 	NotParticipant() string
@@ -112,4 +114,8 @@ type Replier interface {
 
 	// Replies used in CmdSendServiceMessage
 	ServiceMsgGetText() string
+
+	// Replies used in CmdGetMyResults
+	MyResultsProblemResults(problemCaption string, isSolved bool, juriComment string, mark mathbattle.Mark) string
+	MyResultsReviewResults(problemCaption string, solutionNumber int, isCommented bool, juriComment string, mark mathbattle.Mark) string
 }

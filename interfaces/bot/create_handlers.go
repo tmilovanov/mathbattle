@@ -101,6 +101,17 @@ func createCommands(container infrastructure.MBotContainer) []handlers.TelegramC
 			RoundService:       container.RoundService(),
 			ProblemService:     container.ProblemService(),
 		},
+		&handlers.GetMyResults{
+			Handler: handlers.Handler{
+				Name:        container.Replier().CmdGetMyResultsName(),
+				Description: container.Replier().CmdGetMyResultsDesc(),
+			},
+			Replier:            container.Replier(),
+			RoundService:       container.RoundService(),
+			SolutionService:    container.SolutionService(),
+			ParticipantService: container.ParticipantService(),
+			ReviewService:      container.ReviewService(),
+		},
 		commandStart,
 	}
 

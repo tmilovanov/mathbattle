@@ -187,7 +187,7 @@ type whereDescriptor struct {
 	ParamValue string
 }
 
-func createWhereClause(query string, whereDescriptors []whereDescriptor) (string, []interface{}) {
+func joinWhereOmitEmpty(whereDescriptors []whereDescriptor) (string, []interface{}) {
 	i := 1
 	whereClauses := []string{}
 	whereArgs := []interface{}{}
@@ -199,9 +199,10 @@ func createWhereClause(query string, whereDescriptors []whereDescriptor) (string
 		}
 	}
 
+	finalWhere := ""
 	if len(whereClauses) != 0 {
-		query += " WHERE " + strings.Join(whereClauses, " AND ")
+		finalWhere += strings.Join(whereClauses, " AND ")
 	}
 
-	return query, whereArgs
+	return finalWhere, whereArgs
 }

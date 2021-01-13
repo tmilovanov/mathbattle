@@ -21,7 +21,7 @@ func (s *ReviewService) Delete(ID string) error {
 }
 
 func (s *ReviewService) RevewStageDescriptors(participantID string) ([]mathbattle.SolutionDescriptor, error) {
-	round, err := s.Rounds.GetReviewRunning()
+	round, err := s.Rounds.GetLast()
 	if err != nil {
 		return []mathbattle.SolutionDescriptor{}, err
 	}
