@@ -3,6 +3,7 @@ package mathbattle
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -229,6 +230,10 @@ func SolutionDescriptorsForParticipant(problemIDs []string, solutionIDs []string
 		})
 
 	}
+
+	sort.Slice(result, func(i int, j int) bool {
+		return result[i].ProblemCaption < result[j].ProblemCaption
+	})
 
 	return result, nil
 }

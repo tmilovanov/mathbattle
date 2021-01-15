@@ -13,7 +13,30 @@ func (s *ReviewService) Store(review mathbattle.Review) (mathbattle.Review, erro
 }
 
 func (s *ReviewService) FindMany(descriptor mathbattle.ReviewFindDescriptor) ([]mathbattle.Review, error) {
-	return s.Rep.FindMany(descriptor.ReviewerID, descriptor.SolutionID)
+	if descriptor.ProblemID == "" {
+		return s.Rep.FindMany(descriptor.ReviewerID, descriptor.SolutionID)
+	} else {
+		result := []mathbattle.Review{}
+
+		allSolutions, err := s.Solutions.FindMany("", descriptor.SolutionID, descriptor.ProblemID)
+		if err != nil {
+			return result, err
+		}
+
+		if len(allSolutions) == 0 {
+			return result, nil
+		}
+
+		for _, solution := range allSolutions {
+			reviews, err := s.Rep.FindMany(descriptor.ReviewerID, solution.ID)
+			if err != nil {
+				return []mathbattle.Review{}, err
+			}
+			result = append(result, reviews...)
+		}
+
+		return result, nil
+	}
 }
 
 func (s *ReviewService) Delete(ID string) error {

@@ -513,17 +513,33 @@ func (r RussianReplier) ServiceMsgGetText() string {
 	return "Введите сообщение, которое вы хотите разослать всем участникам."
 }
 
-func (r RussianReplier) MyResultsProblemResults(problemCaption string, isSolved bool, juriComment string, mark mathbattle.Mark) string {
+func (r RussianReplier) MyResultsProblemNotSolved(problemCaption string) string {
 	result := ""
 	result += fmt.Sprintf("*Задача*: %s\n", problemCaption)
-	if !isSolved {
-		result += fmt.Sprintf("*Оценка*: %d\n", 0)
-		result += "К сожалению, вы не решили эту задачу :("
-	} else {
-		result += fmt.Sprintf("*Оценка*: %d\n", mark)
-		result += "*Комментарий от жюри:*\n"
-		result += juriComment
+	result += fmt.Sprintf("*Оценка*: %d\n", 0)
+	result += "К сожалению, вы не решили эту задачу :("
+	return result
+}
+
+func (r RussianReplier) MyResultsProblemResults(problemCaption string, juriComment string, mark mathbattle.Mark,
+	otherParticipantsReviews []mathbattle.Review) string {
+
+	result := ""
+	result += fmt.Sprintf("*Задача*: %s\n", problemCaption)
+	result += fmt.Sprintf("*Оценка*: %d\n", mark)
+
+	result += "*Комментарий от жюри:*\n"
+	result += juriComment
+	result += "\n\n"
+
+	result += "*Комментарии от других участников:*\n"
+	for i, review := range otherParticipantsReviews {
+		result += fmt.Sprintf("Комментарий %d\n", i+1)
+		result += "\t" + review.Content
+		result += "\n\n"
 	}
+	result += "\n"
+
 	return result
 }
 

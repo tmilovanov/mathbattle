@@ -18,9 +18,18 @@ type ReviewRepository interface {
 	Delete(ID string) error
 }
 
+// ReviewerID="", SolutionID="", ProblemID="" - Get all reviews in all rounds
+// ReviewerID="", SolutionID="", ProblemID=ID - Get all reviews on all solutions of the problem with id=ID
+// ReviewerID="", SolutionID=ID, ProblemID="" - Get all reviews on solution with ID=ID
+// ReviewerID="", SolutionID=ID, ProblemID=ID - The same as above
+// ReviewerID=ID, SolutionID="", ProblemID="" - Get all reviews in all rounds of this reviewer
+// ReviewerID=ID, SolutionID="", ProblemID="" - Get all reviews in all rounds of this reviewer on all solutions of the problem with id=ID
+// ReviewerID=ID, SolutionID=ID, ProblemID="" - Get all reviews in all rounds of this reviewer on solution with ID=ID
+// ReviewerID=ID, SolutionID=ID, ProblemID=ID - The same as above
 type ReviewFindDescriptor struct {
 	ReviewerID string `json:"reviewer_id"`
 	SolutionID string `json:"solution_id"`
+	ProblemID  string `json:"problem_id"`
 }
 
 type ReviewService interface {

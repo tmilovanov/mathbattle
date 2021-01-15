@@ -116,6 +116,8 @@ type Replier interface {
 	ServiceMsgGetText() string
 
 	// Replies used in CmdGetMyResults
-	MyResultsProblemResults(problemCaption string, isSolved bool, juriComment string, mark mathbattle.Mark) string
+	MyResultsProblemNotSolved(problemCaption string) string
+	MyResultsProblemResults(problemCaption string, juriComment string, mark mathbattle.Mark,
+		otherParticipantsReviews []mathbattle.Review) string
 	MyResultsReviewResults(problemCaption string, solutionNumber int, isCommented bool, juriComment string, mark mathbattle.Mark) string
 }

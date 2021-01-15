@@ -31,6 +31,24 @@ func (h *GetMyResults) IsShowInHelp(ctx infrastructure.TelegramUserContext) bool
 }
 
 func (h *GetMyResults) IsCommandSuitable(ctx infrastructure.TelegramUserContext) (bool, string, error) {
+	_, err := h.ParticipantService.GetByTelegramID(ctx.User.TelegramID)
+	if err != nil {
+		if err == mathbattle.ErrNotFound {
+			return false, h.Replier.NotParticipant(), nil
+		}
+		return false, "", err
+	}
+
+	_, err = h.RoundService.GetRunning()
+	if err != mathbattle.ErrNotFound {
+		return false, "", nil
+	}
+
+	_, err = h.RoundService.GetLast()
+	if err != nil {
+		return false, "", nil
+	}
+
 	return true, "", nil
 }
 
@@ -52,6 +70,7 @@ func (h *GetMyResults) Handle(ctx infrastructure.TelegramUserContext, m *tb.Mess
 		}
 
 		allResps := []string{}
+
 		for _, problemDesc := range round.ProblemDistribution[participant.ID] {
 			solutions, err := h.SolutionService.Find(mathbattle.FindDescriptor{
 				RoundID:       round.ID,
@@ -61,13 +80,23 @@ func (h *GetMyResults) Handle(ctx infrastructure.TelegramUserContext, m *tb.Mess
 			if err != nil {
 				return -1, noResponse(), nil
 			}
-			if len(solutions) != 0 {
-				allResps = append(allResps,
-					h.Replier.MyResultsProblemResults(problemDesc.Caption, true, solutions[0].JuriComment, solutions[0].Mark))
-			} else {
-				allResps = append(allResps,
-					h.Replier.MyResultsProblemResults(problemDesc.Caption, false, "", -1))
+
+			if len(solutions) == 0 {
+				allResps = append(allResps, h.Replier.MyResultsProblemNotSolved(problemDesc.Caption))
 			}
+			solution := solutions[0]
+
+			otherParticipantReviews, err := h.ReviewService.FindMany(mathbattle.ReviewFindDescriptor{
+				SolutionID: solution.ID,
+			})
+			if err != nil {
+				return -1, noResponse(), nil
+			}
+
+			response := h.Replier.MyResultsProblemResults(problemDesc.Caption, solution.JuriComment, solution.Mark,
+				otherParticipantReviews)
+
+			allResps = append(allResps, response)
 		}
 
 		reviewDescriptors, err := h.ReviewService.RevewStageDescriptors(participant.ID)
@@ -83,15 +112,23 @@ func (h *GetMyResults) Handle(ctx infrastructure.TelegramUserContext, m *tb.Mess
 			if err != nil {
 				return -1, noResponse(), nil
 			}
+
 			if len(reviews) != 0 {
+				solution, err := h.SolutionService.Get(desc.SolutionID)
+				if err != nil {
+					return -1, noResponse(), nil
+				}
+
 				allResps = append(allResps,
-					h.Replier.MyResultsReviewResults(desc.ProblemCaption, desc.SolutionNumber, true, reviews[0].JuriComment, reviews[0].Mark))
+					h.Replier.MyResultsReviewResults(desc.ProblemCaption, desc.SolutionNumber, true,
+						solution.JuriComment, reviews[0].Mark))
 			} else {
 				allResps = append(allResps,
 					h.Replier.MyResultsReviewResults(desc.ProblemCaption, desc.SolutionNumber, false, "", -1))
 			}
 
 		}
+
 		return -1, NewResps(allResps...), nil
 	default:
 		return -1, noResponse(), nil

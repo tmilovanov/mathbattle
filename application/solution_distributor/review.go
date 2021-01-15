@@ -8,7 +8,7 @@ import (
 
 type SolutionDistributor struct{}
 
-func MapSolutionsToParticipants(solutions []mathbattle.Solution, reviewerCount uint) map[string][]string {
+func distributeSolutionsToParticipants(solutions []mathbattle.Solution, reviewerCount uint) map[string][]string {
 	// Shuffle
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(solutions), func(i, j int) {
@@ -49,7 +49,7 @@ func (d *SolutionDistributor) Get(allRoundSolutions []mathbattle.Solution, revie
 			finalReviewerCount = uint(len(problemSolutions)) - 1
 		}
 
-		for solutionID, participantIDs := range MapSolutionsToParticipants(problemSolutions, finalReviewerCount) {
+		for solutionID, participantIDs := range distributeSolutionsToParticipants(problemSolutions, finalReviewerCount) {
 			for _, pID := range participantIDs {
 				result.BetweenParticipants[pID] = append(result.BetweenParticipants[pID], solutionID)
 			}
