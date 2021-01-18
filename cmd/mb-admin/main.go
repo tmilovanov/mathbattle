@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -33,12 +34,30 @@ func main() {
 	case "add-problems":
 		container := infrastructure.NewServerContainer(config.LoadConfig("config.yaml"))
 		addProblemsToRepository(container.ProblemRepository(), os.Args[2])
+	case "run-bot":
+		configPath := "config.yaml"
+		if len(os.Args) > 3 {
+			configPath = os.Args[2]
+		}
+		runBot(configPath)
 	case "get-info":
 		getInfo()
 	case "send-kb":
 		sendKb()
 	default:
 		fmt.Println("Unknow command")
+	}
+}
+
+func runBot(configPath string) {
+	err := exec.Command("./mb-bot.exe", configPath).Start()
+	if err != nil {
+		log.Fatalf("Failed to run mbbot, error: %v", err)
+	}
+
+	err = exec.Command("./mb-server.exe", configPath).Start()
+	if err != nil {
+		log.Fatalf("Failed to run mbserver, error: %v", err)
 	}
 }
 

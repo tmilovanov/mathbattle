@@ -1,15 +1,19 @@
 # Telegram API token
-token: ""
+telegram_token: ""
 
 # Host and port of mbserver
 api_url: "127.0.0.1:8080"
 
-# "sqlite3" or "postgres"
+# Database settings
+# Sqlite3
 db_type: "sqlite3"
-# For "sqlite3" - path to database file
+# Path to database file
 db_connection_string: "storage/mathbattle.sqlite"
-# For "postgres" - typical go connection string
-# db_connection_string: "host=%s port=%d user=%s password=%s dbname=%s sslmode=disable"
+
+# Postgres
+# db_type: "postgres"
+# golang postgres connection string
+# db_connection_string: "host=%s user=%s password=%s dbname=%s sslmode=disable"
 
 # Задачи и решения в виде фотографий не пишутся напрямую в базу, а копируются в директории,
 # Чтобы жюри могло их легко посмотреть

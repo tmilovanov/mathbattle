@@ -1,6 +1,6 @@
 build: test
-	go build -o ./bin/mbserver mathbattle/cmd/mbserver
-	go build -o ./bin/mbbot mathbattle/cmd/mbbot
-	go build -o ./bin/adminclient mathbattle/cmd/adminclient
+	go build -o ./bin/mb-server mathbattle/cmd/mb-server
+	go build -o ./bin/mb-bot mathbattle/cmd/mb-bot
+	go build -o ./bin/mb-admin mathbattle/cmd/mb-admin
 test:
 	go test -parallel 1 ./...

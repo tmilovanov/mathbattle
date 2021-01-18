@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v2"
 )
@@ -18,6 +19,13 @@ type Config struct {
 
 func LoadConfig(configPath string) Config {
 	result := Config{}
+
+	configPath, err := filepath.Abs(configPath)
+	if err != nil {
+		log.Fatalf("Failed to get config path, error: %v", err)
+	}
+
+	log.Printf("Loading config: %s", configPath)
 	f, err := os.Open(configPath)
 	if err != nil {
 		log.Fatalf("Failed to open config path, error: %v", err)
