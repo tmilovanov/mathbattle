@@ -14,7 +14,7 @@ type TelegramCommandHelp struct {
 type Replier interface {
 	GetStartMessage() string
 	GetAvailableCommands(availableCommands []TelegramCommandHelp) string
-	GetHelpMessage() string
+	GetHelpMessages() []string
 
 	Yes() string
 	No() string
@@ -114,6 +114,15 @@ type Replier interface {
 
 	// Replies used in CmdSendServiceMessage
 	ServiceMsgGetText() string
+	ServiceMsgTextIsEmpty() string
+	ServiceMsgCancelSend() string
+	ServiceMsgAskRecieversType() string
+	ServiceMsgWrongRecieversType() string
+	ServiceMsgRecieversTypeAll() string
+	ServiceMsgRecieversTypeSome() string
+	ServiceMsgInputRecievers() string
+	ServiceMsgFinalAsk(recieversType string, recievers ...string) string
+	ServiceMsgSendSuccess() string
 
 	// Replies used in CmdGetMyResults
 	MyResultsProblemNotSolved(problemCaption string) string

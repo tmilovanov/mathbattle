@@ -3,6 +3,7 @@ package infrastructure
 import (
 	"bytes"
 	"errors"
+	"mathbattle/models/mathbattle"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -18,6 +19,10 @@ func NewTelegramPostman(APIToken string) (*TelegramPostman, error) {
 	}
 
 	return &TelegramPostman{bot: bot}, nil
+}
+
+func (pm *TelegramPostman) SendSimpleToUsers(msg mathbattle.SimpleMessage) error {
+	return errors.New("Can't be implemented")
 }
 
 func (pm *TelegramPostman) SendSimpleMessage(chatID int64, message string) error {

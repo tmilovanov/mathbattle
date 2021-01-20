@@ -70,7 +70,7 @@ type SolutionDistributor interface {
 type RoundService struct {
 	Rep                    mathbattle.RoundRepository
 	Replier                Replier
-	Postman                mathbattle.Postman
+	Postman                mathbattle.PostmanService
 	Participants           mathbattle.ParticipantRepository
 	Solutions              mathbattle.SolutionRepository
 	Reviews                mathbattle.ReviewRepository

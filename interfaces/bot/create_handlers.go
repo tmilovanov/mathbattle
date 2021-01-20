@@ -19,6 +19,14 @@ func createCommands(container infrastructure.MBotContainer) []handlers.TelegramC
 			},
 			Replier: container.Replier(),
 		},
+		&handlers.SendServiceMessage{
+			Handler: handlers.Handler{
+				Name:        container.Replier().CmdServiceMsgName(),
+				Description: container.Replier().CmdGetMyResultsDesc(),
+			},
+			Replier:        container.Replier(),
+			PostmanService: container.Postman(),
+		},
 		&handlers.StartReviewStage{
 			Handler: handlers.Handler{
 				Name:        container.Replier().CmdStartReviewStageName(),

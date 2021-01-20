@@ -43,7 +43,7 @@ func (r *UserRepository) CreateTable() error {
 		createStmt = `CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 			tg_chat_id VARCHAR(64) UNIQUE,
-			tg_name VARCHAR(100) UNIQUE,
+			tg_name VARCHAR(100),
 			is_admin BOOL,
 			registration_time DATETIME
 		)`
@@ -51,7 +51,7 @@ func (r *UserRepository) CreateTable() error {
 		createStmt = `CREATE TABLE IF NOT EXISTS users (
 			id SERIAL UNIQUE,
 			tg_chat_id VARCHAR(64) UNIQUE,
-			tg_name VARCHAR(100) UNIQUE,
+			tg_name VARCHAR(100),
 			is_admin BOOL,
 			registration_time TIMESTAMP
 		)`

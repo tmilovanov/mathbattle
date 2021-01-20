@@ -33,5 +33,5 @@ func (h *Help) IsAdminOnly() bool {
 }
 
 func (h *Help) Handle(ctx infrastructure.TelegramUserContext, m *tb.Message) (int, []TelegramResponse, error) {
-	return -1, OneTextResp(h.Replier.GetHelpMessage()), nil
+	return -1, NewResps(h.Replier.GetHelpMessages()...), nil
 }

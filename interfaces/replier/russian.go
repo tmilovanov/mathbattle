@@ -50,7 +50,10 @@ func (r RussianReplier) GetStartMessage() string {
 }
 
 func (r RussianReplier) GetAvailableCommands(availableCommands []application.TelegramCommandHelp) string {
-	msg := "Сейчас доступны следующие действия:\n"
+	msg := ""
+	msg += "Текущий раунд: этап решения задач до 16:00 по московскому времени 20.01 (среда), этап проверки решений до 16:00 по московскому времени 21.01 (четверг).\n"
+	msg += "\n"
+	msg += "Сейчас доступны следующие действия:\n"
 	msg += "\n"
 	for _, cmd := range availableCommands {
 		msg += cmd.Name + " " + cmd.Desc + "\n"
@@ -58,7 +61,9 @@ func (r RussianReplier) GetAvailableCommands(availableCommands []application.Tel
 	return msg
 }
 
-func (r RussianReplier) GetHelpMessage() string {
+func (r RussianReplier) GetHelpMessages() []string {
+	result := []string{}
+
 	msg := fmt.Sprintf(`
 	Этот бот поможет вам подготовиться к математическим боям. В процессе каждого раунда вы будете решать задачи, оформлять решения и проверять решения других участников. 
 Чтобы принять участие, необходимо подписаться на рассылку задач. Если не хотите участвовать в раунде, можете отписаться от рассылки задач.
@@ -96,7 +101,14 @@ func (r RussianReplier) GetHelpMessage() string {
 •  Напишите и отправьте комментарий.
 Комментарий можно изменить до окончания этапа проверки решений. Пожалуйста, старайтесь проверить все присланные решения. 
 После окончания этапа комментарии отправляются авторам. Вам может прийти несколько комментариев на одно решение. 
+`,
+		escapeCommandNameForMarkdown(r.CmdSubmitSolutionName()),
+		r.SolutionFinishUploading(),
+		escapeCommandNameForMarkdown(r.CmdSubmitReviewName()))
 
+	result = append(result, msg)
+
+	msg = `
 *3. Подведение итогов.* Присланные решение и комментарии проверяются и оцениваются жюри. Вы получите комментарии к своим решениям и тем решениям, которые вы проверяли. Также публикуются решения задач, вы можете изучить их и проверить себя. 
 Баллы выставляются по следующим правилам:
 • Полностью верное решение оцениватся в 12 баллов.
@@ -110,12 +122,11 @@ func (r RussianReplier) GetHelpMessage() string {
 
 Если у вас есть какие-либо проблемы или вопросы, пишите @mathbattle\_support.
 
-Спасибо за интерес!`,
-		escapeCommandNameForMarkdown(r.CmdSubmitSolutionName()),
-		r.SolutionFinishUploading(),
-		escapeCommandNameForMarkdown(r.CmdSubmitReviewName()))
+Спасибо за интерес!`
 
-	return msg
+	result = append(result, msg)
+
+	return result
 }
 
 func (r RussianReplier) CmdHelpName() string {
@@ -520,6 +531,53 @@ func (r RussianReplier) FormatStat(stat mathbattle.Stat) string {
 
 func (r RussianReplier) ServiceMsgGetText() string {
 	return "Введите сообщение, которое вы хотите разослать всем участникам."
+}
+
+func (r RussianReplier) ServiceMsgTextIsEmpty() string {
+	return "Текст сообщения пуст"
+}
+
+func (r RussianReplier) ServiceMsgCancelSend() string {
+	return "Отменить отправку"
+}
+
+func (r RussianReplier) ServiceMsgAskRecieversType() string {
+	return "Кому вы хотите отправить сообщение?"
+}
+
+func (r RussianReplier) ServiceMsgWrongRecieversType() string {
+	return "Неясно кому вы хотите отправить сообщение"
+}
+
+func (r RussianReplier) ServiceMsgRecieversTypeAll() string {
+	return "Всем"
+}
+
+func (r RussianReplier) ServiceMsgRecieversTypeSome() string {
+	return "Определённым пользователям"
+}
+
+func (r RussianReplier) ServiceMsgInputRecievers() string {
+	return "Введите ID пользователей, кому вы хотите отправить сообщение, через запятую"
+}
+
+func (r RussianReplier) ServiceMsgFinalAsk(recieversType string, recievers ...string) string {
+	msg := ""
+	if recieversType == r.ServiceMsgRecieversTypeAll() {
+		msg += fmt.Sprintf("Отправляем сообщение: %s\n", r.ServiceMsgRecieversTypeAll())
+	} else if recieversType == r.ServiceMsgRecieversTypeSome() {
+		msg += "Отправляем сообщение: "
+		for _, reciever := range recievers {
+			msg += reciever + ","
+		}
+		msg += "\n"
+	}
+
+	return msg
+}
+
+func (r RussianReplier) ServiceMsgSendSuccess() string {
+	return "Сообщение успешно разослано"
 }
 
 func (r RussianReplier) MyResultsProblemNotSolved(problemCaption string) string {

@@ -67,16 +67,20 @@ func Start(container infrastructure.Container) {
 	myRouter.Handle("/solutions/{id}", ghandlers.LoggingHandler(os.Stdout, http.HandlerFunc(slh.Delete))).Methods("DELETE")
 	myRouter.Handle("/solutions/descriptors/{participant_id}", ghandlers.LoggingHandler(os.Stdout, http.HandlerFunc(slh.GetProblemDescriptors))).Methods("GET")
 
-	//Reviews
+	// Reviews
 	rs := handlers.ReviewHandler{Rs: container.ReviewService()}
 	myRouter.Handle("/reviews", ghandlers.LoggingHandler(os.Stdout, http.HandlerFunc(rs.Create))).Methods("POST")
 	myRouter.Handle("/reviews/find/descriptor", ghandlers.LoggingHandler(os.Stdout, http.HandlerFunc(rs.FindMany))).Methods("GET")
 	myRouter.Handle("/reviews/{id}", ghandlers.LoggingHandler(os.Stdout, http.HandlerFunc(rs.Delete))).Methods("DELETE")
 	myRouter.Handle("/reviews/descriptors/{participant_id}", ghandlers.LoggingHandler(os.Stdout, http.HandlerFunc(rs.GetSolutionDescriptors))).Methods("GET")
 
-	//Problems
+	// Problems
 	prh := handlers.ProblemHandler{Ps: container.ProblemService()}
 	myRouter.Handle("/problems/{id}", ghandlers.LoggingHandler(os.Stdout, http.HandlerFunc(prh.GetByID))).Methods("GET")
+
+	// Postman
+	psth := handlers.PostmanHandler{Ps: container.Postman()}
+	myRouter.Handle("/postman/send_to_users", ghandlers.LoggingHandler(os.Stdout, http.HandlerFunc(psth.SendToUsers)))
 
 	log.Fatal(http.ListenAndServe(container.Config().APIUrl, myRouter))
 }

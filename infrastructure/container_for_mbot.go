@@ -30,7 +30,7 @@ type MBotContainer struct {
 	problemRepository      *sqldb.ProblemRepository
 	solutionRepository     *sqldb.SolutionRepository
 	reviewRepository       *sqldb.ReviewRepository
-	postman                mathbattle.Postman
+	postman                mathbattle.PostmanService
 	solveStageDistributor  application.ProblemDistributor
 	reviewStageDistributor application.SolutionDistributor
 }
@@ -192,13 +192,9 @@ func (c *MBotContainer) ReviewRepository() mathbattle.ReviewRepository {
 	return c.reviewRepository
 }
 
-func (c *MBotContainer) Postman() mathbattle.Postman {
+func (c *MBotContainer) Postman() mathbattle.PostmanService {
 	if c.postman == nil {
-		result, err := NewTelegramPostman(c.Config().TelegramToken)
-		if err != nil {
-			log.Fatalf("Failed to create postman, error: %v", err)
-		}
-		c.postman = result
+		c.postman = &client.APIPostman{BaseUrl: c.APIBaseUrl()}
 	}
 
 	return c.postman

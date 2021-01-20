@@ -31,7 +31,7 @@ type Container struct {
 	problemRepository      *sqldb.ProblemRepository
 	solutionRepository     *sqldb.SolutionRepository
 	reviewRepository       *sqldb.ReviewRepository
-	postman                mathbattle.Postman
+	postman                mathbattle.PostmanService
 	solveStageDistributor  application.ProblemDistributor
 	reviewStageDistributor application.SolutionDistributor
 }
@@ -218,13 +218,17 @@ func (c *Container) ReviewRepository() mathbattle.ReviewRepository {
 	return c.reviewRepository
 }
 
-func (c *Container) Postman() mathbattle.Postman {
+func (c *Container) Postman() mathbattle.PostmanService {
 	if c.postman == nil {
-		result, err := NewTelegramPostman(c.Config().TelegramToken)
+		tgPostman, err := NewTelegramPostman(c.Config().TelegramToken)
 		if err != nil {
 			log.Fatalf("Failed to create postman, error: %v", err)
 		}
-		c.postman = result
+
+		c.postman = &application.PostmanService{
+			Users:   c.UserRepository(),
+			Postman: tgPostman,
+		}
 	}
 
 	return c.postman
@@ -232,7 +236,7 @@ func (c *Container) Postman() mathbattle.Postman {
 
 func (c *Container) SolveStageDistributor() application.ProblemDistributor {
 	if c.solveStageDistributor == nil {
-		result := problemdistributor.NewSimpleDistributor(c.ProblemRepository(), 3)
+		result := problemdistributor.NewSimpleDistributor(c.ProblemRepository(), 5)
 		c.solveStageDistributor = &result
 	}
 

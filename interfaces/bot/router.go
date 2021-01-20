@@ -115,7 +115,10 @@ func Start(container infrastructure.MBotContainer) {
 					b2.Send(msg)
 				} else {
 					// text message only
-					b.Send(m.Sender, item.Text, item.Keyboard, tb.ModeMarkdown)
+					_, err = b.Send(m.Sender, item.Text, item.Keyboard, tb.ModeMarkdown)
+					if err != nil {
+						log.Printf("Failed to send message, error: %v", err)
+					}
 				}
 			}
 

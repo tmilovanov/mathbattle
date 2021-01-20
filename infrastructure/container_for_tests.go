@@ -37,7 +37,7 @@ type TestContainer struct {
 	problemRepository      *sqldb.ProblemRepository
 	solutionRepository     *sqldb.SolutionRepository
 	reviewRepository       *sqldb.ReviewRepository
-	postman                mathbattle.Postman
+	postman                mathbattle.PostmanService
 	solveStageDistributor  application.ProblemDistributor
 	reviewStageDistributor application.SolutionDistributor
 }
@@ -219,7 +219,7 @@ func (c *TestContainer) ReviewRepository() mathbattle.ReviewRepository {
 	return c.reviewRepository
 }
 
-func (c *TestContainer) Postman() mathbattle.Postman {
+func (c *TestContainer) Postman() mathbattle.PostmanService {
 	if c.postman == nil {
 		c.postman = nil
 	}
