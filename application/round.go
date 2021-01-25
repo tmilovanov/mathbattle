@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"mathbattle/application/ssd"
 	"mathbattle/libs/mstd"
 	"mathbattle/models/mathbattle"
 )
@@ -55,9 +56,9 @@ func ReviewDistrubitonToString(participants mathbattle.ParticipantRepository, so
 	return mathbattle.ReviewDistributionDesc{Desc: result}, nil
 }
 
-type ProblemDistributor interface {
+// SSD это SolveStageDistributor
+type SSD interface {
 	GetForParticipant(participant mathbattle.Participant) ([]mathbattle.Problem, error)
-	GetForParticipantCount(participant mathbattle.Participant, count int) ([]mathbattle.Problem, error)
 }
 
 // SolutionDistributor распределяет решения участников на ревью после заврешения этапа решения
@@ -73,85 +74,137 @@ type RoundService struct {
 	Postman                mathbattle.PostmanService
 	Participants           mathbattle.ParticipantRepository
 	Solutions              mathbattle.SolutionRepository
+	Problems               mathbattle.ProblemRepository
 	Reviews                mathbattle.ReviewRepository
-	SolveStageDistributor  ProblemDistributor
 	ReviewStageDistributor SolutionDistributor
 	ReviewersCount         int
 }
 
-func (rs *RoundService) StartNew(startOrder mathbattle.StartOrder) (mathbattle.Round, error) {
+func (rs *RoundService) getSSDNewRound(startOrder mathbattle.StartOrder) (SSD, error) {
+	// В данный момент поддерживается только EqualDistributor
+	return ssd.NewEqualDistributor(rs.Problems, startOrder.ProblemsIDs)
+}
+
+func (rs *RoundService) getSSDCurrentRound() (SSD, error) {
+	// В данный момент поддерживается только EqualDistributor
+	// Неявно предполагаем, что всем участникам разосланы одни и те же задачи
+	round, err := rs.Rep.GetRunning()
+	if err != nil {
+		return nil, errors.New("Round not running")
+	}
+
+	// Получаем первого попавшегося участника
+	participantID := ""
+	for k := range round.ProblemDistribution {
+		participantID = k
+		break
+	}
+
+	problemsIDs := []string{}
+	for _, desc := range round.ProblemDistribution[participantID] {
+		problemsIDs = append(problemsIDs, desc.ProblemID)
+	}
+
+	return ssd.NewEqualDistributor(rs.Problems, problemsIDs)
+}
+
+func (rs *RoundService) StartRoundForParticipant(ssd SSD, round mathbattle.Round, participant mathbattle.Participant) error {
+	participantProblems, err := ssd.GetForParticipant(participant)
+	if err != nil {
+		return err
+	}
+
+	for i, problem := range participantProblems {
+		round.ProblemDistribution[participant.ID] = append(round.ProblemDistribution[participant.ID],
+			mathbattle.ProblemDescriptor{
+				Caption:   mstd.IndexToLetter(i),
+				ProblemID: problem.ID,
+			})
+	}
+
+	duration := round.GetSolveStageDuration()
+	stageEndMsk, err := round.GetSolveEndDateMsk()
+	if err != nil {
+		return err
+	}
+
+	message := rs.Replier.ProblemsPostBefore(duration, stageEndMsk)
+	err = rs.Postman.SendSimpleMessage(participant.TelegramID, message)
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < len(participantProblems); i++ {
+		err = rs.Postman.SendImage(participant.TelegramID, round.ProblemDistribution[participant.ID][i].Caption,
+			participantProblems[i].Content)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = rs.Postman.SendSimpleMessage(participant.TelegramID, rs.Replier.ProblemsPostAfter())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rs *RoundService) StartNew(startOrder mathbattle.StartOrder) (mathbattle.StartResult, error) {
+	result := mathbattle.StartResult{}
+
 	_, err := rs.Rep.GetRunning()
 	if err != mathbattle.ErrNotFound {
 		if err == nil {
-			return mathbattle.Round{}, errors.New("Round already started")
+			return result, errors.New("Round already started")
 		}
-		return mathbattle.Round{}, err
+		return result, err
 	}
 
 	solveEndTime, err := mathbattle.ParseStageEndDate(startOrder.StageEnd)
 	if err != nil {
 		log.Printf("Failed to parse stage end date: '%s', Error: '%v'", startOrder.StageEnd, err)
-		return mathbattle.Round{}, err
+		return result, err
+	}
+
+	distributor, err := rs.getSSDNewRound(startOrder)
+	if err != nil {
+		log.Printf("Failed to get solve stage distributor, error: %v", err)
+		return result, err
 	}
 
 	round := mathbattle.NewRoundFromEnd(solveEndTime)
 
 	participants, err := rs.Participants.GetAll()
 	if err != nil {
-		return round, err
+		return result, err
 	}
+	result.TotalParticipants = len(participants)
 
 	for _, participant := range participants {
-		participantProblems, err := rs.SolveStageDistributor.GetForParticipant(participant)
+		err := rs.StartRoundForParticipant(distributor, round, participant)
 		if err != nil {
-			return round, err
-		}
-
-		for i, problem := range participantProblems {
-			round.ProblemDistribution[participant.ID] = append(round.ProblemDistribution[participant.ID],
-				mathbattle.ProblemDescriptor{
-					Caption:   mstd.IndexToLetter(i),
-					ProblemID: problem.ID,
-				})
-		}
-
-		duration := round.GetSolveStageDuration()
-		stageEndMsk, err := round.GetSolveEndDateMsk()
-		if err != nil {
-			return round, err
-		}
-
-		message := rs.Replier.ProblemsPostBefore(duration, stageEndMsk)
-		err = rs.Postman.SendSimpleMessage(participant.TelegramID, message)
-		if err != nil {
-			return round, err
-		}
-
-		for i := 0; i < len(participantProblems); i++ {
-			err = rs.Postman.SendImage(participant.TelegramID, round.ProblemDistribution[participant.ID][i].Caption,
-				participantProblems[i].Content)
-			if err != nil {
-				return round, err
-			}
-		}
-
-		err = rs.Postman.SendSimpleMessage(participant.TelegramID, rs.Replier.ProblemsPostAfter())
-		if err != nil {
-			return round, err
+			result.FailedParticipants = append(result.FailedParticipants, mathbattle.ParticipantError{
+				Participant: participant,
+				Error:       err.Error(),
+			})
+		} else {
+			result.TotalSuccessParticipants++
 		}
 	}
 
 	round, err = rs.Rep.Store(round)
 	if err != nil {
-		return round, err
+		return result, err
 	}
+	result.Round = round
 
 	err = rs.StartSchedulingActions()
 	if err != nil {
-		return round, err
+		return result, err
 	}
 
-	return round, nil
+	return result, nil
 }
 
 func (rs *RoundService) StartReviewStage(startOrder mathbattle.StartOrder) (mathbattle.Round, error) {
@@ -287,9 +340,13 @@ func (rs *RoundService) GetProblemDescriptors(participantID string) ([]mathbattl
 	}
 
 	problemDescriptors, areExist := curRound.ProblemDistribution[participantID]
-	if !areExist {
-		// New participant
-		problems, err := rs.SolveStageDistributor.GetForParticipant(participant)
+	if !areExist { // Новый участник
+		distributor, err := rs.getSSDCurrentRound()
+		if err != nil {
+			return []mathbattle.ProblemDescriptor{}, err
+		}
+
+		problems, err := distributor.GetForParticipant(participant)
 		if err != nil {
 			return []mathbattle.ProblemDescriptor{}, err
 		}

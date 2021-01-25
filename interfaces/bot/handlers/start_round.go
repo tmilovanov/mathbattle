@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"strings"
 
 	"mathbattle/application"
 	"mathbattle/infrastructure"
@@ -52,6 +53,8 @@ func (h *StartRound) Handle(ctx infrastructure.TelegramUserContext, m *tb.Messag
 	case 1:
 		return h.stepConfirmDuration(ctx, m)
 	case 2:
+		return h.stepAskProblems(ctx, m)
+	case 3:
 		return h.stepStart(ctx, m)
 	default:
 		return -1, noResponse(), nil
@@ -75,20 +78,29 @@ func (h *StartRound) stepConfirmDuration(ctx infrastructure.TelegramUserContext,
 	return 2, OneWithKb(h.Replier.StartRoundConfirmDuration(untilDate), h.Replier.Yes(), h.Replier.No()), nil
 }
 
-func (h *StartRound) stepStart(ctx infrastructure.TelegramUserContext, m *tb.Message) (int, []TelegramResponse, error) {
+func (h *StartRound) stepAskProblems(ctx infrastructure.TelegramUserContext, m *tb.Message) (int, []TelegramResponse, error) {
 	if m.Text != h.Replier.Yes() {
 		return -1, OneTextResp(h.Replier.Cancel()), nil
 	}
+
+	return 3, OneTextResp(h.Replier.StartRoundAskProblemsIDs()), nil
+}
+
+func (h *StartRound) stepStart(ctx infrastructure.TelegramUserContext, m *tb.Message) (int, []TelegramResponse, error) {
+	problemsIDs := strings.Split(m.Text, ",")
 
 	untilDateStr, exist := ctx.Variables["until_date"]
 	if !exist {
 		return -1, noResponse(), errors.New("Can't find until_date")
 	}
 
-	_, err := h.RoundService.StartNew(mathbattle.StartOrder{StageEnd: untilDateStr.AsString()})
+	startResult, err := h.RoundService.StartNew(mathbattle.StartOrder{
+		ProblemsIDs: problemsIDs,
+		StageEnd:    untilDateStr.AsString(),
+	})
 	if err != nil {
 		return -1, noResponse(), err
 	}
 
-	return -1, OneTextResp(h.Replier.StartRoundSuccess()), nil
+	return -1, OneTextResp(h.Replier.StartRoundSuccess(startResult)), nil
 }

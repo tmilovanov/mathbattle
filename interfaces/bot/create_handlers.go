@@ -58,6 +58,7 @@ func createCommands(container infrastructure.MBotContainer) []handlers.TelegramC
 			},
 			Replier:            container.Replier(),
 			ParticipantService: container.ParticipantService(),
+			RoundService:       container.RoundService(),
 		},
 		&handlers.Unsubscribe{
 			Handler: handlers.Handler{

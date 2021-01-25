@@ -2,6 +2,7 @@ package memory
 
 import (
 	"mathbattle/infrastructure"
+	"time"
 
 	"mathbattle/models/mathbattle"
 )
@@ -29,11 +30,16 @@ func (r *TelegramContextRepository) GetByUserData(userData infrastructure.Telegr
 			return infrastructure.TelegramUserContext{}, err
 		}
 
-		user, err = r.userRepository.Store(mathbattle.User{
-			TelegramID:   userData.ChatID,
-			TelegramName: userData.Username,
-			IsAdmin:      false,
-		})
+		newUser := mathbattle.User{
+			TelegramID:        userData.ChatID,
+			TelegramFirstName: userData.FirstName,
+			TelegramLastName:  userData.LastName,
+			TelegramUsername:  userData.Username,
+			IsAdmin:           false,
+		}
+		newUser.SetRegistrationTime(time.Now())
+
+		user, err = r.userRepository.Store(newUser)
 		if err != nil {
 			return infrastructure.TelegramUserContext{}, err
 		}

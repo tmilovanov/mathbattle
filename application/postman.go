@@ -11,7 +11,11 @@ type PostmanService struct {
 }
 
 func (s *PostmanService) SendSimpleToUsers(msg mathbattle.SimpleMessage) error {
+	log.Printf("[PostmanService] SendSimpleToUsers, msg = %s", msg)
+
 	if len(msg.UsersIDS) == 0 {
+		log.Printf("[PostmanService] SendSimpleToUsers, send to everyone")
+
 		users, err := s.Users.GetAll()
 		if err != nil {
 			log.Printf("[PostmanService][SendSimpleToUsers] Failed to get all users, error: %v", err)
@@ -21,8 +25,9 @@ func (s *PostmanService) SendSimpleToUsers(msg mathbattle.SimpleMessage) error {
 		for _, user := range users {
 			err = s.SendSimpleMessage(user.TelegramID, msg.Text)
 			if err != nil {
-				log.Printf("[PostmanService][SendSimpleToUsers] Failed to send to user, error: %v", err)
-				return err
+				log.Printf("[PostmanService][SendSimpleToUsers] Failed to send to user with telegram id %d, error: %v", user.TelegramID, err)
+			} else {
+				log.Printf("[PostmanService][SendSimpleToUsers] Success sent to user with telegram id %d", user.TelegramID)
 			}
 		}
 	} else {
@@ -36,7 +41,8 @@ func (s *PostmanService) SendSimpleToUsers(msg mathbattle.SimpleMessage) error {
 			err = s.SendSimpleMessage(user.TelegramID, msg.Text)
 			if err != nil {
 				log.Printf("[PostmanService][SendSimpleToUsers] Failed to send to user, error: %v", err)
-				return err
+			} else {
+				log.Printf("[PostmanService][SendSimpleToUsers] Success sent to user with telegram id %d", user.TelegramID)
 			}
 		}
 	}

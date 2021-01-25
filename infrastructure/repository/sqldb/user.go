@@ -43,7 +43,9 @@ func (r *UserRepository) CreateTable() error {
 		createStmt = `CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 			tg_chat_id VARCHAR(64) UNIQUE,
-			tg_name VARCHAR(100),
+			tg_firstname VARCHAR(100),
+			tg_lastname VARCHAR(100),
+			tg_username VARCHAR(100),
 			is_admin BOOL,
 			registration_time DATETIME
 		)`
@@ -51,7 +53,9 @@ func (r *UserRepository) CreateTable() error {
 		createStmt = `CREATE TABLE IF NOT EXISTS users (
 			id SERIAL UNIQUE,
 			tg_chat_id VARCHAR(64) UNIQUE,
-			tg_name VARCHAR(100),
+			tg_firstname VARCHAR(100),
+			tg_lastname VARCHAR(100),
+			tg_username VARCHAR(100),
 			is_admin BOOL,
 			registration_time TIMESTAMP
 		)`
@@ -66,8 +70,10 @@ func (r *UserRepository) Store(user mathbattle.User) (mathbattle.User, error) {
 
 	switch r.dbType {
 	case "sqlite3":
-		res, err := r.db.Exec("INSERT INTO users (tg_chat_id, tg_name, is_admin, registration_time) VALUES (?, ?, ?, ?)",
-			user.TelegramID, user.TelegramName, user.IsAdmin, user.RegistrationTime)
+		res, err := r.db.Exec(`
+			INSERT INTO users (tg_chat_id, tg_firstname, tg_lastname, tg_username, is_admin, registration_time)
+			VALUES (?, ?, ?, ?, ?, ?)`,
+			user.TelegramID, user.TelegramFirstName, user.TelegramLastName, user.TelegramUsername, user.IsAdmin, user.RegistrationTime)
 		if err != nil {
 			return result, err
 		}
@@ -80,14 +86,16 @@ func (r *UserRepository) Store(user mathbattle.User) (mathbattle.User, error) {
 
 		return result, nil
 	case "postgres":
-		query := "INSERT INTO users (tg_chat_id, tg_name, is_admin, registration_time) VALUES ($1, $2, $3, $4) RETURNING id"
+		query := `INSERT INTO users (tg_chat_id, tg_firstname, tg_lastname, tg_username, is_admin, registration_time)
+		VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
 		stmt, err := r.db.Prepare(query)
 		if err != nil {
 			return result, err
 		}
 		defer stmt.Close()
 
-		err = stmt.QueryRow(user.TelegramID, user.TelegramName, user.IsAdmin, user.RegistrationTime).Scan(&result.ID)
+		err = stmt.QueryRow(user.TelegramID, user.TelegramFirstName, user.TelegramLastName, user.TelegramUsername,
+			user.IsAdmin, user.RegistrationTime).Scan(&result.ID)
 		if err != nil {
 			return result, err
 		}
@@ -100,8 +108,11 @@ func (r *UserRepository) Store(user mathbattle.User) (mathbattle.User, error) {
 
 func (r *UserRepository) getWhere(whereStr string, whereArgs ...interface{}) (mathbattle.User, error) {
 	result := mathbattle.User{}
-	row := r.db.QueryRow("SELECT id, tg_chat_id, tg_name, is_admin, registration_time FROM users WHERE "+whereStr, whereArgs...)
-	err := row.Scan(&result.ID, &result.TelegramID, &result.TelegramName, &result.IsAdmin, &result.RegistrationTime)
+	row := r.db.QueryRow(`SELECT
+		id, tg_chat_id, tg_firstname, tg_lastname, tg_username, is_admin, registration_time
+	FROM users WHERE `+whereStr, whereArgs...)
+	err := row.Scan(&result.ID, &result.TelegramID, &result.TelegramFirstName, &result.TelegramLastName, &result.TelegramUsername,
+		&result.IsAdmin, &result.RegistrationTime)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return result, mathbattle.ErrNotFound
@@ -152,8 +163,10 @@ func (r *UserRepository) GetByTelegramName(name string) (mathbattle.User, error)
 }
 
 func (r *UserRepository) Update(user mathbattle.User) error {
-	_, err := r.db.Exec("UPDATE users SET tg_chat_id = $1, tg_name = $2, is_admin = $3, registration_time = $4 WHERE id = $5",
-		user.TelegramID, user.TelegramName, user.IsAdmin, user.RegistrationTime, user.ID)
+	_, err := r.db.Exec(`UPDATE users SET 
+		tg_chat_id = $1, tg_firstname=$2, tg_lastname=$3, tg_username = $4, is_admin = $5, registration_time = $6 WHERE id = $7`,
+		user.TelegramID, user.TelegramFirstName, user.TelegramLastName, user.TelegramUsername,
+		user.IsAdmin, user.RegistrationTime, user.ID)
 	return err
 }
 

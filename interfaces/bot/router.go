@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"encoding/hex"
 	"log"
 	"time"
 
@@ -42,10 +43,12 @@ func Start(container infrastructure.MBotContainer) {
 	allCommands := createCommands(container)
 	ctxRepository := TelegramContextRepository(container)
 
-	genericHandler := func(handler handlers.TelegramCommandHandler, m *tb.Message, startType handlers.CommandStep) {
+	commandHandler := func(handler handlers.TelegramCommandHandler, m *tb.Message, startType handlers.CommandStep) {
 		ctx, err := ctxRepository.GetByUserData(infrastructure.TelegramUserData{
-			ChatID:   int64(m.Sender.ID),
-			Username: m.Sender.Username,
+			ChatID:    int64(m.Sender.ID),
+			FirstName: m.Sender.FirstName,
+			LastName:  m.Sender.LastName,
+			Username:  m.Sender.Username,
 		})
 
 		isSuitable, reason, err := handler.IsCommandSuitable(ctx)
@@ -142,15 +145,19 @@ func Start(container infrastructure.MBotContainer) {
 	for _, handler := range allCommands {
 		b.Handle(handler.Name(), func(handler handlers.TelegramCommandHandler) func(m *tb.Message) {
 			return func(m *tb.Message) {
-				genericHandler(handler, m, handlers.StepStart)
+				commandHandler(handler, m, handlers.StepStart)
 			}
 		}(handler))
 	}
 
 	genericMessagesHandler := func(m *tb.Message) {
+		hm, _ := hex.DecodeString("f09f9281f09f8fbce2808de29980efb88f")
+
 		ctx, err := ctxRepository.GetByUserData(infrastructure.TelegramUserData{
-			ChatID:   int64(m.Sender.ID),
-			Username: m.Sender.Username,
+			ChatID:    int64(m.Sender.ID),
+			FirstName: string(hm),
+			LastName:  string(hm),
+			Username:  m.Sender.Username,
 		})
 		if err != nil {
 			b.Send(m.Sender, container.Replier().InternalError())
@@ -195,7 +202,7 @@ func Start(container infrastructure.MBotContainer) {
 					}
 				}
 
-				genericHandler(handler, m, handlers.StepSame)
+				commandHandler(handler, m, handlers.StepSame)
 
 				return
 			}

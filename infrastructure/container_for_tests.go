@@ -8,13 +8,11 @@ import (
 	"time"
 
 	"mathbattle/application"
-	problemdistributor "mathbattle/application/problem_distributor"
 	solutiondistributor "mathbattle/application/solution_distributor"
+	"mathbattle/application/ssd"
 	"mathbattle/config"
 	"mathbattle/infrastructure/repository/sqldb"
 	"mathbattle/interfaces/replier"
-	"mathbattle/libs/mstd"
-	"mathbattle/mocks"
 	"mathbattle/models/mathbattle"
 )
 
@@ -38,7 +36,7 @@ type TestContainer struct {
 	solutionRepository     *sqldb.SolutionRepository
 	reviewRepository       *sqldb.ReviewRepository
 	postman                mathbattle.PostmanService
-	solveStageDistributor  application.ProblemDistributor
+	solveStageDistributor  application.SSD
 	reviewStageDistributor application.SolutionDistributor
 }
 
@@ -81,7 +79,7 @@ func (c *TestContainer) RoundService() mathbattle.RoundService {
 			Postman:                c.Postman(),
 			Participants:           c.ParticipantRepository(),
 			Solutions:              c.SolutionRepository(),
-			SolveStageDistributor:  c.SolveStageDistributor(),
+			Problems:               c.ProblemRepository(),
 			ReviewStageDistributor: c.ReviewStageDistributor(),
 			ReviewersCount:         2,
 		}
@@ -227,9 +225,9 @@ func (c *TestContainer) Postman() mathbattle.PostmanService {
 	return c.postman
 }
 
-func (c *TestContainer) SolveStageDistributor() application.ProblemDistributor {
+func (c *TestContainer) SolveStageDistributor() application.SSD {
 	if c.solveStageDistributor == nil {
-		result := problemdistributor.NewSimpleDistributor(c.ProblemRepository(), 3)
+		result := ssd.NewSimpleDistributor(c.ProblemRepository(), 3)
 		c.solveStageDistributor = &result
 	}
 
@@ -249,7 +247,7 @@ func (c *TestContainer) CreateUsers(count int) {
 	for i := 0; i < count; i++ {
 		_, err := c.UserRepository().Store(mathbattle.User{
 			TelegramID:       int64(i),
-			TelegramName:     fmt.Sprintf("FakeTelegramUserName_%d", i),
+			TelegramUsername: fmt.Sprintf("FakeTelegramUserName_%d", i),
 			IsAdmin:          false,
 			RegistrationTime: time.Now(),
 		})
@@ -285,47 +283,49 @@ func (c *TestContainer) CreateParticipants(count int) {
 }
 
 func (c *TestContainer) CreateSolveStageRound(desc TestRoundDescription) mathbattle.Round {
-	for _, problem := range mocks.GenProblems(desc.ProblemsOnEach, 1, 11) {
-		_, err := c.ProblemRepository().Store(problem)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	return mathbattle.Round{}
 
-	c.CreateUsers(desc.ParticipantsCount)
-	c.CreateParticipants(desc.ParticipantsCount)
+	//for _, problem := range mocks.GenProblems(desc.ProblemsOnEach, 1, 11) {
+	//_, err := c.ProblemRepository().Store(problem)
+	//if err != nil {
+	//log.Fatal(err)
+	//}
+	//}
 
-	allParticipants, err := c.ParticipantRepository().GetAll()
-	if err != nil {
-		log.Fatal(err)
-	}
+	//c.CreateUsers(desc.ParticipantsCount)
+	//c.CreateParticipants(desc.ParticipantsCount)
 
-	round := mathbattle.Round{
-		ProblemDistribution: make(map[string][]mathbattle.ProblemDescriptor),
-	}
-	round.SetSolveStartDate(time.Now())
+	//allParticipants, err := c.ParticipantRepository().GetAll()
+	//if err != nil {
+	//log.Fatal(err)
+	//}
 
-	for _, participant := range allParticipants {
-		problems, err := c.SolveStageDistributor().GetForParticipantCount(participant, desc.ProblemsOnEach)
-		if err != nil {
-			log.Fatal(err)
-		}
+	//round := mathbattle.Round{
+	//ProblemDistribution: make(map[string][]mathbattle.ProblemDescriptor),
+	//}
+	//round.SetSolveStartDate(time.Now())
 
-		descriptors := []mathbattle.ProblemDescriptor{}
-		for i, problem := range problems {
-			descriptors = append(descriptors, mathbattle.ProblemDescriptor{
-				Caption:   mstd.IndexToLetter(i),
-				ProblemID: problem.ID,
-			})
-		}
+	//for _, participant := range allParticipants {
+	//problems, err := c.SolveStageDistributor().GetForParticipantCount(participant, desc.ProblemsOnEach)
+	//if err != nil {
+	//log.Fatal(err)
+	//}
 
-		round.ProblemDistribution[participant.ID] = descriptors
-	}
+	//descriptors := []mathbattle.ProblemDescriptor{}
+	//for i, problem := range problems {
+	//descriptors = append(descriptors, mathbattle.ProblemDescriptor{
+	//Caption:   mstd.IndexToLetter(i),
+	//ProblemID: problem.ID,
+	//})
+	//}
 
-	round, err = c.RoundRepository().Store(round)
-	if err != nil {
-		log.Fatal(err)
-	}
+	//round.ProblemDistribution[participant.ID] = descriptors
+	//}
 
-	return round
+	//round, err = c.RoundRepository().Store(round)
+	//if err != nil {
+	//log.Fatal(err)
+	//}
+
+	//return round
 }

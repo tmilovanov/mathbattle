@@ -14,8 +14,10 @@ type TelegramUserContext struct {
 }
 
 type TelegramUserData struct {
-	ChatID   int64
-	Username string
+	ChatID    int64
+	FirstName string
+	LastName  string
+	Username  string
 }
 
 type TelegramContextRepository interface {
@@ -26,9 +28,11 @@ type TelegramContextRepository interface {
 func NewTelegramUserContext(userData TelegramUserData) TelegramUserContext {
 	return TelegramUserContext{
 		User: mathbattle.User{
-			TelegramID:   userData.ChatID,
-			TelegramName: userData.Username,
-			IsAdmin:      false,
+			TelegramID:        userData.ChatID,
+			TelegramFirstName: userData.FirstName,
+			TelegramLastName:  userData.LastName,
+			TelegramUsername:  userData.Username,
+			IsAdmin:           false,
 		},
 		Variables:      make(map[string]ContextVariable),
 		CurrentStep:    0,

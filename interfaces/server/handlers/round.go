@@ -22,14 +22,14 @@ func (h *RoundHandler) StartNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	round, err := h.Rs.StartNew(startOrder)
+	result, err := h.Rs.StartNew(startOrder)
 	if err != nil {
 		log.Printf("Failed to start new round, error: '%v'", err)
 		ResponseJSON(w, http.StatusInternalServerError, nil)
 		return
 	}
 
-	ResponseJSON(w, http.StatusOK, round)
+	ResponseJSON(w, http.StatusOK, result)
 }
 
 func (h *RoundHandler) GetReivewStageDistribution(w http.ResponseWriter, r *http.Request) {

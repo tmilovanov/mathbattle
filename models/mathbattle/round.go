@@ -117,11 +117,24 @@ type RoundRepository interface {
 }
 
 type StartOrder struct {
-	StageEnd string `json:"stage_end"`
+	ProblemsIDs []string `json:"problems_ids"`
+	StageEnd    string   `json:"stage_end"`
+}
+
+type ParticipantError struct {
+	Participant Participant `json:"participant"`
+	Error       string      `json:"error"`
+}
+
+type StartResult struct {
+	TotalParticipants        int                `json:"total_participants"`
+	TotalSuccessParticipants int                `json:"total_success_participants"`
+	FailedParticipants       []ParticipantError `json:"failed_participants"`
+	Round                    Round              `json:"round"`
 }
 
 type RoundService interface {
-	StartNew(startOrder StartOrder) (Round, error)
+	StartNew(startOrder StartOrder) (StartResult, error)
 	StartReviewStage(startOrder StartOrder) (Round, error)
 	ReviewStageDistributionDesc() (ReviewDistributionDesc, error)
 	GetAll() ([]Round, error)

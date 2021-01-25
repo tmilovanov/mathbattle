@@ -3,11 +3,13 @@ package mathbattle
 import "time"
 
 type User struct {
-	ID               string    `json:"id"`
-	TelegramID       int64     `json:"telegram_id"`
-	TelegramName     string    `json:"telegram_name"`
-	IsAdmin          bool      `json:"is_admin"`
-	RegistrationTime time.Time `json:"registration_time"`
+	ID                string    `json:"id"`
+	TelegramID        int64     `json:"telegram_id"`
+	TelegramFirstName string    `json:"telegram_firstname"`
+	TelegramLastName  string    `json:"telegram_lastname"`
+	TelegramUsername  string    `json:"telegram_username"`
+	IsAdmin           bool      `json:"is_admin"`
+	RegistrationTime  time.Time `json:"registration_time"`
 }
 
 func (u *User) SetRegistrationTime(t time.Time) {

@@ -12,6 +12,7 @@ type Subscribe struct {
 	Handler
 	Replier            application.Replier
 	ParticipantService mathbattle.ParticipantService
+	RoundService       mathbattle.RoundService
 }
 
 func (h *Subscribe) Name() string {
@@ -109,5 +110,15 @@ func (h *Subscribe) stepAcceptGradeAndFinish(ctx infrastructure.TelegramUserCont
 		return -1, noResponse(), err
 	}
 
-	return -1, OneTextResp(h.Replier.RegisterSuccess()), nil
+	round, err := h.RoundService.GetRunning()
+	if err == nil {
+		stageDuration := round.GetSolveStageDuration()
+		stageEnd, err := round.GetSolveEndDateMsk()
+		if err != nil {
+			return -1, noResponse(), err
+		}
+		return -1, OneTextResp(h.Replier.RegisterSuccessRoundRunning(stageDuration, stageEnd)), nil
+	} else {
+		return -1, OneTextResp(h.Replier.RegisterSuccess()), nil
+	}
 }

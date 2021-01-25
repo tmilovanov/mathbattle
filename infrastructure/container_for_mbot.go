@@ -1,10 +1,14 @@
 package infrastructure
 
 import (
+	"fmt"
+	"io"
 	"log"
+	"os"
+	"path/filepath"
+	"time"
 
 	"mathbattle/application"
-	problemdistributor "mathbattle/application/problem_distributor"
 	solutiondistributor "mathbattle/application/solution_distributor"
 	"mathbattle/config"
 	"mathbattle/infrastructure/repository/sqldb"
@@ -31,14 +35,31 @@ type MBotContainer struct {
 	solutionRepository     *sqldb.SolutionRepository
 	reviewRepository       *sqldb.ReviewRepository
 	postman                mathbattle.PostmanService
-	solveStageDistributor  application.ProblemDistributor
 	reviewStageDistributor application.SolutionDistributor
 }
 
 func NewBotContainer(config config.Config) MBotContainer {
+	log.SetOutput(logFileMbot())
+
 	return MBotContainer{
 		cfg: config,
 	}
+}
+
+func logFileMbot() io.Writer {
+	logDirectory := "logs"
+	if err := os.MkdirAll(logDirectory, 0777); err != nil {
+		log.Fatalf("Failed to create log directory, error: %v", err)
+	}
+
+	logFileName := fmt.Sprintf("mb-bot_%s.txt", time.Now().Format("02-01-2006-15-04-05"))
+	logFilePath := filepath.Join(logDirectory, logFileName)
+	file, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatalf("Failed to create log file, error: %v", err)
+	}
+
+	return io.MultiWriter(os.Stdout, file)
 }
 
 func (c *MBotContainer) Config() config.Config {
@@ -198,15 +219,6 @@ func (c *MBotContainer) Postman() mathbattle.PostmanService {
 	}
 
 	return c.postman
-}
-
-func (c *MBotContainer) SolveStageDistributor() application.ProblemDistributor {
-	if c.solveStageDistributor == nil {
-		result := problemdistributor.NewSimpleDistributor(c.ProblemRepository(), 3)
-		c.solveStageDistributor = &result
-	}
-
-	return c.solveStageDistributor
 }
 
 func (c *MBotContainer) ReviewStageDistributor() application.SolutionDistributor {

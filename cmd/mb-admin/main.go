@@ -40,10 +40,6 @@ func main() {
 			configPath = os.Args[2]
 		}
 		runBot(configPath)
-	case "send-message":
-		sendMessage()
-	case "get-info":
-		getInfo()
 	case "send-kb":
 		sendKb()
 	default:
@@ -61,71 +57,6 @@ func runBot(configPath string) {
 	if err != nil {
 		log.Fatalf("Failed to run mbserver, error: %v", err)
 	}
-}
-
-func getInfo() {
-	container := infrastructure.NewServerContainer(config.LoadConfig("config.yaml"))
-
-	b, _ := tb.NewBot(tb.Settings{
-		Token:       container.Config().TelegramToken,
-		Poller:      &tb.LongPoller{Timeout: 10 * time.Second},
-		Synchronous: true,
-		//Verbose:     true,
-	})
-
-	ids := []string{"1020341126", "1340754306", "743651179", "760356269", "146590255", "483612890", "875279773",
-		"599432958", "719375391", "683841172", "810211817", "796335579", "738821177", "813617082", "930111176", "624013576"}
-
-	for _, chatID := range ids {
-		chat, err := b.ChatByID(chatID)
-		if err != nil {
-			log.Printf("Failed to get chat by id %s", chatID)
-		}
-
-		fmt.Printf("INSERT INTO users (tg_chat_id, tg_name, is_admin, registration_time) VALUES (%v, '%v', %v, '0001-01-01 00:00:00');\n", chatID, chat.Username, false)
-	}
-
-	names := []string{"Рената", "ка", "Ксения", "Андрей", "Саша", "Сергей", "Сабина", "Александр", "Андрей", "Егор", "Константин",
-		"Слава", "Ярослав", "Екатерина", "Сух", "Anastasia"}
-	grades := []int{10, 10, 10, 11, 11, 11, 10, 11, 11, 11, 11, 11, 11, 10, 11, 9}
-	fmt.Println(len(names), len(grades))
-	for i := 0; i < len(names); i++ {
-		name := names[i]
-		grade := grades[i]
-		fmt.Printf("INSERT INTO participants (user_id, name, school, grade, is_active) VALUES (%d, '%s', '', %d, true);\n", i+1, name, grade)
-	}
-}
-
-func sendMessage() {
-	ids := []string{"1020341126", "1340754306", "743651179", "760356269", "146590255", "483612890", "875279773",
-		"599432958", "719375391", "683841172", "810211817", "796335579", "738821177", "813617082", "930111176", "624013576"}
-
-	//ids := []string{"442504899"}
-
-	container := infrastructure.NewServerContainer(config.LoadConfig("config.yaml"))
-
-	b, _ := tb.NewBot(tb.Settings{
-		Token:       container.Config().TelegramToken,
-		Poller:      &tb.LongPoller{Timeout: 10 * time.Second},
-		Synchronous: true,
-		//Verbose:     true,
-	})
-
-	for _, chatID := range ids {
-		cID, err := strconv.ParseInt(chatID, 10, 64)
-		if err != nil {
-			log.Printf("Failed to parse")
-		}
-
-		msg := "Привет! Мы сделали систему оценивания решений и комментариев, поправили найденные баги и запускаем новый раунд.\n"
-		msg += "Мы хотим подготовить участников к предстоящим матбоям, познакомить новичков с форматом задач и требованиями к решениям. Принять участие в раунде могут все, но задачи будут не очень сложные:)"
-
-		_, err = b.Send(tb.ChatID(cID), msg)
-		if err != nil {
-			log.Println(err)
-		}
-	}
-
 }
 
 func sendKb() {

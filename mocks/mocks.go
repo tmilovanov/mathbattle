@@ -50,7 +50,7 @@ func GenParticipants(participantsCount int, grade int) []mathbattle.Participant 
 		result = append(result, mathbattle.Participant{
 			User: mathbattle.User{
 				TelegramID:       int64(i),
-				TelegramName:     fmt.Sprintf("fake_telegram_name_%d", i),
+				TelegramUsername: fmt.Sprintf("fake_telegram_name_%d", i),
 				IsAdmin:          false,
 				RegistrationTime: mstd.UTCNowRoundSeconds(),
 			},

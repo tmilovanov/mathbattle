@@ -60,6 +60,7 @@ type Replier interface {
 	RegisterGradeExpect() string
 	RegisterGradeWrong() string
 	RegisterSuccess() string
+	RegisterSuccessRoundRunning(solveStageDuration time.Duration, solveStageEndMsk time.Time) string
 
 	// Replies used in CmdUnsubscribe
 	NotSubscribed() string
@@ -92,7 +93,8 @@ type Replier interface {
 	StartRoundGetDuration() string
 	StartRoundWrongDuration() string
 	StartRoundConfirmDuration(untillDate time.Time) string
-	StartRoundSuccess() string
+	StartRoundSuccess(startResult mathbattle.StartResult) string
+	StartRoundAskProblemsIDs() string
 
 	// Replies used to post solutions to other participants to review
 	ReviewPostBefore(stageDuration time.Duration, stageEnd time.Time) string

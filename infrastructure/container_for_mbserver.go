@@ -1,10 +1,14 @@
 package infrastructure
 
 import (
+	"fmt"
+	"io"
 	"log"
+	"os"
+	"path/filepath"
+	"time"
 
 	"mathbattle/application"
-	problemdistributor "mathbattle/application/problem_distributor"
 	solutiondistributor "mathbattle/application/solution_distributor"
 	"mathbattle/config"
 	"mathbattle/infrastructure/repository/sqldb"
@@ -32,14 +36,31 @@ type Container struct {
 	solutionRepository     *sqldb.SolutionRepository
 	reviewRepository       *sqldb.ReviewRepository
 	postman                mathbattle.PostmanService
-	solveStageDistributor  application.ProblemDistributor
 	reviewStageDistributor application.SolutionDistributor
 }
 
 func NewServerContainer(config config.Config) Container {
+	log.SetOutput(logFileMbserver())
+
 	return Container{
 		cfg: config,
 	}
+}
+
+func logFileMbserver() io.Writer {
+	logDirectory := "logs"
+	if err := os.MkdirAll(logDirectory, 0777); err != nil {
+		log.Fatalf("Failed to create log directory, error: %v", err)
+	}
+
+	logFileName := fmt.Sprintf("mb-server_%s.txt", time.Now().Format("02-01-2006-15-04-05"))
+	logFilePath := filepath.Join(logDirectory, logFileName)
+	file, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatalf("Failed to create log file, error: %v", err)
+	}
+
+	return io.MultiWriter(os.Stdout, file)
 }
 
 func (c *Container) Config() config.Config {
@@ -53,8 +74,8 @@ func (c *Container) RoundService() mathbattle.RoundService {
 			Replier:                c.Replier(),
 			Postman:                c.Postman(),
 			Participants:           c.ParticipantRepository(),
+			Problems:               c.ProblemRepository(),
 			Solutions:              c.SolutionRepository(),
-			SolveStageDistributor:  c.SolveStageDistributor(),
 			ReviewStageDistributor: c.ReviewStageDistributor(),
 			ReviewersCount:         2,
 		}
@@ -232,15 +253,6 @@ func (c *Container) Postman() mathbattle.PostmanService {
 	}
 
 	return c.postman
-}
-
-func (c *Container) SolveStageDistributor() application.ProblemDistributor {
-	if c.solveStageDistributor == nil {
-		result := problemdistributor.NewSimpleDistributor(c.ProblemRepository(), 5)
-		c.solveStageDistributor = &result
-	}
-
-	return c.solveStageDistributor
 }
 
 func (c *Container) ReviewStageDistributor() application.SolutionDistributor {

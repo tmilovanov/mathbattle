@@ -181,6 +181,22 @@ func (h *SubmitSolution) stepAcceptSolutionPart(ctx infrastructure.TelegramUserC
 	if m.Text == h.Replier.SolutionFinishUploading() {
 		totalUploaded, _ := ctx.Variables["total_uploaded"].AsInt()
 		if totalUploaded == 0 {
+			// Удалить пустое решение
+			problemID := ctx.Variables["problem_id"].AsString()
+			s, err := h.SolutionService.Find(mathbattle.FindDescriptor{
+				RoundID:       round.ID,
+				ParticipantID: participant.ID,
+				ProblemID:     problemID,
+			})
+			if err != nil {
+				return -1, noResponse(), err
+			}
+
+			err = h.SolutionService.Delete(s[0].ID)
+			if err != nil {
+				return -1, noResponse(), err
+			}
+
 			return -1, OneTextResp(h.Replier.SolutionEmpty()), nil
 		} else {
 			return -1, OneTextResp(h.Replier.SolutionUploadSuccess(totalUploaded)), nil

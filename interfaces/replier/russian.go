@@ -33,6 +33,10 @@ func escapeCommandNameForMarkdown(commandName string) string {
 	return strings.Replace(commandName, "_", "\\_", -1)
 }
 
+func (r RussianReplier) GetSupportAccountName() string {
+	return "@mathbattle_support"
+}
+
 func (r RussianReplier) Yes() string {
 	return "Да"
 }
@@ -51,8 +55,6 @@ func (r RussianReplier) GetStartMessage() string {
 
 func (r RussianReplier) GetAvailableCommands(availableCommands []application.TelegramCommandHelp) string {
 	msg := ""
-	msg += "Текущий раунд: этап решения задач до 16:00 по московскому времени 20.01 (среда), этап проверки решений до 16:00 по московскому времени 21.01 (четверг).\n"
-	msg += "\n"
 	msg += "Сейчас доступны следующие действия:\n"
 	msg += "\n"
 	for _, cmd := range availableCommands {
@@ -226,7 +228,7 @@ func (r RussianReplier) CmdGetMyResultsDesc() string {
 }
 
 func (r RussianReplier) InternalError() string {
-	return "Произошла внутрення ошибка. Свяжитесь с организаторами и опишите свою проблему."
+	return fmt.Sprintf("Произошла внутрення ошибка. Свяжитесь с %s и опишите свою проблему.", r.GetSupportAccountName())
 }
 
 func (r RussianReplier) NotParticipant() string {
@@ -279,6 +281,18 @@ func (r RussianReplier) RegisterGradeWrong() string {
 
 func (r RussianReplier) RegisterSuccess() string {
 	return "Вы успешно зарегистрированы. Ожидайте начала раунда и рассылки задач."
+}
+
+func (r RussianReplier) RegisterSuccessRoundRunning(solveStageDuration time.Duration, solveStageEndMsk time.Time) string {
+	msg := ""
+	msg += "Вы успешно зарегистрированы.\n"
+	msg += "В данный момент уже идёт раунд. Присоединяйтесь к решению задач!\n"
+	msg += "\n"
+	day, hour, minute := mstd.DurationToDayHourMinute(solveStageDuration)
+	msg += fmt.Sprintf("Этап решения задач продлится %dд. %dч. %dм. ", day, hour, minute)
+	msg += fmt.Sprintf("После %s по московскому времени решения приниматься не будут.", solveStageEndMsk.Format("02.01.2006 15:04"))
+
+	return msg
 }
 
 func (r RussianReplier) NotSubscribed() string {
@@ -407,8 +421,23 @@ func (r RussianReplier) StartRoundConfirmDuration(untilDate time.Time) string {
 	return result
 }
 
-func (r RussianReplier) StartRoundSuccess() string {
-	return "Задачи разосланы, этап успешно начался."
+func (r RussianReplier) StartRoundSuccess(startResult mathbattle.StartResult) string {
+	msg := ""
+	msg += "Раунд начался\n"
+	msg += fmt.Sprintf("Задачи успешно разосланы *%d/%d* участникам",
+		startResult.TotalSuccessParticipants, startResult.TotalParticipants)
+	if len(startResult.FailedParticipants) != 0 {
+		msg += "\n"
+		msg += "Участники, для которых раунд не удалось начать:\n"
+		for i, failed := range startResult.FailedParticipants {
+			msg += fmt.Sprintf("%d) ID: %s, Error: '%v'\n", i+1, failed.Participant.ID, failed.Error)
+		}
+	}
+	return msg
+}
+
+func (r RussianReplier) StartRoundAskProblemsIDs() string {
+	return "Введите ID задач, которые будут использованы в данном раунде (Порядок будет учтён)"
 }
 
 func (r RussianReplier) ReviewPostBefore(stageDuration time.Duration, stageEnd time.Time) string {

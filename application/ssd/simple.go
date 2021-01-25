@@ -1,4 +1,5 @@
-package problemdistributor
+// ssd означает Solve Stage Distributor, распределитель задач между участниками, на этапе решения задач (Solve Stage)
+package ssd
 
 import (
 	"fmt"
