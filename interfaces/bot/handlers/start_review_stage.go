@@ -98,10 +98,10 @@ func (h *StartReviewStage) stepDistribute(ctx infrastructure.TelegramUserContext
 		return -1, noResponse(), errors.New("Can't find until_date")
 	}
 
-	_, err := h.RoundService.StartReviewStage(mathbattle.StartOrder{StageEnd: untilDateStr.AsString()})
+	cssResult, err := h.RoundService.StartReviewStage(mathbattle.StartOrder{StageEnd: untilDateStr.AsString()})
 	if err != nil {
 		return -1, noResponse(), err
 	}
 
-	return -1, OneTextResp(h.Replier.StartReviewSuccess()), nil
+	return -1, OneTextResp(h.Replier.StartReviewSuccess(cssResult.FailedParticipants)), nil
 }

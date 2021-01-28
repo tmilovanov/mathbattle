@@ -87,13 +87,13 @@ type Replier interface {
 	StartReviewGetDuration() string
 	StartReviewWrongDuration() string
 	StartReviewConfirmDuration(untilDate time.Time) string
-	StartReviewSuccess() string
+	StartReviewSuccess(FailedParticipants []mathbattle.ParticipantError) string
 
 	// Replies used in CmdStartRound
 	StartRoundGetDuration() string
 	StartRoundWrongDuration() string
 	StartRoundConfirmDuration(untillDate time.Time) string
-	StartRoundSuccess(startResult mathbattle.StartResult) string
+	StartRoundSuccess(startResult mathbattle.SSStartResult) string
 	StartRoundAskProblemsIDs() string
 
 	// Replies used to post solutions to other participants to review

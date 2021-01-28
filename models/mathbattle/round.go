@@ -126,16 +126,23 @@ type ParticipantError struct {
 	Error       string      `json:"error"`
 }
 
-type StartResult struct {
+/// SSStartResult - Solution Stage Start Result
+type SSStartResult struct {
 	TotalParticipants        int                `json:"total_participants"`
 	TotalSuccessParticipants int                `json:"total_success_participants"`
 	FailedParticipants       []ParticipantError `json:"failed_participants"`
 	Round                    Round              `json:"round"`
 }
 
+/// CSStartResult - Comment Stage Start Result
+type CSStartResult struct {
+	FailedParticipants []ParticipantError `json:"failed_participants"`
+	Round              Round              `json:"round"`
+}
+
 type RoundService interface {
-	StartNew(startOrder StartOrder) (StartResult, error)
-	StartReviewStage(startOrder StartOrder) (Round, error)
+	StartNew(startOrder StartOrder) (SSStartResult, error)
+	StartReviewStage(startOrder StartOrder) (CSStartResult, error)
 	ReviewStageDistributionDesc() (ReviewDistributionDesc, error)
 	GetAll() ([]Round, error)
 	GetByID(ID string) (Round, error)
@@ -241,7 +248,6 @@ func SolutionDescriptorsForParticipant(problemIDs []string, solutionIDs []string
 			SolutionNumber: solutionNumbers[desc.Caption],
 			SolutionID:     solutionIDs[i],
 		})
-
 	}
 
 	sort.Slice(result, func(i int, j int) bool {

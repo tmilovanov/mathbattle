@@ -10,14 +10,14 @@ type APIRound struct {
 	BaseUrl string
 }
 
-func (a *APIRound) StartNew(startOrder mathbattle.StartOrder) (mathbattle.StartResult, error) {
-	result := mathbattle.StartResult{}
+func (a *APIRound) StartNew(startOrder mathbattle.StartOrder) (mathbattle.SSStartResult, error) {
+	result := mathbattle.SSStartResult{}
 	err := PostJsonRecieveJson(fmt.Sprintf("%s%s", a.BaseUrl, "/rounds/start"), startOrder, &result)
 	return result, err
 }
 
-func (a *APIRound) StartReviewStage(startOrder mathbattle.StartOrder) (mathbattle.Round, error) {
-	result := mathbattle.Round{}
+func (a *APIRound) StartReviewStage(startOrder mathbattle.StartOrder) (mathbattle.CSStartResult, error) {
+	result := mathbattle.CSStartResult{}
 	err := PostJsonRecieveJson(fmt.Sprintf("%s%s", a.BaseUrl, "/rounds/start_review"), startOrder, &result)
 	return result, err
 }

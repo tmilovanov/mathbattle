@@ -397,8 +397,15 @@ func (r RussianReplier) StartReviewConfirmDuration(untilDate time.Time) string {
 	return result
 }
 
-func (r RussianReplier) StartReviewSuccess() string {
-	return "Решения разосланы, этап успешно начался."
+func (r RussianReplier) StartReviewSuccess(failedParticipants []mathbattle.ParticipantError) string {
+	msg := ""
+	msg += "Решения разосланы, этап успешно начался.\n"
+	msg += fmt.Sprintf("Участников с ошбиками: %d\n", len(failedParticipants))
+	for i, item := range failedParticipants {
+		msg += fmt.Sprintf("%d) %s %s\n", i+1, item.Participant.ID, item.Error)
+	}
+
+	return msg
 }
 
 func (r RussianReplier) StartRoundGetDuration() string {
@@ -421,7 +428,7 @@ func (r RussianReplier) StartRoundConfirmDuration(untilDate time.Time) string {
 	return result
 }
 
-func (r RussianReplier) StartRoundSuccess(startResult mathbattle.StartResult) string {
+func (r RussianReplier) StartRoundSuccess(startResult mathbattle.SSStartResult) string {
 	msg := ""
 	msg += "Раунд начался\n"
 	msg += fmt.Sprintf("Задачи успешно разосланы *%d/%d* участникам",

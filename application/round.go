@@ -150,8 +150,8 @@ func (rs *RoundService) StartRoundForParticipant(ssd SSD, round mathbattle.Round
 	return nil
 }
 
-func (rs *RoundService) StartNew(startOrder mathbattle.StartOrder) (mathbattle.StartResult, error) {
-	result := mathbattle.StartResult{}
+func (rs *RoundService) StartNew(startOrder mathbattle.StartOrder) (mathbattle.SSStartResult, error) {
+	result := mathbattle.SSStartResult{}
 
 	_, err := rs.Rep.GetRunning()
 	if err != mathbattle.ErrNotFound {
@@ -207,22 +207,67 @@ func (rs *RoundService) StartNew(startOrder mathbattle.StartOrder) (mathbattle.S
 	return result, nil
 }
 
-func (rs *RoundService) StartReviewStage(startOrder mathbattle.StartOrder) (mathbattle.Round, error) {
-	round := mathbattle.Round{}
+func (rs *RoundService) startReviewStageForParticipant(round mathbattle.Round, participant mathbattle.Participant) error {
+	endMsk, err := round.GetReviewEndDateMsk()
+	if err != nil {
+		return err
+	}
+
+	err = rs.Postman.SendSimpleMessage(participant.TelegramID,
+		rs.Replier.ReviewPostBefore(round.GetReviewStageDuration(), endMsk))
+	if err != nil {
+		return err
+	}
+
+	descriptors, err := mathbattle.SolutionDescriptorsFromSolutionIDs(rs.Solutions, participant.ID, round)
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < len(descriptors); i++ {
+		solutionID := descriptors[i].SolutionID
+		solution, err := rs.Solutions.Get(solutionID)
+		if err != nil {
+			return err
+		}
+
+		images := [][]byte{}
+		for _, part := range solution.Parts {
+			images = append(images, part.Content)
+		}
+
+		caption := rs.Replier.ReviewPostCaption(descriptors[i].ProblemCaption, descriptors[i].SolutionNumber)
+		err = rs.Postman.SendAlbum(participant.TelegramID, caption, images)
+		if err != nil {
+			return err
+		}
+
+	}
+
+	err = rs.Postman.SendSimpleMessage(participant.TelegramID, rs.Replier.ReviewPostAfter())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rs *RoundService) StartReviewStage(startOrder mathbattle.StartOrder) (mathbattle.CSStartResult, error) {
+	result := mathbattle.CSStartResult{}
 
 	untilDate, err := mathbattle.ParseStageEndDate(startOrder.StageEnd)
 	if err != nil {
-		return round, err
+		return result, err
 	}
 
-	round, err = rs.Rep.GetReviewPending()
+	round, err := rs.Rep.GetReviewPending()
 	if err != nil {
-		return round, err
+		return result, err
 	}
 
 	allRoundSolutions, err := rs.Solutions.FindMany(round.ID, "", "")
 	if err != nil {
-		return round, err
+		return result, err
 	}
 
 	distribution := rs.ReviewStageDistributor.Get(allRoundSolutions, uint(rs.ReviewersCount))
@@ -231,61 +276,31 @@ func (rs *RoundService) StartReviewStage(startOrder mathbattle.StartOrder) (math
 	round.SetReviewEndDate(untilDate)
 	round.ReviewDistribution = distribution
 	if err = rs.Rep.Update(round); err != nil {
-		return round, err
+		return result, err
 	}
+	result.Round = round
 
-	for participantID, solutionIDs := range distribution.BetweenParticipants {
-		p, err := rs.Participants.GetByID(participantID)
+	for participantID, _ := range distribution.BetweenParticipants {
+		participant, err := rs.Participants.GetByID(participantID)
 		if err != nil {
-			return round, err
+			return result, err
 		}
 
-		endMsk, err := round.GetReviewEndDateMsk()
+		err = rs.startReviewStageForParticipant(round, participant)
 		if err != nil {
-			return round, err
-		}
-
-		err = rs.Postman.SendSimpleMessage(p.TelegramID, rs.Replier.ReviewPostBefore(round.GetReviewStageDuration(), endMsk))
-		if err != nil {
-			return round, err
-		}
-
-		descriptors, err := mathbattle.SolutionDescriptorsFromSolutionIDs(rs.Solutions, participantID, round)
-		if err != nil {
-			return round, err
-		}
-
-		for i := 0; i < len(solutionIDs); i++ {
-			solution, err := rs.Solutions.Get(solutionIDs[i])
-			if err != nil {
-				return round, err
-			}
-
-			caption := rs.Replier.ReviewPostCaption(descriptors[i].ProblemCaption, descriptors[i].SolutionNumber)
-
-			images := [][]byte{}
-			for _, part := range solution.Parts {
-				images = append(images, part.Content)
-			}
-
-			err = rs.Postman.SendAlbum(p.TelegramID, caption, images)
-			if err != nil {
-				return round, err
-			}
-		}
-
-		err = rs.Postman.SendSimpleMessage(p.TelegramID, rs.Replier.ReviewPostAfter())
-		if err != nil {
-			return round, err
+			result.FailedParticipants = append(result.FailedParticipants, mathbattle.ParticipantError{
+				Participant: participant,
+				Error:       err.Error(),
+			})
 		}
 	}
 
 	err = rs.StartSchedulingActions()
 	if err != nil {
-		return round, err
+		return result, err
 	}
 
-	return round, nil
+	return result, nil
 }
 
 func (rs *RoundService) ReviewStageDistributionDesc() (mathbattle.ReviewDistributionDesc, error) {
